@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, Package, Upload, Edit } from "lucide-react";
+import { Plus, Package, Upload, Edit, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,13 @@ const Produtos = () => {
   const [loading, setLoading] = useState(false);
   const [marcaSelecionada, setMarcaSelecionada] = useState("");
   const [editFormData, setEditFormData] = useState<any>({});
+  const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
+  const [estoqueOpen, setEstoqueOpen] = useState(false);
+  const [movimentacaoData, setMovimentacaoData] = useState({
+    tipo: "entrada",
+    quantidade: "",
+    observacao: "",
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -128,7 +136,42 @@ const Produtos = () => {
       preco_base: produto.preco_base || "",
     });
     setMarcaSelecionada(produto.marca_id || "");
+    loadMovimentacoes(produto.id);
     setEditOpen(true);
+  };
+
+  const loadMovimentacoes = async (produtoId: string) => {
+    const { data } = await supabase
+      .from("movimentacao_estoque")
+      .select("*, profiles(nome)")
+      .eq("produto_id", produtoId)
+      .order("created_at", { ascending: false });
+    setMovimentacoes(data || []);
+  };
+
+  const handleMovimentacao = async () => {
+    if (!produtoSelecionado || !movimentacaoData.quantidade) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase.from("movimentacao_estoque").insert({
+      produto_id: produtoSelecionado.id,
+      tipo: movimentacaoData.tipo,
+      quantidade: parseInt(movimentacaoData.quantidade),
+      observacao: movimentacaoData.observacao,
+      responsavel_id: user.id,
+    });
+
+    if (error) {
+      toast({ title: "Erro ao registrar movimentação", variant: "destructive" });
+    } else {
+      toast({ title: "Movimentação registrada com sucesso!" });
+      setEstoqueOpen(false);
+      setMovimentacaoData({ tipo: "entrada", quantidade: "", observacao: "" });
+      loadMovimentacoes(produtoSelecionado.id);
+      loadProdutos();
+    }
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -280,9 +323,11 @@ const Produtos = () => {
                       {produto.preco_base && <p className="text-sm font-medium mt-2">R$ {parseFloat(produto.preco_base).toFixed(2)}</p>}
                       {produto.descricao && <p className="text-sm text-muted-foreground mt-2">{produto.descricao}</p>}
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(produto)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                     <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(produto)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -292,11 +337,18 @@ const Produtos = () => {
       </Card>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Produto</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleUpdate} className="space-y-4">
+          <Tabs defaultValue="info" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="info">Informações</TabsTrigger>
+              <TabsTrigger value="estoque">Estoque</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="info">
+              <form onSubmit={handleUpdate} className="space-y-4">
             <div>
               <Label htmlFor="edit_nome">Nome *</Label>
               <Input 
@@ -347,15 +399,125 @@ const Produtos = () => {
                 onChange={(e) => setEditFormData({ ...editFormData, descricao: e.target.value })}
               />
             </div>
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Salvando..." : "Salvar Alterações"}
-              </Button>
-            </div>
-          </form>
+                <div className="flex gap-2 justify-end">
+                  <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Salvando..." : "Salvar Alterações"}
+                  </Button>
+                </div>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="estoque" className="space-y-4">
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Estoque Escritório</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Controle de entradas e saídas
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-primary">
+                      {produtoSelecionado?.estoque_escritorio || 0}
+                    </p>
+                    <p className="text-xs text-muted-foreground">unidades</p>
+                  </div>
+                </div>
+
+                <Dialog open={estoqueOpen} onOpenChange={setEstoqueOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="w-full">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nova Movimentação
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Registrar Movimentação</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Tipo</Label>
+                        <Select
+                          value={movimentacaoData.tipo}
+                          onValueChange={(v) => setMovimentacaoData({ ...movimentacaoData, tipo: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="entrada">Entrada</SelectItem>
+                            <SelectItem value="saida">Saída</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Quantidade</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={movimentacaoData.quantidade}
+                          onChange={(e) => setMovimentacaoData({ ...movimentacaoData, quantidade: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Observação</Label>
+                        <Textarea
+                          value={movimentacaoData.observacao}
+                          onChange={(e) => setMovimentacaoData({ ...movimentacaoData, observacao: e.target.value })}
+                        />
+                      </div>
+                      <Button onClick={handleMovimentacao} className="w-full">
+                        Registrar Movimentação
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Histórico de Movimentações</h4>
+                {movimentacoes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    Nenhuma movimentação registrada
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {movimentacoes.map((mov) => (
+                      <div key={mov.id} className="flex items-center justify-between border rounded p-2">
+                        <div className="flex items-center gap-2">
+                          {mov.tipo === "entrada" ? (
+                            <ArrowUpCircle className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <ArrowDownCircle className="h-4 w-4 text-red-500" />
+                          )}
+                          <div>
+                            <p className="text-sm font-medium">
+                              {mov.tipo === "entrada" ? "Entrada" : "Saída"} de {mov.quantidade} unidades
+                            </p>
+                            {mov.observacao && (
+                              <p className="text-xs text-muted-foreground">{mov.observacao}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(mov.created_at).toLocaleDateString('pt-BR')}
+                          </p>
+                          {mov.profiles && (
+                            <p className="text-xs text-muted-foreground">{mov.profiles.nome}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>

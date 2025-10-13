@@ -259,24 +259,27 @@ const Clientes = () => {
 
     setLoadingCnpj(true);
     try {
-      const response = await fetch(`https://receitaws.com.br/v1/cnpj/${cnpj}`);
-      const data = await response.json();
-      
-      if (data.status === "ERROR") {
-        toast({ title: "Erro", description: data.message, variant: "destructive" });
+      const { data, error } = await supabase.functions.invoke('buscar-cnpj', {
+        body: { cnpj }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        toast({ title: "Erro", description: data.error, variant: "destructive" });
         return;
       }
 
       setFormData({
         ...formData,
-        razao_social: data.nome || "",
-        nome_fantasia: data.fantasia || data.nome || "",
+        razao_social: data.razao_social || "",
+        nome_fantasia: data.nome_fantasia || data.razao_social || "",
         email: data.email || "",
         telefone: data.telefone || "",
         cep: data.cep?.replace(/\D/g, "") || "",
         logradouro: data.logradouro || "",
         numero: data.numero || "",
-        cidade: data.municipio || "",
+        cidade: data.cidade || "",
         uf: data.uf || "",
       });
 

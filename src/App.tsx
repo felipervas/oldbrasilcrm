@@ -11,6 +11,7 @@ import Interacoes from "./pages/Interacoes";
 import Produtos from "./pages/Produtos";
 import Marcas from "./pages/Marcas";
 import Catalogos from "./pages/Catalogos";
+import Pedidos from "./pages/Pedidos";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
 
@@ -77,6 +78,14 @@ const App = () => (
             element={
               <AppLayout>
                 <Catalogos />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/pedidos"
+            element={
+              <AppLayout>
+                <Pedidos />
               </AppLayout>
             }
           />

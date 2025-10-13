@@ -117,6 +117,7 @@ export type Database = {
           tamanho: string | null
           telefone: string | null
           uf: string | null
+          ultima_compra_data: string | null
           updated_at: string
         }
         Insert: {
@@ -140,6 +141,7 @@ export type Database = {
           tamanho?: string | null
           telefone?: string | null
           uf?: string | null
+          ultima_compra_data?: string | null
           updated_at?: string
         }
         Update: {
@@ -163,6 +165,7 @@ export type Database = {
           tamanho?: string | null
           telefone?: string | null
           uf?: string | null
+          ultima_compra_data?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -339,6 +342,44 @@ export type Database = {
         }
         Relationships: []
       }
+      movimentacao_estoque: {
+        Row: {
+          created_at: string
+          id: string
+          observacao: string | null
+          produto_id: string
+          quantidade: number
+          responsavel_id: string | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          produto_id: string
+          quantidade: number
+          responsavel_id?: string | null
+          tipo: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          produto_id?: string
+          quantidade?: number
+          responsavel_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacao_estoque_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedidos: {
         Row: {
           arquivo_nome: string | null
@@ -394,6 +435,7 @@ export type Database = {
           ativo: boolean
           created_at: string
           descricao: string | null
+          estoque_escritorio: number | null
           id: string
           marca_id: string | null
           nome: string
@@ -405,6 +447,7 @@ export type Database = {
           ativo?: boolean
           created_at?: string
           descricao?: string | null
+          estoque_escritorio?: number | null
           id?: string
           marca_id?: string | null
           nome: string
@@ -416,6 +459,7 @@ export type Database = {
           ativo?: boolean
           created_at?: string
           descricao?: string | null
+          estoque_escritorio?: number | null
           id?: string
           marca_id?: string | null
           nome?: string
@@ -564,6 +608,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["user_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      pode_ver_faturamento: {
+        Args: { _user_id: string }
         Returns: boolean
       }
     }
