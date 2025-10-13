@@ -225,10 +225,10 @@ const Tarefas = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="responsavel">Responsável (Opcional - deixe vazio para você)</Label>
+                <Label htmlFor="responsavel">Responsável (Opcional)</Label>
                 <Select value={colaboradorSelecionado} onValueChange={setColaboradorSelecionado}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um colaborador" />
+                    <SelectValue placeholder="Você mesmo(a)" />
                   </SelectTrigger>
                   <SelectContent>
                     {colaboradores.map((colab) => (

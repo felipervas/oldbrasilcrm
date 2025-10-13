@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 const Clientes = () => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingCnpj, setLoadingCnpj] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
   const [clientes, setClientes] = useState<any[]>([]);
   const { toast } = useToast();
 
@@ -95,6 +97,76 @@ const Clientes = () => {
     if (data) setClientes(data);
   };
 
+  const buscarCnpj = async () => {
+    const cnpj = formData.cnpj_cpf.replace(/\D/g, "");
+    if (cnpj.length !== 14) {
+      toast({ title: "CNPJ inválido", description: "Digite um CNPJ válido com 14 dígitos", variant: "destructive" });
+      return;
+    }
+
+    setLoadingCnpj(true);
+    try {
+      const response = await fetch(`https://receitaws.com.br/v1/cnpj/${cnpj}`);
+      const data = await response.json();
+      
+      if (data.status === "ERROR") {
+        toast({ title: "Erro", description: data.message, variant: "destructive" });
+        return;
+      }
+
+      setFormData({
+        ...formData,
+        razao_social: data.nome || "",
+        nome_fantasia: data.fantasia || data.nome || "",
+        email: data.email || "",
+        telefone: data.telefone || "",
+        cep: data.cep?.replace(/\D/g, "") || "",
+        logradouro: data.logradouro || "",
+        numero: data.numero || "",
+        cidade: data.municipio || "",
+        uf: data.uf || "",
+      });
+
+      toast({ title: "Sucesso!", description: "Dados da empresa carregados" });
+    } catch (error) {
+      toast({ title: "Erro ao buscar CNPJ", description: "Tente novamente", variant: "destructive" });
+    } finally {
+      setLoadingCnpj(false);
+    }
+  };
+
+  const buscarCep = async () => {
+    const cep = formData.cep.replace(/\D/g, "");
+    if (cep.length !== 8) {
+      toast({ title: "CEP inválido", description: "Digite um CEP válido com 8 dígitos", variant: "destructive" });
+      return;
+    }
+
+    setLoadingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        toast({ title: "CEP não encontrado", variant: "destructive" });
+        return;
+      }
+
+      setFormData({
+        ...formData,
+        logradouro: data.logradouro || "",
+        cidade: data.localidade || "",
+        uf: data.uf || "",
+      });
+
+      toast({ title: "Sucesso!", description: "Endereço carregado" });
+    } catch (error) {
+      toast({ title: "Erro ao buscar CEP", description: "Tente novamente", variant: "destructive" });
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
   useState(() => {
     loadClientes();
   });
@@ -148,11 +220,17 @@ const Clientes = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="cnpj_cpf">CNPJ/CPF</Label>
-                  <Input
-                    id="cnpj_cpf"
-                    value={formData.cnpj_cpf}
-                    onChange={(e) => setFormData({ ...formData, cnpj_cpf: e.target.value })}
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="cnpj_cpf"
+                      value={formData.cnpj_cpf}
+                      onChange={(e) => setFormData({ ...formData, cnpj_cpf: e.target.value })}
+                      placeholder="Digite o CNPJ"
+                    />
+                    <Button type="button" onClick={buscarCnpj} disabled={loadingCnpj} variant="outline">
+                      {loadingCnpj ? "..." : "Buscar"}
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -176,11 +254,17 @@ const Clientes = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cep">CEP</Label>
-                  <Input
-                    id="cep"
-                    value={formData.cep}
-                    onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="cep"
+                      value={formData.cep}
+                      onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
+                      placeholder="Digite o CEP"
+                    />
+                    <Button type="button" onClick={buscarCep} disabled={loadingCep} variant="outline">
+                      {loadingCep ? "..." : "Buscar"}
+                    </Button>
+                  </div>
                 </div>
               </div>
 
