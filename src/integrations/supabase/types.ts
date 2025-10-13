@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalogos: {
+        Row: {
+          arquivo_nome: string
+          arquivo_url: string
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          arquivo_nome: string
+          arquivo_url: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          arquivo_nome?: string
+          arquivo_url?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cliente_produtos: {
         Row: {
           cliente_id: string
