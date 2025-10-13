@@ -17,20 +17,38 @@ const Tarefas = () => {
   const [tarefaSelecionada, setTarefaSelecionada] = useState<any>(null);
   const [tarefas, setTarefas] = useState<any[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
+  const [colaboradores, setColaboradores] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [clienteSelecionado, setClienteSelecionado] = useState("");
+  const [colaboradorSelecionado, setColaboradorSelecionado] = useState("");
   const [tipoTarefa, setTipoTarefa] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
   const loadTarefas = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data, error } = await supabase
+    // Verificar se é admin ou gestor
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+
+    const isAdminOrGestor = roles?.some(r => r.role === "admin" || r.role === "gestor");
+    setIsAdmin(!!isAdminOrGestor);
+
+    // Se for admin/gestor, carrega todas as tarefas, senão só as suas
+    let query = supabase
       .from("tarefas")
-      .select("*, clientes(nome_fantasia)")
-      .eq("responsavel_id", user.id)
+      .select("*, clientes(nome_fantasia), profiles(nome)")
       .order("data_prevista", { ascending: true });
+
+    if (!isAdminOrGestor) {
+      query = query.eq("responsavel_id", user.id);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast({ title: "Erro ao carregar tarefas", variant: "destructive" });
@@ -44,9 +62,15 @@ const Tarefas = () => {
     setClientes(data || []);
   };
 
+  const loadColaboradores = async () => {
+    const { data } = await supabase.from("profiles").select("id, nome");
+    setColaboradores(data || []);
+  };
+
   useEffect(() => {
     loadTarefas();
     loadClientes();
+    loadColaboradores();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -56,6 +80,9 @@ const Tarefas = () => {
     const { data: { user } } = await supabase.auth.getUser();
     const formData = new FormData(e.currentTarget);
     
+    // Se for admin e selecionou um colaborador, usa o selecionado, senão usa o próprio usuário
+    const responsavelId = (isAdmin && colaboradorSelecionado) ? colaboradorSelecionado : user?.id as string;
+    
     const { error } = await supabase.from("tarefas").insert({
       titulo: formData.get("titulo") as string,
       descricao: formData.get("descricao") as string || null,
@@ -63,7 +90,7 @@ const Tarefas = () => {
       tipo: tipoTarefa as "visitar" | "ligar",
       data_prevista: (formData.get("data_prevista") as string) || null,
       prioridade: (formData.get("prioridade") as "baixa" | "media" | "alta") || "media",
-      responsavel_id: user?.id as string,
+      responsavel_id: responsavelId,
     });
 
     setLoading(false);
@@ -75,6 +102,7 @@ const Tarefas = () => {
       toast({ title: "Tarefa criada com sucesso!" });
       setOpen(false);
       setClienteSelecionado("");
+      setColaboradorSelecionado("");
       setTipoTarefa("");
       loadTarefas();
     }
@@ -187,6 +215,23 @@ const Tarefas = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {isAdmin && (
+                <div>
+                  <Label htmlFor="responsavel">Responsável (Opcional - deixe vazio para você)</Label>
+                  <Select value={colaboradorSelecionado} onValueChange={setColaboradorSelecionado}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um colaborador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {colaboradores.map((colab) => (
+                        <SelectItem key={colab.id} value={colab.id}>
+                          {colab.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div>
                 <Label htmlFor="data_prevista">Data Prevista</Label>
                 <Input id="data_prevista" name="data_prevista" type="date" />
@@ -241,6 +286,9 @@ const Tarefas = () => {
                     <div className="flex-1">
                       <h3 className="font-semibold">{tarefa.titulo}</h3>
                       <p className="text-sm text-muted-foreground">Cliente: {tarefa.clientes?.nome_fantasia}</p>
+                      {isAdmin && tarefa.profiles && (
+                        <p className="text-sm text-muted-foreground">Responsável: {tarefa.profiles.nome}</p>
+                      )}
                       <div className="flex gap-2 mt-2 text-xs">
                         <span className="px-2 py-1 bg-secondary rounded">{tarefa.tipo}</span>
                         <span className={`px-2 py-1 rounded ${

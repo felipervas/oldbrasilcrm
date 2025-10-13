@@ -70,6 +70,7 @@ export type Database = {
           cnpj_cpf: string | null
           created_at: string
           email: string | null
+          historico_pedidos: string | null
           id: string
           logradouro: string | null
           nome_fantasia: string
@@ -91,6 +92,7 @@ export type Database = {
           cnpj_cpf?: string | null
           created_at?: string
           email?: string | null
+          historico_pedidos?: string | null
           id?: string
           logradouro?: string | null
           nome_fantasia: string
@@ -112,6 +114,7 @@ export type Database = {
           cnpj_cpf?: string | null
           created_at?: string
           email?: string | null
+          historico_pedidos?: string | null
           id?: string
           logradouro?: string | null
           nome_fantasia?: string

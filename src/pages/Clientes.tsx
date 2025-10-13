@@ -30,6 +30,7 @@ const Clientes = () => {
     segmento: "",
     tamanho: "",
     observacoes: "",
+    historico_pedidos: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,6 +75,7 @@ const Clientes = () => {
         segmento: "",
         tamanho: "",
         observacoes: "",
+        historico_pedidos: "",
       });
       setOpen(false);
       loadClientes();
@@ -246,6 +248,18 @@ const Clientes = () => {
                   id="observacoes"
                   value={formData.observacoes}
                   onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="historico_pedidos">Histórico de Pedidos</Label>
+                <Textarea
+                  id="historico_pedidos"
+                  placeholder="Ex: Último pedido em 10/2025 - 50kg Cacau Premium"
+                  value={formData.historico_pedidos}
+                  onChange={(e) => setFormData({ ...formData, historico_pedidos: e.target.value })}
+                  rows={3}
                 />
               </div>
 
@@ -288,7 +302,7 @@ const Clientes = () => {
               {clientes.map((cliente) => (
                 <div key={cliente.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <h3 className="font-semibold text-lg">{cliente.nome_fantasia}</h3>
                       {cliente.razao_social && (
                         <p className="text-sm text-muted-foreground">{cliente.razao_social}</p>
@@ -300,6 +314,18 @@ const Clientes = () => {
                           <p>📍 {cliente.cidade}/{cliente.uf}</p>
                         )}
                       </div>
+                      {cliente.historico_pedidos && (
+                        <div className="mt-3 p-3 bg-muted rounded-md">
+                          <p className="text-xs font-semibold mb-1">Histórico de Pedidos:</p>
+                          <p className="text-sm whitespace-pre-wrap">{cliente.historico_pedidos}</p>
+                        </div>
+                      )}
+                      {cliente.observacoes && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          <p className="font-medium">Observações:</p>
+                          <p>{cliente.observacoes}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
