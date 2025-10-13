@@ -1,9 +1,72 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Plus, Package } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Produtos = () => {
+  const [open, setOpen] = useState(false);
+  const [produtos, setProdutos] = useState<any[]>([]);
+  const [marcas, setMarcas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [marcaSelecionada, setMarcaSelecionada] = useState("");
+  const { toast } = useToast();
+
+  const loadProdutos = async () => {
+    const { data, error } = await supabase
+      .from("produtos")
+      .select("*, marcas(nome)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({ title: "Erro ao carregar produtos", variant: "destructive" });
+    } else {
+      setProdutos(data || []);
+    }
+  };
+
+  const loadMarcas = async () => {
+    const { data } = await supabase.from("marcas").select("*").eq("ativa", true);
+    setMarcas(data || []);
+  };
+
+  useEffect(() => {
+    loadProdutos();
+    loadMarcas();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const { error } = await supabase.from("produtos").insert({
+      nome: formData.get("nome") as string,
+      sku: formData.get("sku") as string,
+      descricao: formData.get("descricao") as string,
+      marca_id: marcaSelecionada || null,
+      preco_base: formData.get("preco_base") ? parseFloat(formData.get("preco_base") as string) : null,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast({ title: "Erro ao adicionar produto", variant: "destructive" });
+    } else {
+      toast({ title: "Produto adicionado com sucesso!" });
+      setOpen(false);
+      setMarcaSelecionada("");
+      loadProdutos();
+    }
+  };
+
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8">
       <div className="flex items-center justify-between">
@@ -18,10 +81,55 @@ const Produtos = () => {
             </p>
           </div>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Produto
-        </Button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Produto
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Novo Produto</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="nome">Nome *</Label>
+                <Input id="nome" name="nome" required />
+              </div>
+              <div>
+                <Label htmlFor="sku">SKU</Label>
+                <Input id="sku" name="sku" />
+              </div>
+              <div>
+                <Label htmlFor="marca">Marca</Label>
+                <Select value={marcaSelecionada} onValueChange={setMarcaSelecionada}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma marca" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {marcas.map((marca) => (
+                      <SelectItem key={marca.id} value={marca.id}>
+                        {marca.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="preco_base">Preço Base</Label>
+                <Input id="preco_base" name="preco_base" type="number" step="0.01" />
+              </div>
+              <div>
+                <Label htmlFor="descricao">Descrição</Label>
+                <Textarea id="descricao" name="descricao" />
+              </div>
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? "Salvando..." : "Salvar Produto"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="shadow-card">
@@ -35,15 +143,25 @@ const Produtos = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12 text-muted-foreground">
-            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium mb-2">Nenhum produto cadastrado</p>
-            <p className="text-sm mb-4">Adicione produtos ao seu catálogo</p>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Adicionar Produto
-            </Button>
-          </div>
+          {produtos.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium mb-2">Nenhum produto cadastrado</p>
+              <p className="text-sm">Adicione produtos ao seu catálogo</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {produtos.map((produto) => (
+                <div key={produto.id} className="border rounded-lg p-4">
+                  <h3 className="font-semibold">{produto.nome}</h3>
+                  {produto.sku && <p className="text-xs text-muted-foreground">SKU: {produto.sku}</p>}
+                  {produto.marcas && <p className="text-sm text-muted-foreground mt-1">Marca: {produto.marcas.nome}</p>}
+                  {produto.preco_base && <p className="text-sm font-medium mt-2">R$ {parseFloat(produto.preco_base).toFixed(2)}</p>}
+                  {produto.descricao && <p className="text-sm text-muted-foreground mt-2">{produto.descricao}</p>}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
