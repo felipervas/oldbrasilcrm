@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Package,
   Tag,
+  FileText,
   Briefcase,
   LogOut,
 } from "lucide-react";
@@ -34,6 +35,7 @@ const menuItems = [
   { title: "Interações", url: "/interacoes", icon: MessageSquare },
   { title: "Produtos", url: "/produtos", icon: Package },
   { title: "Marcas", url: "/marcas", icon: Tag },
+  { title: "Catálogos", url: "/catalogos", icon: FileText },
 ];
 
 export function AppSidebar() {

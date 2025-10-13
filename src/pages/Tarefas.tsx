@@ -22,33 +22,17 @@ const Tarefas = () => {
   const [clienteSelecionado, setClienteSelecionado] = useState("");
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState("");
   const [tipoTarefa, setTipoTarefa] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
   const loadTarefas = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Verificar se é admin ou gestor
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
-
-    const isAdminOrGestor = roles?.some(r => r.role === "admin" || r.role === "gestor");
-    setIsAdmin(!!isAdminOrGestor);
-
-    // Se for admin/gestor, carrega todas as tarefas, senão só as suas
-    let query = supabase
+    const { data, error } = await supabase
       .from("tarefas")
       .select("*, clientes(nome_fantasia), profiles(nome)")
+      .eq("responsavel_id", user.id)
       .order("data_prevista", { ascending: true });
-
-    if (!isAdminOrGestor) {
-      query = query.eq("responsavel_id", user.id);
-    }
-
-    const { data, error } = await query;
 
     if (error) {
       toast({ title: "Erro ao carregar tarefas", variant: "destructive" });
@@ -80,10 +64,10 @@ const Tarefas = () => {
     const { data: { user } } = await supabase.auth.getUser();
     const formData = new FormData(e.currentTarget);
     
-    // Se for admin e selecionou um colaborador, usa o selecionado, senão usa o próprio usuário
-    const responsavelId = (isAdmin && colaboradorSelecionado) ? colaboradorSelecionado : user?.id as string;
+    // Usa o colaborador selecionado ou o próprio usuário
+    const responsavelId = colaboradorSelecionado || user?.id as string;
     
-    const { error } = await supabase.from("tarefas").insert({
+    const { data: tarefaData, error } = await supabase.from("tarefas").insert({
       titulo: formData.get("titulo") as string,
       descricao: formData.get("descricao") as string || null,
       cliente_id: clienteSelecionado,
@@ -91,21 +75,46 @@ const Tarefas = () => {
       data_prevista: (formData.get("data_prevista") as string) || null,
       prioridade: (formData.get("prioridade") as "baixa" | "media" | "alta") || "media",
       responsavel_id: responsavelId,
-    });
+    }).select().single();
 
-    setLoading(false);
+    const tarefa = tarefaData as any;
 
     if (error) {
+      setLoading(false);
       toast({ title: "Erro ao criar tarefa", variant: "destructive" });
       console.error(error);
-    } else {
-      toast({ title: "Tarefa criada com sucesso!" });
-      setOpen(false);
-      setClienteSelecionado("");
-      setColaboradorSelecionado("");
-      setTipoTarefa("");
-      loadTarefas();
+      return;
     }
+
+    // Enviar notificação
+    if (tarefa) {
+      try {
+        const { data: funcData } = await supabase.functions.invoke('send-task-notification', {
+          body: {
+            tarefa_id: tarefa.id,
+            responsavel_id: responsavelId,
+            titulo: formData.get("titulo") as string,
+            cliente_id: clienteSelecionado,
+            data_prevista: formData.get("data_prevista") as string,
+            tipo: tipoTarefa,
+          }
+        });
+
+        if (funcData?.whatsappUrl) {
+          window.open(funcData.whatsappUrl, '_blank');
+        }
+      } catch (notifError) {
+        console.error("Erro ao enviar notificação:", notifError);
+      }
+    }
+
+    setLoading(false);
+    toast({ title: "Tarefa criada e notificação enviada!" });
+    setOpen(false);
+    setClienteSelecionado("");
+    setColaboradorSelecionado("");
+    setTipoTarefa("");
+    loadTarefas();
   };
 
   const handleConclusao = async (resultado: "concluida" | "nao_concluida" | "reagendar", motivo?: string, novaData?: string) => {
@@ -215,23 +224,21 @@ const Tarefas = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {isAdmin && (
-                <div>
-                  <Label htmlFor="responsavel">Responsável (Opcional - deixe vazio para você)</Label>
-                  <Select value={colaboradorSelecionado} onValueChange={setColaboradorSelecionado}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um colaborador" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {colaboradores.map((colab) => (
-                        <SelectItem key={colab.id} value={colab.id}>
-                          {colab.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div>
+                <Label htmlFor="responsavel">Responsável (Opcional - deixe vazio para você)</Label>
+                <Select value={colaboradorSelecionado} onValueChange={setColaboradorSelecionado}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um colaborador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {colaboradores.map((colab) => (
+                      <SelectItem key={colab.id} value={colab.id}>
+                        {colab.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label htmlFor="data_prevista">Data Prevista</Label>
                 <Input id="data_prevista" name="data_prevista" type="date" />
@@ -286,9 +293,6 @@ const Tarefas = () => {
                     <div className="flex-1">
                       <h3 className="font-semibold">{tarefa.titulo}</h3>
                       <p className="text-sm text-muted-foreground">Cliente: {tarefa.clientes?.nome_fantasia}</p>
-                      {isAdmin && tarefa.profiles && (
-                        <p className="text-sm text-muted-foreground">Responsável: {tarefa.profiles.nome}</p>
-                      )}
                       <div className="flex gap-2 mt-2 text-xs">
                         <span className="px-2 py-1 bg-secondary rounded">{tarefa.tipo}</span>
                         <span className={`px-2 py-1 rounded ${

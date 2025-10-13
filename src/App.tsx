@@ -10,6 +10,7 @@ import Tarefas from "./pages/Tarefas";
 import Interacoes from "./pages/Interacoes";
 import Produtos from "./pages/Produtos";
 import Marcas from "./pages/Marcas";
+import Catalogos from "./pages/Catalogos";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
 
@@ -68,6 +69,14 @@ const App = () => (
             element={
               <AppLayout>
                 <Marcas />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/catalogos"
+            element={
+              <AppLayout>
+                <Catalogos />
               </AppLayout>
             }
           />
