@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,10 +13,12 @@ import { useToast } from "@/hooks/use-toast";
 
 const Produtos = () => {
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [produtos, setProdutos] = useState<any[]>([]);
   const [marcas, setMarcas] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [marcaSelecionada, setMarcaSelecionada] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const loadProdutos = async () => {
@@ -67,6 +69,53 @@ const Produtos = () => {
     }
   };
 
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      // Ignora a primeira linha (cabeçalho)
+      const produtos = lines.slice(1).map(line => {
+        const [nome, sku, marca_nome, preco, descricao] = line.split(',').map(item => item.trim());
+        
+        // Encontra marca pelo nome
+        const marca = marcas.find(m => m.nome.toLowerCase() === marca_nome?.toLowerCase());
+        
+        return {
+          nome: nome || 'Produto sem nome',
+          sku: sku || null,
+          marca_id: marca?.id || null,
+          preco_base: preco ? parseFloat(preco) : null,
+          descricao: descricao || null,
+        };
+      }).filter(p => p.nome !== 'Produto sem nome');
+
+      const { error } = await supabase.from("produtos").insert(produtos);
+
+      setLoading(false);
+
+      if (error) {
+        toast({ title: "Erro ao importar produtos", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: `${produtos.length} produtos importados com sucesso!` });
+        setImportOpen(false);
+        loadProdutos();
+      }
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8">
       <div className="flex items-center justify-between">
@@ -81,13 +130,41 @@ const Produtos = () => {
             </p>
           </div>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Produto
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Dialog open={importOpen} onOpenChange={setImportOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Upload className="h-4 w-4" />
+                Importar CSV
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Importar Produtos via CSV</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  O arquivo CSV deve ter o formato: Nome, SKU, Marca, Preço, Descrição
+                </p>
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleImportCSV}
+                  disabled={loading}
+                />
+                {loading && <p className="text-sm">Importando produtos...</p>}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Produto
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Novo Produto</DialogTitle>
@@ -129,7 +206,8 @@ const Produtos = () => {
               </Button>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <Card className="shadow-card">

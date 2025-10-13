@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, MessageCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -385,7 +385,7 @@ const Clientes = () => {
             <div className="space-y-4">
               {clientes.map((cliente) => (
                 <div key={cliente.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors">
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start gap-4">
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{cliente.nome_fantasia}</h3>
                       {cliente.razao_social && (
@@ -411,6 +411,21 @@ const Clientes = () => {
                         </div>
                       )}
                     </div>
+                    {cliente.telefone && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => {
+                          const telefone = cliente.telefone.replace(/\D/g, '');
+                          const mensagem = encodeURIComponent(`Olá ${cliente.nome_fantasia}! Tudo bem?`);
+                          window.open(`https://wa.me/55${telefone}?text=${mensagem}`, '_blank');
+                        }}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        WhatsApp
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
