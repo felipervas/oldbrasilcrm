@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, CheckSquare, Calendar, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Plus, CheckSquare, Calendar, CheckCircle2, XCircle, Clock, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Tarefas = () => {
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [conclusaoOpen, setConclusaoOpen] = useState(false);
   const [tarefaSelecionada, setTarefaSelecionada] = useState<any>(null);
   const [tarefas, setTarefas] = useState<any[]>([]);
@@ -22,6 +23,7 @@ const Tarefas = () => {
   const [clienteSelecionado, setClienteSelecionado] = useState("");
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState("");
   const [tipoTarefa, setTipoTarefa] = useState("");
+  const [editFormData, setEditFormData] = useState<any>({});
   const { toast } = useToast();
 
   const loadTarefas = async () => {
@@ -163,6 +165,48 @@ const Tarefas = () => {
       });
       setConclusaoOpen(false);
       setTarefaSelecionada(null);
+      loadTarefas();
+    }
+  };
+
+  const handleEdit = (tarefa: any) => {
+    setTarefaSelecionada(tarefa);
+    setEditFormData({
+      titulo: tarefa.titulo,
+      descricao: tarefa.descricao || "",
+      data_prevista: tarefa.data_prevista || "",
+      prioridade: tarefa.prioridade,
+    });
+    setClienteSelecionado(tarefa.cliente_id);
+    setColaboradorSelecionado(tarefa.responsavel_id);
+    setTipoTarefa(tarefa.tipo);
+    setEditOpen(true);
+  };
+
+  const handleUpdateTarefa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tarefaSelecionada) return;
+
+    setLoading(true);
+    const { error } = await supabase
+      .from("tarefas")
+      .update({
+        titulo: editFormData.titulo,
+        descricao: editFormData.descricao,
+        data_prevista: editFormData.data_prevista || null,
+        prioridade: editFormData.prioridade,
+        cliente_id: clienteSelecionado,
+        responsavel_id: colaboradorSelecionado,
+        tipo: tipoTarefa as "visitar" | "ligar",
+      })
+      .eq("id", tarefaSelecionada.id);
+
+    setLoading(false);
+    if (error) {
+      toast({ title: "Erro ao atualizar tarefa", variant: "destructive" });
+    } else {
+      toast({ title: "Tarefa atualizada com sucesso!" });
+      setEditOpen(false);
       loadTarefas();
     }
   };
@@ -309,17 +353,26 @@ const Tarefas = () => {
                       </div>
                       {tarefa.descricao && <p className="text-sm mt-2">{tarefa.descricao}</p>}
                     </div>
-                    {tarefa.status === 'pendente' && (
+                    <div className="flex gap-2">
                       <Button 
-                        size="sm" 
-                        onClick={() => {
-                          setTarefaSelecionada(tarefa);
-                          setConclusaoOpen(true);
-                        }}
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEdit(tarefa)}
                       >
-                        Executar
+                        <Edit className="h-4 w-4" />
                       </Button>
-                    )}
+                      {tarefa.status === 'pendente' && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => {
+                            setTarefaSelecionada(tarefa);
+                            setConclusaoOpen(true);
+                          }}
+                        >
+                          Executar
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -375,6 +428,108 @@ const Tarefas = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Tarefa</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateTarefa} className="space-y-4">
+            <div>
+              <Label htmlFor="edit_titulo">Título *</Label>
+              <Input 
+                id="edit_titulo" 
+                required 
+                value={editFormData.titulo || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, titulo: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_cliente">Cliente *</Label>
+              <Select value={clienteSelecionado} onValueChange={setClienteSelecionado} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientes.map((cliente) => (
+                    <SelectItem key={cliente.id} value={cliente.id}>
+                      {cliente.nome_fantasia}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit_tipo">Tipo *</Label>
+              <Select value={tipoTarefa} onValueChange={setTipoTarefa} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="visitar">Visita</SelectItem>
+                  <SelectItem value="ligar">Ligação</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit_responsavel">Responsável</Label>
+              <Select value={colaboradorSelecionado} onValueChange={setColaboradorSelecionado}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione responsável" />
+                </SelectTrigger>
+                <SelectContent>
+                  {colaboradores.map((colab) => (
+                    <SelectItem key={colab.id} value={colab.id}>
+                      {colab.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit_data_prevista">Data Prevista</Label>
+              <Input 
+                id="edit_data_prevista" 
+                type="date"
+                value={editFormData.data_prevista || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, data_prevista: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_prioridade">Prioridade</Label>
+              <Select 
+                value={editFormData.prioridade || "media"} 
+                onValueChange={(value) => setEditFormData({ ...editFormData, prioridade: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="baixa">Baixa</SelectItem>
+                  <SelectItem value="media">Média</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit_descricao">Descrição</Label>
+              <Textarea 
+                id="edit_descricao"
+                value={editFormData.descricao || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, descricao: e.target.value })}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

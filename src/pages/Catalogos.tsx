@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, Upload, Download, Trash2 } from "lucide-react";
+import { Plus, FileText, Upload, Download, Trash2, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,11 +13,14 @@ import { useToast } from "@/hooks/use-toast";
 
 const Catalogos = () => {
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [catalogoSelecionado, setCatalogoSelecionado] = useState<any>(null);
   const [catalogos, setCatalogos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [tipo, setTipo] = useState("");
+  const [editFormData, setEditFormData] = useState<any>({});
   const { toast } = useToast();
 
   const loadCatalogos = async () => {
@@ -120,6 +123,40 @@ const Catalogos = () => {
     } catch (error: any) {
       console.error(error);
       toast({ title: "Erro ao excluir catálogo", variant: "destructive" });
+    }
+  };
+
+  const handleEdit = (catalogo: any) => {
+    setCatalogoSelecionado(catalogo);
+    setEditFormData({
+      nome: catalogo.nome,
+      descricao: catalogo.descricao || "",
+    });
+    setTipo(catalogo.tipo);
+    setEditOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!catalogoSelecionado) return;
+
+    setLoading(true);
+    const { error } = await supabase
+      .from("catalogos")
+      .update({
+        nome: editFormData.nome,
+        descricao: editFormData.descricao,
+        tipo: tipo,
+      })
+      .eq("id", catalogoSelecionado.id);
+
+    setLoading(false);
+    if (error) {
+      toast({ title: "Erro ao atualizar catálogo", variant: "destructive" });
+    } else {
+      toast({ title: "Catálogo atualizado com sucesso!" });
+      setEditOpen(false);
+      loadCatalogos();
     }
   };
 
@@ -231,6 +268,13 @@ const Catalogos = () => {
                     <Button
                       size="sm"
                       variant="outline"
+                      onClick={() => handleEdit(catalogo)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
                       className="flex-1 gap-2"
                       onClick={() => window.open(catalogo.arquivo_url, '_blank')}
                     >
@@ -251,6 +295,53 @@ const Catalogos = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Catálogo</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <div>
+              <Label htmlFor="edit_nome">Nome *</Label>
+              <Input 
+                id="edit_nome" 
+                required
+                value={editFormData.nome || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, nome: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_tipo">Tipo *</Label>
+              <Select value={tipo} onValueChange={setTipo} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tabela_precos">Tabela de Preços</SelectItem>
+                  <SelectItem value="catalogo">Catálogo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit_descricao">Descrição</Label>
+              <Textarea 
+                id="edit_descricao"
+                value={editFormData.descricao || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, descricao: e.target.value })}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

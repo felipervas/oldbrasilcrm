@@ -97,6 +97,7 @@ export type Database = {
       }
       clientes: {
         Row: {
+          aniversario: string | null
           ativo: boolean
           cep: string | null
           cidade: string | null
@@ -119,6 +120,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aniversario?: string | null
           ativo?: boolean
           cep?: string | null
           cidade?: string | null
@@ -141,6 +143,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aniversario?: string | null
           ativo?: boolean
           cep?: string | null
           cidade?: string | null
@@ -168,6 +171,80 @@ export type Database = {
             columns: ["responsavel_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comentarios: {
+        Row: {
+          comentario: string
+          created_at: string | null
+          entidade_id: string
+          entidade_tipo: string
+          id: string
+          usuario_id: string
+        }
+        Insert: {
+          comentario: string
+          created_at?: string | null
+          entidade_id: string
+          entidade_tipo: string
+          id?: string
+          usuario_id: string
+        }
+        Update: {
+          comentario?: string
+          created_at?: string | null
+          entidade_id?: string
+          entidade_tipo?: string
+          id?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
+      contatos_clientes: {
+        Row: {
+          aniversario: string | null
+          cargo: string | null
+          cliente_id: string
+          created_at: string | null
+          email: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          aniversario?: string | null
+          cargo?: string | null
+          cliente_id: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          aniversario?: string | null
+          cargo?: string | null
+          cliente_id?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contatos_clientes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
         ]
@@ -261,6 +338,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pedidos: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_url: string | null
+          cliente_id: string
+          created_at: string | null
+          data_pedido: string | null
+          id: string
+          numero_pedido: string | null
+          observacoes: string | null
+          status: string | null
+          updated_at: string | null
+          valor_total: number | null
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          cliente_id: string
+          created_at?: string | null
+          data_pedido?: string | null
+          id?: string
+          numero_pedido?: string | null
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor_total?: number | null
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          cliente_id?: string
+          created_at?: string | null
+          data_pedido?: string | null
+          id?: string
+          numero_pedido?: string | null
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       produtos: {
         Row: {

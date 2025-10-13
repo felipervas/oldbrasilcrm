@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, Package, Upload } from "lucide-react";
+import { Plus, Package, Upload, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,11 +13,14 @@ import { useToast } from "@/hooks/use-toast";
 
 const Produtos = () => {
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [produtoSelecionado, setProdutoSelecionado] = useState<any>(null);
   const [produtos, setProdutos] = useState<any[]>([]);
   const [marcas, setMarcas] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [marcaSelecionada, setMarcaSelecionada] = useState("");
+  const [editFormData, setEditFormData] = useState<any>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -114,6 +117,44 @@ const Produtos = () => {
     };
 
     reader.readAsText(file);
+  };
+
+  const handleEdit = (produto: any) => {
+    setProdutoSelecionado(produto);
+    setEditFormData({
+      nome: produto.nome,
+      sku: produto.sku || "",
+      descricao: produto.descricao || "",
+      preco_base: produto.preco_base || "",
+    });
+    setMarcaSelecionada(produto.marca_id || "");
+    setEditOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!produtoSelecionado) return;
+
+    setLoading(true);
+    const { error } = await supabase
+      .from("produtos")
+      .update({
+        nome: editFormData.nome,
+        sku: editFormData.sku,
+        descricao: editFormData.descricao,
+        marca_id: marcaSelecionada || null,
+        preco_base: editFormData.preco_base ? parseFloat(editFormData.preco_base) : null,
+      })
+      .eq("id", produtoSelecionado.id);
+
+    setLoading(false);
+    if (error) {
+      toast({ title: "Erro ao atualizar produto", variant: "destructive" });
+    } else {
+      toast({ title: "Produto atualizado com sucesso!" });
+      setEditOpen(false);
+      loadProdutos();
+    }
   };
 
   return (
@@ -231,17 +272,92 @@ const Produtos = () => {
             <div className="grid gap-4 md:grid-cols-2">
               {produtos.map((produto) => (
                 <div key={produto.id} className="border rounded-lg p-4">
-                  <h3 className="font-semibold">{produto.nome}</h3>
-                  {produto.sku && <p className="text-xs text-muted-foreground">SKU: {produto.sku}</p>}
-                  {produto.marcas && <p className="text-sm text-muted-foreground mt-1">Marca: {produto.marcas.nome}</p>}
-                  {produto.preco_base && <p className="text-sm font-medium mt-2">R$ {parseFloat(produto.preco_base).toFixed(2)}</p>}
-                  {produto.descricao && <p className="text-sm text-muted-foreground mt-2">{produto.descricao}</p>}
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{produto.nome}</h3>
+                      {produto.sku && <p className="text-xs text-muted-foreground">SKU: {produto.sku}</p>}
+                      {produto.marcas && <p className="text-sm text-muted-foreground mt-1">Marca: {produto.marcas.nome}</p>}
+                      {produto.preco_base && <p className="text-sm font-medium mt-2">R$ {parseFloat(produto.preco_base).toFixed(2)}</p>}
+                      {produto.descricao && <p className="text-sm text-muted-foreground mt-2">{produto.descricao}</p>}
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(produto)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Produto</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdate} className="space-y-4">
+            <div>
+              <Label htmlFor="edit_nome">Nome *</Label>
+              <Input 
+                id="edit_nome" 
+                required
+                value={editFormData.nome || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, nome: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_sku">SKU</Label>
+              <Input 
+                id="edit_sku"
+                value={editFormData.sku || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, sku: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_marca">Marca</Label>
+              <Select value={marcaSelecionada} onValueChange={setMarcaSelecionada}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  {marcas.map((marca) => (
+                    <SelectItem key={marca.id} value={marca.id}>
+                      {marca.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit_preco_base">Preço Base</Label>
+              <Input 
+                id="edit_preco_base" 
+                type="number" 
+                step="0.01"
+                value={editFormData.preco_base || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, preco_base: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_descricao">Descrição</Label>
+              <Textarea 
+                id="edit_descricao"
+                value={editFormData.descricao || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, descricao: e.target.value })}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
