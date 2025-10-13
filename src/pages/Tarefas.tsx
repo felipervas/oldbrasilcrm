@@ -44,12 +44,20 @@ const Tarefas = () => {
   };
 
   const loadClientes = async () => {
-    const { data } = await supabase.from("clientes").select("*").eq("ativo", true);
+    const { data } = await supabase
+      .from("clientes")
+      .select("id, nome_fantasia")
+      .eq("ativo", true)
+      .order("nome_fantasia");
     setClientes(data || []);
   };
 
   const loadColaboradores = async () => {
-    const { data } = await supabase.from("profiles").select("id, nome");
+    // Buscar os colaboradores principais do sistema
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, nome")
+      .in("nome", ["Felipe", "Oswaldo", "Leandro", "Alex", "Kamila"]);
     setColaboradores(data || []);
   };
 

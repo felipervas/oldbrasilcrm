@@ -79,6 +79,7 @@ const Clientes = () => {
 
       const { error } = await supabase.from("clientes").insert({
         ...formData,
+        aniversario: formData.aniversario || null,
         responsavel_id: user.id,
       });
 
@@ -173,7 +174,10 @@ const Clientes = () => {
     setLoading(true);
     const { error } = await supabase
       .from("clientes")
-      .update(formData)
+      .update({
+        ...formData,
+        aniversario: formData.aniversario || null,
+      })
       .eq("id", clienteSelecionado.id);
 
     setLoading(false);
@@ -209,8 +213,11 @@ const Clientes = () => {
 
       const { error: insertError } = await supabase.from("pedidos").insert({
         cliente_id: clienteSelecionado.id,
-        ...pedidoData,
+        numero_pedido: pedidoData.numero_pedido || null,
+        data_pedido: pedidoData.data_pedido || null,
         valor_total: pedidoData.valor_total ? parseFloat(pedidoData.valor_total) : null,
+        status: pedidoData.status,
+        observacoes: pedidoData.observacoes || null,
         arquivo_url: urlData.publicUrl,
         arquivo_nome: selectedFile.name,
       });
@@ -237,6 +244,7 @@ const Clientes = () => {
     const { error } = await supabase.from("contatos_clientes").insert({
       cliente_id: clienteSelecionado.id,
       ...contatoData,
+      aniversario: contatoData.aniversario || null,
     });
 
     setLoading(false);

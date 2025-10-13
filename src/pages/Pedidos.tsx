@@ -34,7 +34,7 @@ const Pedidos = () => {
     if (!user) return;
 
     const email = user.email?.toLowerCase() || '';
-    const temPermissao = email.includes('felipervas@gmail.com') || email.includes('oldvasconcellos.com');
+    const temPermissao = email === 'felipervas@gmail.com' || email.endsWith('@oldvasconcellos.com');
     setPodeVerFaturamento(temPermissao);
   };
 

@@ -611,7 +611,7 @@ export type Database = {
         Returns: boolean
       }
       pode_ver_faturamento: {
-        Args: { _user_id: string }
+        Args: { user_id: string }
         Returns: boolean
       }
     }
