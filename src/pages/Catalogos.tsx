@@ -46,6 +46,33 @@ const Catalogos = () => {
     }
   };
 
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      const validTypes = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
+      const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+      
+      if (validTypes.includes(fileExt)) {
+        setSelectedFile(file);
+        toast({ title: "Arquivo selecionado: " + file.name });
+      } else {
+        toast({ 
+          title: "Tipo de arquivo não suportado", 
+          description: "Use PDF ou imagens (JPG, PNG, WEBP)",
+          variant: "destructive" 
+        });
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedFile) {
@@ -206,18 +233,33 @@ const Catalogos = () => {
                 <Label htmlFor="descricao">Descrição</Label>
                 <Textarea id="descricao" name="descricao" placeholder="Descrição do arquivo" />
               </div>
-              <div>
-                <Label htmlFor="arquivo">Arquivo (PDF ou Imagem) *</Label>
+              <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors"
+              >
+                <Label htmlFor="arquivo" className="cursor-pointer">
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm font-medium">
+                      Arraste arquivos aqui ou clique para selecionar
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      PDF ou Imagens (JPG, PNG, WEBP)
+                    </p>
+                  </div>
+                </Label>
                 <Input 
                   id="arquivo" 
                   type="file" 
                   accept=".pdf,.jpg,.jpeg,.png,.webp"
                   onChange={handleFileSelect}
                   required 
+                  className="hidden"
                 />
                 {selectedFile && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Arquivo selecionado: {selectedFile.name}
+                  <p className="text-sm text-primary mt-3 font-medium">
+                    ✓ {selectedFile.name}
                   </p>
                 )}
               </div>

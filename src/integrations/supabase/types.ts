@@ -514,6 +514,7 @@ export type Database = {
           data_conclusao: string | null
           data_prevista: string | null
           descricao: string | null
+          horario: string | null
           id: string
           origem: string | null
           prioridade: Database["public"]["Enums"]["priority_type"]
@@ -529,6 +530,7 @@ export type Database = {
           data_conclusao?: string | null
           data_prevista?: string | null
           descricao?: string | null
+          horario?: string | null
           id?: string
           origem?: string | null
           prioridade?: Database["public"]["Enums"]["priority_type"]
@@ -544,6 +546,7 @@ export type Database = {
           data_conclusao?: string | null
           data_prevista?: string | null
           descricao?: string | null
+          horario?: string | null
           id?: string
           origem?: string | null
           prioridade?: Database["public"]["Enums"]["priority_type"]

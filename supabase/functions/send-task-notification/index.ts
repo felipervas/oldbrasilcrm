@@ -16,14 +16,14 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { tarefa_id, responsavel_id, titulo, cliente_id, data_prevista, tipo } = await req.json();
+    const { tarefa_id, responsavel_id, titulo, cliente_id, data_prevista, horario, tipo } = await req.json();
 
     console.log("Processando notificação para tarefa:", tarefa_id);
 
     // Buscar dados do responsável
     const { data: responsavel } = await supabase
       .from("profiles")
-      .select("nome")
+      .select("nome, telefone")
       .eq("id", responsavel_id)
       .single();
 
@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("id", cliente_id)
       .single();
 
-    // Buscar email e telefone do usuário
+    // Buscar email do usuário
     const { data: { user } } = await supabase.auth.admin.getUserById(responsavel_id);
 
     if (!user || !responsavel || !cliente) {
@@ -43,19 +43,58 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Enviando notificação para:", user.email);
 
-    // Por enquanto, apenas retornar link do WhatsApp
-    // O email será implementado quando o RESEND_API_KEY estiver configurado
+    // Formatar data e horário
+    const dataFormatada = data_prevista ? new Date(data_prevista).toLocaleDateString('pt-BR') : '';
+    const horarioFormatado = horario ? horario.slice(0, 5) : '';
+
+    // Enviar email via Resend
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (resendApiKey && user.email) {
+      try {
+        const emailResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Tarefas <onboarding@resend.dev>',
+            to: [user.email],
+            subject: `🔔 Nova Tarefa: ${titulo}`,
+            html: `
+              <h2>Nova Tarefa Atribuída</h2>
+              <p><strong>Título:</strong> ${titulo}</p>
+              <p><strong>Cliente:</strong> ${cliente.nome_fantasia}</p>
+              <p><strong>Tipo:</strong> ${tipo === 'visitar' ? 'Visita' : 'Ligação'}</p>
+              ${dataFormatada ? `<p><strong>Data:</strong> ${dataFormatada}</p>` : ''}
+              ${horarioFormatado ? `<p><strong>Horário:</strong> ${horarioFormatado}</p>` : ''}
+              <p>Acesse o sistema para mais detalhes.</p>
+            `,
+          }),
+        });
+
+        if (!emailResponse.ok) {
+          console.error("Erro ao enviar email:", await emailResponse.text());
+        } else {
+          console.log("Email enviado com sucesso!");
+        }
+      } catch (emailError) {
+        console.error("Erro ao enviar email:", emailError);
+      }
+    }
+
+    // Criar link do WhatsApp
     const whatsappMessage = encodeURIComponent(
       `🔔 Nova Tarefa!\n\n` +
       `Título: ${titulo}\n` +
       `Cliente: ${cliente.nome_fantasia}\n` +
       `Tipo: ${tipo === 'visitar' ? 'Visita' : 'Ligação'}\n` +
-      `${data_prevista ? `Data: ${new Date(data_prevista).toLocaleDateString('pt-BR')}\n` : ''}` +
+      `${dataFormatada ? `Data: ${dataFormatada}\n` : ''}` +
+      `${horarioFormatado ? `Horário: ${horarioFormatado}\n` : ''}` +
       `\nAcesse o sistema para mais detalhes.`
     );
     
-    // Assumindo formato brasileiro de telefone
-    const telefone = user.user_metadata?.telefone || user.phone || "";
+    const telefone = responsavel.telefone || user.user_metadata?.telefone || user.phone || "";
     const whatsappUrl = telefone ? `https://wa.me/${telefone.replace(/\D/g, '')}?text=${whatsappMessage}` : null;
     
     console.log("Link WhatsApp gerado:", whatsappUrl);

@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Clientes from "./pages/Clientes";
 import Tarefas from "./pages/Tarefas";
 import Interacoes from "./pages/Interacoes";
+import Colaboradores from "./pages/Colaboradores";
 import Produtos from "./pages/Produtos";
 import Marcas from "./pages/Marcas";
 import Catalogos from "./pages/Catalogos";
@@ -54,6 +55,14 @@ const App = () => (
             element={
               <AppLayout>
                 <Interacoes />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/colaboradores"
+            element={
+              <AppLayout>
+                <Colaboradores />
               </AppLayout>
             }
           />

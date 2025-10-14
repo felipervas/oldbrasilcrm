@@ -83,6 +83,7 @@ const Tarefas = () => {
       cliente_id: clienteSelecionado,
       tipo: tipoTarefa as "visitar" | "ligar",
       data_prevista: (formData.get("data_prevista") as string) || null,
+      horario: (formData.get("horario") as string) || null,
       prioridade: (formData.get("prioridade") as "baixa" | "media" | "alta") || "media",
       responsavel_id: responsavelId,
     }).select().single();
@@ -106,6 +107,7 @@ const Tarefas = () => {
             titulo: formData.get("titulo") as string,
             cliente_id: clienteSelecionado,
             data_prevista: formData.get("data_prevista") as string,
+            horario: formData.get("horario") as string,
             tipo: tipoTarefa,
           }
         });
@@ -183,6 +185,7 @@ const Tarefas = () => {
       titulo: tarefa.titulo,
       descricao: tarefa.descricao || "",
       data_prevista: tarefa.data_prevista || "",
+      horario: tarefa.horario || "",
       prioridade: tarefa.prioridade,
     });
     setClienteSelecionado(tarefa.cliente_id);
@@ -202,6 +205,7 @@ const Tarefas = () => {
         titulo: editFormData.titulo,
         descricao: editFormData.descricao,
         data_prevista: editFormData.data_prevista || null,
+        horario: editFormData.horario || null,
         prioridade: editFormData.prioridade,
         cliente_id: clienteSelecionado,
         responsavel_id: colaboradorSelecionado,
@@ -296,6 +300,10 @@ const Tarefas = () => {
                 <Input id="data_prevista" name="data_prevista" type="date" />
               </div>
               <div>
+                <Label htmlFor="horario">Horário</Label>
+                <Input id="horario" name="horario" type="time" />
+              </div>
+              <div>
                 <Label htmlFor="prioridade">Prioridade</Label>
                 <Select name="prioridade" defaultValue="media">
                   <SelectTrigger>
@@ -356,6 +364,7 @@ const Tarefas = () => {
                           <span className="px-2 py-1 bg-muted rounded flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(tarefa.data_prevista).toLocaleDateString('pt-BR')}
+                            {tarefa.horario && ` às ${tarefa.horario.slice(0, 5)}`}
                           </span>
                         )}
                       </div>
@@ -503,6 +512,15 @@ const Tarefas = () => {
                 type="date"
                 value={editFormData.data_prevista || ""}
                 onChange={(e) => setEditFormData({ ...editFormData, data_prevista: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_horario">Horário</Label>
+              <Input 
+                id="edit_horario" 
+                type="time"
+                value={editFormData.horario || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, horario: e.target.value })}
               />
             </div>
             <div>
