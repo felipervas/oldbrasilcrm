@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Briefcase } from "lucide-react";
+import oldLogo from "@/assets/old-brasil-logo.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -75,14 +75,14 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-subtle p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-primary shadow-glow mb-4">
-            <Briefcase className="h-8 w-8 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center mb-6">
+            <img src={oldLogo} alt="OLD Brasil" className="h-20 w-auto" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Sistema de Gestão
+          <h1 className="text-4xl font-bold text-foreground mb-2">
+            OLD CRM
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Gestão de Representação Comercial
+          <p className="text-muted-foreground">
+            Sistema de Gestão de Representação
           </p>
         </div>
 

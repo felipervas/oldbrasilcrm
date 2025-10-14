@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import oldLogo from "@/assets/old-brasil-logo.png";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -63,19 +64,17 @@ export function AppSidebar() {
     <Sidebar className={open ? "w-64" : "w-16"} collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         {open && (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-primary">
-              <Briefcase className="h-5 w-5 text-primary-foreground" />
-            </div>
+          <div className="flex items-center gap-3">
+            <img src={oldLogo} alt="OLD Brasil" className="h-10 w-auto" />
             <div>
-              <h2 className="font-semibold text-sidebar-foreground">Sistema</h2>
+              <h2 className="font-bold text-sidebar-foreground text-lg">OLD CRM</h2>
               <p className="text-xs text-sidebar-foreground/60">Gestão Comercial</p>
             </div>
           </div>
         )}
         {!open && (
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-primary mx-auto">
-            <Briefcase className="h-5 w-5 text-primary-foreground" />
+          <div className="flex items-center justify-center mx-auto">
+            <img src={oldLogo} alt="OLD" className="h-8 w-auto" />
           </div>
         )}
       </SidebarHeader>
