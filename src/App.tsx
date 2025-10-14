@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Clientes from "./pages/Clientes";
 import Tarefas from "./pages/Tarefas";
+import Financeiro from "./pages/Financeiro";
 import Interacoes from "./pages/Interacoes";
 import Colaboradores from "./pages/Colaboradores";
 import Produtos from "./pages/Produtos";
@@ -113,6 +114,14 @@ const App = () => (
             element={
               <AppLayout>
                 <EstoqueAmostras />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/financeiro"
+            element={
+              <AppLayout>
+                <Financeiro />
               </AppLayout>
             }
           />

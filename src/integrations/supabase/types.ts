@@ -315,6 +315,51 @@ export type Database = {
           },
         ]
       }
+      financeiro: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_url: string | null
+          categoria: string | null
+          created_at: string
+          data: string
+          descricao: string
+          id: string
+          observacoes: string | null
+          tipo: Database["public"]["Enums"]["transaction_type"]
+          updated_at: string
+          usuario_id: string
+          valor: number
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          categoria?: string | null
+          created_at?: string
+          data?: string
+          descricao: string
+          id?: string
+          observacoes?: string | null
+          tipo: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+          usuario_id: string
+          valor: number
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          categoria?: string | null
+          created_at?: string
+          data?: string
+          descricao?: string
+          id?: string
+          observacoes?: string | null
+          tipo?: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+          usuario_id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       interacoes: {
         Row: {
           cliente_id: string
@@ -693,6 +738,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      pode_ver_financeiro: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       processar_clientes_inativos: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -706,6 +755,7 @@ export type Database = {
       sentiment_type: "positivo" | "neutro" | "negativo"
       task_status: "pendente" | "em_andamento" | "concluida" | "cancelada"
       task_type: "visitar" | "ligar"
+      transaction_type: "receita" | "despesa"
       user_role: "admin" | "gestor" | "colaborador" | "leitura"
     }
     CompositeTypes: {
@@ -841,6 +891,7 @@ export const Constants = {
       sentiment_type: ["positivo", "neutro", "negativo"],
       task_status: ["pendente", "em_andamento", "concluida", "cancelada"],
       task_type: ["visitar", "ligar"],
+      transaction_type: ["receita", "despesa"],
       user_role: ["admin", "gestor", "colaborador", "leitura"],
     },
   },

@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -26,29 +27,130 @@ import {
   LogOut,
   ShoppingCart,
   Boxes,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import oldLogo from "@/assets/old-brasil-logo.png";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
-const menuItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Clientes", url: "/clientes", icon: Users },
-  { title: "Tarefas", url: "/tarefas", icon: CheckSquare },
-  { title: "Interações", url: "/interacoes", icon: MessageSquare },
-  { title: "Responsáveis", url: "/colaboradores", icon: Users },
-  { title: "Produtos", url: "/produtos", icon: Package },
-  { title: "Marcas", url: "/marcas", icon: Tag },
-  { title: "Catálogos", url: "/catalogos", icon: FileText },
-  { title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
-  { title: "Lançar Pedido", url: "/lancar-pedido", icon: Briefcase },
-  { title: "Estoque & Amostras", url: "/estoque-amostras", icon: Boxes },
+const defaultMenuItems = [
+  { id: "dashboard", title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { id: "clientes", title: "Clientes", url: "/clientes", icon: Users },
+  { id: "tarefas", title: "Tarefas", url: "/tarefas", icon: CheckSquare },
+  { id: "interacoes", title: "Interações", url: "/interacoes", icon: MessageSquare },
+  { id: "colaboradores", title: "Responsáveis", url: "/colaboradores", icon: Users },
+  { id: "produtos", title: "Produtos", url: "/produtos", icon: Package },
+  { id: "marcas", title: "Marcas", url: "/marcas", icon: Tag },
+  { id: "catalogos", title: "Catálogos", url: "/catalogos", icon: FileText },
+  { id: "pedidos", title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
+  { id: "lancar-pedido", title: "Lançar Pedido", url: "/lancar-pedido", icon: Briefcase },
+  { id: "estoque", title: "Estoque & Amostras", url: "/estoque-amostras", icon: Boxes },
+  { id: "financeiro", title: "Financeiro", url: "/financeiro", icon: DollarSign, restricted: true },
 ];
+
+function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; open: boolean }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild>
+          <NavLink
+            to={item.url}
+            end
+            className={({ isActive }) =>
+              isActive
+                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                : "hover:bg-sidebar-accent/50"
+            }
+          >
+            <item.icon className="h-4 w-4" />
+            {open && <span>{item.title}</span>}
+          </NavLink>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </div>
+  );
+}
 
 export function AppSidebar() {
   const { open } = useSidebar();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [menuItems, setMenuItems] = useState(defaultMenuItems);
+  const [canViewFinanceiro, setCanViewFinanceiro] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  useEffect(() => {
+    checkFinanceiroAccess();
+    loadMenuOrder();
+  }, []);
+
+  const checkFinanceiroAccess = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.email === 'felipervas@gmail.com' || user?.email === 'oldvasconcellos@gmail.com') {
+      setCanViewFinanceiro(true);
+    }
+  };
+
+  const loadMenuOrder = () => {
+    const saved = localStorage.getItem('menuOrder');
+    if (saved) {
+      const savedIds = JSON.parse(saved);
+      const orderedItems = savedIds
+        .map((id: string) => defaultMenuItems.find(item => item.id === id))
+        .filter(Boolean);
+      setMenuItems(orderedItems as typeof defaultMenuItems);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setMenuItems((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        const newOrder = arrayMove(items, oldIndex, newIndex);
+        localStorage.setItem('menuOrder', JSON.stringify(newOrder.map(item => item.id)));
+        return newOrder;
+      });
+    }
+  };
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -62,6 +164,10 @@ export function AppSidebar() {
       navigate("/login");
     }
   };
+
+  const visibleMenuItems = menuItems.filter(item => 
+    !item.restricted || (item.restricted && canViewFinanceiro)
+  );
 
   return (
     <Sidebar className={open ? "w-64" : "w-16"} collapsible="icon">
@@ -86,26 +192,22 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end
-                      className={({ isActive }) =>
-                        isActive
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                          : "hover:bg-sidebar-accent/50"
-                      }
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {open && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={visibleMenuItems.map(item => item.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <SidebarMenu>
+                  {visibleMenuItems.map((item) => (
+                    <SortableMenuItem key={item.id} item={item} open={open} />
+                  ))}
+                </SidebarMenu>
+              </SortableContext>
+            </DndContext>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
