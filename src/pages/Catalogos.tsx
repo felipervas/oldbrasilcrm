@@ -21,7 +21,14 @@ const Catalogos = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [tipo, setTipo] = useState("");
   const [editFormData, setEditFormData] = useState<any>({});
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+
+  const catalogosFiltrados = catalogos.filter(catalogo =>
+    catalogo.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    catalogo.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    catalogo.arquivo_nome?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const loadCatalogos = async () => {
     const { data, error } = await supabase
@@ -280,9 +287,16 @@ const Catalogos = () => {
           <CardDescription>
             Seus catálogos e tabelas de preços
           </CardDescription>
+          <div className="mt-4">
+            <Input
+              placeholder="Buscar por nome, descrição ou arquivo..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </CardHeader>
         <CardContent>
-          {catalogos.length === 0 ? (
+          {catalogosFiltrados.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">Nenhum arquivo ainda</p>
@@ -290,7 +304,7 @@ const Catalogos = () => {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {catalogos.map((catalogo) => (
+              {catalogosFiltrados.map((catalogo) => (
                 <div key={catalogo.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">

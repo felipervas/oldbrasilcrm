@@ -617,6 +617,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      processar_clientes_inativos: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       interaction_result: "concluida" | "nao_atendido" | "reagendada"

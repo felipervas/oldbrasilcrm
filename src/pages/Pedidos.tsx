@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { DollarSign, TrendingUp, Package, Calendar } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,7 +23,14 @@ const Pedidos = () => {
   const [pedidosRecentes, setPedidosRecentes] = useState<any[]>([]);
   const [podeverFaturamento, setPodeVerFaturamento] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+
+  const pedidosFiltrados = pedidosRecentes.filter(pedido =>
+    pedido.clientes?.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pedido.numero_pedido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pedido.clientes?.profiles?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   useEffect(() => {
     verificarPermissao();
@@ -232,16 +240,23 @@ const Pedidos = () => {
           <CardDescription>
             Últimos 10 pedidos registrados
           </CardDescription>
+          <div className="mt-4">
+            <Input
+              placeholder="Buscar por cliente, número do pedido ou vendedor..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </CardHeader>
         <CardContent>
-          {pedidosRecentes.length === 0 ? (
+          {pedidosFiltrados.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">Nenhum pedido registrado</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {pedidosRecentes.map((pedido) => (
+              {pedidosFiltrados.map((pedido) => (
                 <div key={pedido.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

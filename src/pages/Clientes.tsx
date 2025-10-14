@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,6 +25,9 @@ const Clientes = () => {
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [contatos, setContatos] = useState<any[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState<"todos" | "ativo" | "inativo">("todos");
+  const [responsaveis, setResponsaveis] = useState<any[]>([]);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -121,8 +125,16 @@ const Clientes = () => {
   };
 
   const loadClientes = async () => {
-    const { data } = await supabase.from("clientes").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("clientes")
+      .select("*, profiles(nome)")
+      .order("created_at", { ascending: false });
     if (data) setClientes(data);
+  };
+
+  const loadResponsaveis = async () => {
+    const { data } = await supabase.from("profiles").select("id, nome").order("nome");
+    if (data) setResponsaveis(data);
   };
 
   const loadPedidos = async (clienteId: string) => {
@@ -331,8 +343,38 @@ const Clientes = () => {
     }
   };
 
+  const handleChangeResponsavel = async (clienteId: string, novoResponsavelId: string) => {
+    const { error } = await supabase
+      .from("clientes")
+      .update({ responsavel_id: novoResponsavelId })
+      .eq("id", clienteId);
+
+    if (error) {
+      toast({ title: "Erro ao alterar responsável", variant: "destructive" });
+    } else {
+      toast({ title: "Responsável alterado com sucesso!" });
+      loadClientes();
+    }
+  };
+
+  const clientesFiltrados = clientes.filter(cliente => {
+    const matchSearch = 
+      cliente.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cliente.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cliente.cnpj_cpf?.includes(searchTerm) ||
+      cliente.telefone?.includes(searchTerm);
+
+    const matchStatus = 
+      filtroStatus === "todos" ? true :
+      filtroStatus === "ativo" ? cliente.ativo === true :
+      cliente.ativo === false;
+
+    return matchSearch && matchStatus;
+  });
+
   useEffect(() => {
     loadClientes();
+    loadResponsaveis();
   }, []);
 
   return (
@@ -543,9 +585,28 @@ const Clientes = () => {
           <CardDescription>
             Todos os clientes cadastrados no sistema
           </CardDescription>
+          <div className="flex gap-4 mt-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Buscar por nome, CNPJ, telefone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={filtroStatus} onValueChange={(v: any) => setFiltroStatus(v)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="ativo">Ativos</SelectItem>
+                <SelectItem value="inativo">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
-          {clientes.length === 0 ? (
+          {clientesFiltrados.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">Nenhum cliente cadastrado</p>
@@ -557,11 +618,16 @@ const Clientes = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {clientes.map((cliente) => (
+              {clientesFiltrados.map((cliente) => (
                 <div key={cliente.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{cliente.nome_fantasia}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">{cliente.nome_fantasia}</h3>
+                        <span className={`text-xs px-2 py-1 rounded ${cliente.ativo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {cliente.ativo ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </div>
                       {cliente.razao_social && (
                         <p className="text-sm text-muted-foreground">{cliente.razao_social}</p>
                       )}
@@ -571,9 +637,29 @@ const Clientes = () => {
                         {cliente.cidade && cliente.uf && (
                           <p>📍 {cliente.cidade}/{cliente.uf}</p>
                         )}
-                        {cliente.aniversario && (
-                          <p>🎂 {new Date(cliente.aniversario).toLocaleDateString('pt-BR')}</p>
+                        {cliente.ultima_compra_data && (
+                          <p>🛒 Última compra: {new Date(cliente.ultima_compra_data).toLocaleDateString('pt-BR')}</p>
                         )}
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs text-muted-foreground">Responsável:</span>
+                          <Select 
+                            value={cliente.responsavel_id || ""} 
+                            onValueChange={(v) => handleChangeResponsavel(cliente.id, v)}
+                          >
+                            <SelectTrigger className="h-7 w-[180px] text-xs">
+                              <SelectValue placeholder="Selecione">
+                                {cliente.profiles?.nome || "Sem responsável"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {responsaveis.map((resp) => (
+                                <SelectItem key={resp.id} value={resp.id}>
+                                  {resp.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-2">

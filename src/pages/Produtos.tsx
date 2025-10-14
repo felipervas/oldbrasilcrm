@@ -29,8 +29,15 @@ const Produtos = () => {
     quantidade: "",
     observacao: "",
   });
+  const [searchTerm, setSearchTerm] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const produtosFiltrados = produtos.filter(produto =>
+    produto.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    produto.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    produto.marcas?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const loadProdutos = async () => {
     const { data, error } = await supabase
@@ -303,9 +310,16 @@ const Produtos = () => {
           <CardDescription>
             Todos os produtos disponíveis
           </CardDescription>
+          <div className="mt-4">
+            <Input
+              placeholder="Buscar por nome, SKU ou marca..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </CardHeader>
         <CardContent>
-          {produtos.length === 0 ? (
+          {produtosFiltrados.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">Nenhum produto cadastrado</p>
@@ -313,7 +327,7 @@ const Produtos = () => {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
-              {produtos.map((produto) => (
+              {produtosFiltrados.map((produto) => (
                 <div key={produto.id} className="border rounded-lg p-4">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
