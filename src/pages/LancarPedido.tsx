@@ -32,6 +32,7 @@ const LancarPedido = () => {
   const [quantidade, setQuantidade] = useState(1);
   const [precoUnitario, setPrecoUnitario] = useState(0);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -56,6 +57,25 @@ const LancarPedido = () => {
       .eq("ativo", true)
       .order("nome");
     setProdutos(data || []);
+  };
+
+  const calcularPrecoKilo = (produto: any) => {
+    if (!produto.preco_base) return 0;
+    
+    const preco = parseFloat(produto.preco_base);
+    
+    // Se tem peso da unidade, calcular preço por kilo
+    if (produto.peso_unidade_kg) {
+      return preco / parseFloat(produto.peso_unidade_kg);
+    }
+    
+    // Se tem rendimento por dose (ex: 30g para 1kg), calcular
+    if (produto.rendimento_dose_gramas) {
+      const dosesParaUmKg = 1000 / produto.rendimento_dose_gramas;
+      return preco * dosesParaUmKg;
+    }
+    
+    return preco;
   };
 
   const adicionarProduto = () => {
@@ -134,10 +154,43 @@ const LancarPedido = () => {
     }
   };
 
-  const handlePdfUpload = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files[0]) {
+      const file = files[0];
+      if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+        setPdfFile(file);
+        toast({ title: "Arquivo carregado com sucesso!" });
+      } else {
+        toast({ 
+          title: "Tipo de arquivo inválido", 
+          description: "Apenas PDFs e imagens são aceitos",
+          variant: "destructive" 
+        });
+      }
+    }
+  };
+
+  const processPdfFile = async () => {
     if (!pdfFile) {
       toast({ title: "Selecione um arquivo PDF", variant: "destructive" });
+      return;
+    }
+    if (!selectedCliente) {
+      toast({ title: "Selecione um cliente", variant: "destructive" });
       return;
     }
 
@@ -214,6 +267,11 @@ const LancarPedido = () => {
     }
   };
 
+  const handlePdfUpload = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await processPdfFile();
+  };
+
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8">
       <div className="flex items-center gap-4">
@@ -274,7 +332,9 @@ const LancarPedido = () => {
                       <Select value={selectedProduto} onValueChange={(v) => {
                         setSelectedProduto(v);
                         const prod = produtos.find(p => p.id === v);
-                        if (prod?.preco_base) setPrecoUnitario(parseFloat(prod.preco_base));
+                        if (prod?.preco_base) {
+                          setPrecoUnitario(parseFloat(prod.preco_base));
+                        }
                       }}>
                         <SelectTrigger>
                           <SelectValue placeholder="Escolher produto" />
@@ -283,10 +343,26 @@ const LancarPedido = () => {
                           {produtos.map((produto) => (
                             <SelectItem key={produto.id} value={produto.id}>
                               {produto.nome}
+                              {produto.peso_unidade_kg && ` (${produto.peso_unidade_kg}kg)`}
+                              {produto.rendimento_dose_gramas && ` (${produto.rendimento_dose_gramas}g/kg)`}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {selectedProduto && (() => {
+                        const prod = produtos.find(p => p.id === selectedProduto);
+                        if (!prod) return null;
+                        const precoKilo = calcularPrecoKilo(prod);
+                        if (precoKilo === 0 || precoKilo === parseFloat(prod.preco_base || 0)) return null;
+                        return (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {prod.rendimento_dose_gramas 
+                              ? `Preço por kg (gelato): R$ ${precoKilo.toFixed(2)}`
+                              : `Preço por kg: R$ ${precoKilo.toFixed(2)}`
+                            }
+                          </p>
+                        );
+                      })()}
                     </div>
                     <div className="col-span-2">
                       <Label className="text-xs">Qtd</Label>
@@ -437,24 +513,62 @@ const LancarPedido = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="pdf_file">Arquivo PDF *</Label>
-                  <Input 
-                    id="pdf_file" 
-                    type="file" 
-                    accept=".pdf"
-                    required
-                    onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    A IA irá extrair número do pedido, data, valor e observações do PDF
+                  <Label htmlFor="pdf_file">Arquivo PDF ou Imagem *</Label>
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                      isDragging 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-muted hover:border-primary/50'
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    <FileUp className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Arraste e solte o PDF/imagem aqui ou clique para selecionar
+                    </p>
+                    <Input 
+                      id="pdf_file" 
+                      type="file" 
+                      accept=".pdf,image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setPdfFile(file);
+                          toast({ title: "Arquivo carregado!" });
+                        }
+                      }}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => document.getElementById('pdf_file')?.click()}
+                    >
+                      Selecionar Arquivo
+                    </Button>
+                    {pdfFile && (
+                      <p className="text-sm text-primary mt-3 font-medium">
+                        ✓ {pdfFile.name}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    A IA extrairá automaticamente: número do pedido, data, cliente, produtos, quantidades, valores e total
                   </p>
                 </div>
 
-                <Button type="submit" disabled={uploadLoading} className="w-full">
+                <Button 
+                  type="submit" 
+                  disabled={uploadLoading || !pdfFile || !selectedCliente} 
+                  className="w-full"
+                >
                   {uploadLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processando PDF...
+                      Processando com IA...
                     </>
                   ) : (
                     "Processar e Criar Pedido"

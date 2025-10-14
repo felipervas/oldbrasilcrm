@@ -37,23 +37,39 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `Você é um assistente especializado em extrair dados de pedidos de PDFs. 
-Extraia as seguintes informações do PDF e retorne APENAS um JSON válido sem nenhum texto adicional:
+            content: `Você é um assistente especializado em extrair dados de pedidos/notas de PDFs e imagens. 
+Extraia TODAS as informações e retorne APENAS um JSON válido:
 {
-  "numero_pedido": "número do pedido ou código",
+  "numero_pedido": "número do pedido/nota",
   "data_pedido": "data no formato YYYY-MM-DD",
-  "valor_total": número decimal,
-  "observacoes": "quaisquer observações relevantes ou itens do pedido"
+  "valor_total": número decimal do total geral,
+  "cliente_nome": "nome ou razão social do cliente",
+  "cliente_cnpj": "CNPJ do cliente",
+  "vendedor": "nome do vendedor/representante",
+  "produtos": [
+    {
+      "referencia": "código/ref do produto",
+      "descricao": "descrição completa",
+      "quantidade": quantidade numérica,
+      "valor_unitario": valor unitário,
+      "total": total do item
+    }
+  ],
+  "observacoes": "outras informações relevantes"
 }
 
-Se não encontrar algum dado, use null. Para valor_total, tente somar todos os valores se houver múltiplos itens.`
+IMPORTANTE:
+- Extraia TODOS os produtos da tabela/lista
+- Converta valores para números (remova R$, vírgulas, pontos de milhar)
+- Se não encontrar algum campo, use null
+- Para quantidades com vírgula (ex: 175,000), converta para número decimal (175.0)`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Extraia os dados deste pedido em PDF:'
+                text: 'Extraia TODOS os dados deste pedido:'
               },
               {
                 type: 'image_url',
@@ -83,6 +99,19 @@ Se não encontrar algum dado, use null. Para valor_total, tente somar todos os v
       // Remover possíveis marcadores de código markdown
       const cleanedText = extractedText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       pedidoData = JSON.parse(cleanedText);
+      
+      // Formatar observações com produtos se houver
+      if (pedidoData.produtos && Array.isArray(pedidoData.produtos)) {
+        const produtosTexto = pedidoData.produtos.map((p: any) => 
+          `${p.referencia || ''} - ${p.descricao || ''} | Qtd: ${p.quantidade || 0} | Unit: R$ ${p.valor_unitario || 0} | Total: R$ ${p.total || 0}`
+        ).join('\n');
+        
+        const infoCliente = pedidoData.cliente_nome ? `Cliente: ${pedidoData.cliente_nome}\n` : '';
+        const infoCnpj = pedidoData.cliente_cnpj ? `CNPJ: ${pedidoData.cliente_cnpj}\n` : '';
+        const infoVendedor = pedidoData.vendedor ? `Vendedor: ${pedidoData.vendedor}\n` : '';
+        
+        pedidoData.observacoes = `${infoCliente}${infoCnpj}${infoVendedor}\n--- PRODUTOS ---\n${produtosTexto}\n\n${pedidoData.observacoes || ''}`;
+      }
     } catch (parseError) {
       console.error('Erro ao fazer parse:', extractedText);
       // Se não conseguir fazer parse, retornar dados vazios
@@ -90,7 +119,7 @@ Se não encontrar algum dado, use null. Para valor_total, tente somar todos os v
         numero_pedido: null,
         data_pedido: new Date().toISOString().split('T')[0],
         valor_total: 0,
-        observacoes: `Dados extraídos do PDF ${fileName}`
+        observacoes: `Dados extraídos do PDF ${fileName}\n\nTexto original:\n${extractedText}`
       };
     }
 

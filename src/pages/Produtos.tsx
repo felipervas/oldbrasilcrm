@@ -73,6 +73,8 @@ const Produtos = () => {
       descricao: formData.get("descricao") as string,
       marca_id: marcaSelecionada || null,
       preco_base: formData.get("preco_base") ? parseFloat(formData.get("preco_base") as string) : null,
+      peso_unidade_kg: formData.get("peso_unidade_kg") ? parseFloat(formData.get("peso_unidade_kg") as string) : null,
+      rendimento_dose_gramas: formData.get("rendimento_dose_gramas") ? parseInt(formData.get("rendimento_dose_gramas") as string) : null,
     });
 
     setLoading(false);
@@ -194,6 +196,8 @@ const Produtos = () => {
         descricao: editFormData.descricao,
         marca_id: marcaSelecionada || null,
         preco_base: editFormData.preco_base ? parseFloat(editFormData.preco_base) : null,
+        peso_unidade_kg: editFormData.peso_unidade_kg ? parseFloat(editFormData.peso_unidade_kg) : null,
+        rendimento_dose_gramas: editFormData.rendimento_dose_gramas ? parseInt(editFormData.rendimento_dose_gramas) : null,
       })
       .eq("id", produtoSelecionado.id);
 
@@ -287,6 +291,18 @@ const Produtos = () => {
               <div>
                 <Label htmlFor="preco_base">Preço Base</Label>
                 <Input id="preco_base" name="preco_base" type="number" step="0.01" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="peso_unidade_kg">Peso da Unidade (kg)</Label>
+                  <Input id="peso_unidade_kg" name="peso_unidade_kg" type="number" step="0.001" placeholder="Ex: 3.5" />
+                  <p className="text-xs text-muted-foreground mt-1">Para calcular preço por kilo</p>
+                </div>
+                <div>
+                  <Label htmlFor="rendimento_dose_gramas">Rendimento (g/kg)</Label>
+                  <Input id="rendimento_dose_gramas" name="rendimento_dose_gramas" type="number" placeholder="Ex: 30" />
+                  <p className="text-xs text-muted-foreground mt-1">Gramas para 1kg de gelato</p>
+                </div>
               </div>
               <div>
                 <Label htmlFor="descricao">Descrição</Label>
@@ -404,6 +420,31 @@ const Produtos = () => {
                 value={editFormData.preco_base || ""}
                 onChange={(e) => setEditFormData({ ...editFormData, preco_base: e.target.value })}
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_peso_unidade_kg">Peso da Unidade (kg)</Label>
+                <Input 
+                  id="edit_peso_unidade_kg" 
+                  type="number" 
+                  step="0.001"
+                  placeholder="Ex: 3.5"
+                  value={editFormData.peso_unidade_kg || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, peso_unidade_kg: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Para calcular preço por kilo</p>
+              </div>
+              <div>
+                <Label htmlFor="edit_rendimento_dose_gramas">Rendimento (g/kg)</Label>
+                <Input 
+                  id="edit_rendimento_dose_gramas" 
+                  type="number"
+                  placeholder="Ex: 30"
+                  value={editFormData.rendimento_dose_gramas || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, rendimento_dose_gramas: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Gramas para 1kg de gelato</p>
+              </div>
             </div>
             <div>
               <Label htmlFor="edit_descricao">Descrição</Label>

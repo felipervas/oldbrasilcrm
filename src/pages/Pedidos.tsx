@@ -120,24 +120,43 @@ const Pedidos = () => {
     }).format(value);
   };
 
-  const handleDeletePedido = async (pedidoId: string) => {
-    if (!confirm("Cancelar este pedido? Ele será movido para pedidos cancelados.")) {
-      return;
-    }
+  const handleDeletePedido = async (pedidoId: string, status: string) => {
+    if (status === 'cancelado') {
+      if (!confirm("ATENÇÃO: Excluir permanentemente este pedido cancelado? Esta ação não pode ser desfeita.")) {
+        return;
+      }
+      const { error } = await supabase
+        .from("pedidos")
+        .delete()
+        .eq("id", pedidoId);
 
-    const { error } = await supabase
-      .from("pedidos")
-      .update({ status: "cancelado" })
-      .eq("id", pedidoId);
-
-    if (error) {
-      toast({ 
-        title: "Erro ao cancelar pedido", 
-        variant: "destructive" 
-      });
+      if (error) {
+        toast({ 
+          title: "Erro ao excluir pedido", 
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: "Pedido excluído permanentemente!" });
+        loadPedidos();
+      }
     } else {
-      toast({ title: "Pedido cancelado com sucesso!" });
-      loadPedidos();
+      if (!confirm("Cancelar este pedido? Ele será movido para pedidos cancelados.")) {
+        return;
+      }
+      const { error } = await supabase
+        .from("pedidos")
+        .update({ status: "cancelado" })
+        .eq("id", pedidoId);
+
+      if (error) {
+        toast({ 
+          title: "Erro ao cancelar pedido", 
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: "Pedido cancelado com sucesso!" });
+        loadPedidos();
+      }
     }
   };
 
@@ -365,15 +384,17 @@ const Pedidos = () => {
                             </p>
                           )}
                         </div>
-                        {pedido.status !== 'cancelado' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeletePedido(pedido.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeletePedido(pedido.id, pedido.status)}
+                          className={pedido.status === 'cancelado' ? 'border-destructive' : ''}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                          {pedido.status === 'cancelado' && (
+                            <span className="ml-1 text-xs">Excluir</span>
+                          )}
+                        </Button>
                       </div>
                   </div>
                 </div>

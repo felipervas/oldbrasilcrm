@@ -445,7 +445,9 @@ export type Database = {
           id: string
           marca_id: string | null
           nome: string
+          peso_unidade_kg: number | null
           preco_base: number | null
+          rendimento_dose_gramas: number | null
           sku: string | null
           updated_at: string
         }
@@ -457,7 +459,9 @@ export type Database = {
           id?: string
           marca_id?: string | null
           nome: string
+          peso_unidade_kg?: number | null
           preco_base?: number | null
+          rendimento_dose_gramas?: number | null
           sku?: string | null
           updated_at?: string
         }
@@ -469,7 +473,9 @@ export type Database = {
           id?: string
           marca_id?: string | null
           nome?: string
+          peso_unidade_kg?: number | null
           preco_base?: number | null
+          rendimento_dose_gramas?: number | null
           sku?: string | null
           updated_at?: string
         }
