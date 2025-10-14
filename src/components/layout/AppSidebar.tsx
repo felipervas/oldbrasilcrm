@@ -25,6 +25,7 @@ import {
   Briefcase,
   LogOut,
   ShoppingCart,
+  Boxes,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -41,6 +42,7 @@ const menuItems = [
   { title: "Catálogos", url: "/catalogos", icon: FileText },
   { title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
   { title: "Lançar Pedido", url: "/lancar-pedido", icon: Briefcase },
+  { title: "Estoque & Amostras", url: "/estoque-amostras", icon: Boxes },
 ];
 
 export function AppSidebar() {

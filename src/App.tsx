@@ -14,6 +14,7 @@ import Marcas from "./pages/Marcas";
 import Catalogos from "./pages/Catalogos";
 import Pedidos from "./pages/Pedidos";
 import LancarPedido from "./pages/LancarPedido";
+import EstoqueAmostras from "./pages/EstoqueAmostras";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
 
@@ -104,6 +105,14 @@ const App = () => (
             element={
               <AppLayout>
                 <LancarPedido />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/estoque-amostras"
+            element={
+              <AppLayout>
+                <EstoqueAmostras />
               </AppLayout>
             }
           />

@@ -68,13 +68,14 @@ const Pedidos = () => {
 
       setPedidosRecentes(pedidos || []);
 
-      // Calcular estatísticas
+      // Calcular estatísticas (excluindo cancelados)
       const todosPedidos = pedidos || [];
-      const pedidosMes = todosPedidos.filter(p => 
+      const pedidosAtivos = todosPedidos.filter(p => p.status !== 'cancelado');
+      const pedidosMes = pedidosAtivos.filter(p => 
         p.data_pedido && p.data_pedido >= inicioMesStr
       );
 
-      const totalFaturamento = todosPedidos
+      const totalFaturamento = pedidosAtivos
         .reduce((acc, p) => acc + (parseFloat(String(p.valor_total || 0))), 0);
 
       const faturamentoMes = pedidosMes
@@ -125,37 +126,59 @@ const Pedidos = () => {
       if (!confirm("ATENÇÃO: Excluir permanentemente este pedido cancelado? Esta ação não pode ser desfeita.")) {
         return;
       }
-      const { error } = await supabase
-        .from("pedidos")
-        .delete()
-        .eq("id", pedidoId);
+      
+      try {
+        const { error } = await supabase
+          .from("pedidos")
+          .delete()
+          .eq("id", pedidoId);
 
-      if (error) {
+        if (error) {
+          console.error("Erro ao excluir:", error);
+          toast({ 
+            title: "Erro ao excluir pedido", 
+            description: error.message,
+            variant: "destructive" 
+          });
+        } else {
+          toast({ title: "Pedido excluído permanentemente!" });
+          await loadPedidos();
+        }
+      } catch (err) {
+        console.error("Erro:", err);
         toast({ 
           title: "Erro ao excluir pedido", 
           variant: "destructive" 
         });
-      } else {
-        toast({ title: "Pedido excluído permanentemente!" });
-        loadPedidos();
       }
     } else {
       if (!confirm("Cancelar este pedido? Ele será movido para pedidos cancelados.")) {
         return;
       }
-      const { error } = await supabase
-        .from("pedidos")
-        .update({ status: "cancelado" })
-        .eq("id", pedidoId);
+      
+      try {
+        const { error } = await supabase
+          .from("pedidos")
+          .update({ status: "cancelado" })
+          .eq("id", pedidoId);
 
-      if (error) {
+        if (error) {
+          console.error("Erro ao cancelar:", error);
+          toast({ 
+            title: "Erro ao cancelar pedido",
+            description: error.message,
+            variant: "destructive" 
+          });
+        } else {
+          toast({ title: "Pedido cancelado com sucesso!" });
+          await loadPedidos();
+        }
+      } catch (err) {
+        console.error("Erro:", err);
         toast({ 
           title: "Erro ao cancelar pedido", 
           variant: "destructive" 
         });
-      } else {
-        toast({ title: "Pedido cancelado com sucesso!" });
-        loadPedidos();
       }
     }
   };

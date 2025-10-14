@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      amostras: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          data_entrega: string
+          id: string
+          observacoes: string | null
+          produto_id: string
+          quantidade: number
+          responsavel_id: string
+          retorno: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          data_entrega?: string
+          id?: string
+          observacoes?: string | null
+          produto_id: string
+          quantidade: number
+          responsavel_id: string
+          retorno?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          data_entrega?: string
+          id?: string
+          observacoes?: string | null
+          produto_id?: string
+          quantidade?: number
+          responsavel_id?: string
+          retorno?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amostras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "amostras_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogos: {
         Row: {
           arquivo_nome: string
