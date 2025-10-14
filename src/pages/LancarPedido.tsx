@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -7,23 +7,37 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileUp, FileText, Plus, Loader2 } from "lucide-react";
+import { FileUp, FileText, Plus, Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Combobox } from "@/components/ui/combobox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+interface ProdutoItem {
+  produto_id: string;
+  nome: string;
+  quantidade: number;
+  preco_unitario: number;
+}
 
 const LancarPedido = () => {
   const [clientes, setClientes] = useState<any[]>([]);
+  const [produtos, setProdutos] = useState<any[]>([]);
+  const [produtosEscolhidos, setProdutosEscolhidos] = useState<ProdutoItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState("");
+  const [selectedProduto, setSelectedProduto] = useState("");
+  const [quantidade, setQuantidade] = useState(1);
+  const [precoUnitario, setPrecoUnitario] = useState(0);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     loadClientes();
+    loadProdutos();
   }, []);
 
   const loadClientes = async () => {
@@ -35,19 +49,77 @@ const LancarPedido = () => {
     setClientes(data || []);
   };
 
+  const loadProdutos = async () => {
+    const { data } = await supabase
+      .from("produtos")
+      .select("id, nome, preco_base")
+      .eq("ativo", true)
+      .order("nome");
+    setProdutos(data || []);
+  };
+
+  const adicionarProduto = () => {
+    if (!selectedProduto) {
+      toast({ title: "Selecione um produto", variant: "destructive" });
+      return;
+    }
+
+    const produto = produtos.find(p => p.id === selectedProduto);
+    if (!produto) return;
+
+    const novoProduto: ProdutoItem = {
+      produto_id: selectedProduto,
+      nome: produto.nome,
+      quantidade: quantidade,
+      preco_unitario: precoUnitario || produto.preco_base || 0,
+    };
+
+    setProdutosEscolhidos([...produtosEscolhidos, novoProduto]);
+    setSelectedProduto("");
+    setQuantidade(1);
+    setPrecoUnitario(0);
+  };
+
+  const removerProduto = (index: number) => {
+    setProdutosEscolhidos(produtosEscolhidos.filter((_, i) => i !== index));
+  };
+
+  const calcularTotal = () => {
+    return produtosEscolhidos.reduce((total, item) => 
+      total + (item.quantidade * item.preco_unitario), 0
+    );
+  };
+
   const handleManualSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!selectedCliente) {
+      toast({ title: "Selecione um cliente", variant: "destructive" });
+      return;
+    }
+
+    if (produtosEscolhidos.length === 0) {
+      toast({ title: "Adicione pelo menos um produto", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
+    const valorTotal = calcularTotal();
     
+    // Criar descrição dos produtos
+    const descricaoProdutos = produtosEscolhidos.map(p => 
+      `${p.nome} - Qtd: ${p.quantidade} - R$ ${p.preco_unitario.toFixed(2)}`
+    ).join('\n');
+
     const { error } = await supabase.from("pedidos").insert({
       cliente_id: selectedCliente,
       numero_pedido: formData.get("numero_pedido") as string || null,
       data_pedido: formData.get("data_pedido") as string || new Date().toISOString().split('T')[0],
-      valor_total: parseFloat(formData.get("valor_total") as string) || 0,
+      valor_total: valorTotal,
       status: formData.get("status") as string || "pendente",
-      observacoes: formData.get("observacoes") as string || null,
+      observacoes: `${descricaoProdutos}\n\n${formData.get("observacoes") || ""}`,
     });
 
     setLoading(false);
@@ -56,6 +128,8 @@ const LancarPedido = () => {
       toast({ title: "Erro ao criar pedido", variant: "destructive" });
     } else {
       toast({ title: "Pedido criado com sucesso!" });
+      setProdutosEscolhidos([]);
+      setSelectedCliente("");
       navigate("/pedidos");
     }
   };
@@ -178,24 +252,117 @@ const LancarPedido = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleManualSubmit} className="space-y-4">
+              <form onSubmit={handleManualSubmit} className="space-y-6">
                 <div>
-                  <Label htmlFor="cliente">Cliente *</Label>
-                  <Select value={selectedCliente} onValueChange={setSelectedCliente} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientes.map((cliente) => (
-                        <SelectItem key={cliente.id} value={cliente.id}>
-                          {cliente.nome_fantasia}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Cliente *</Label>
+                  <Combobox
+                    options={clientes.map(c => ({ value: c.id, label: c.nome_fantasia }))}
+                    value={selectedCliente}
+                    onValueChange={setSelectedCliente}
+                    placeholder="Selecione um cliente..."
+                    searchPlaceholder="Buscar cliente..."
+                    emptyText="Nenhum cliente encontrado."
+                  />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="border-t pt-4">
+                  <h3 className="font-semibold mb-3">Produtos do Pedido</h3>
+                  
+                  <div className="grid grid-cols-12 gap-2 mb-3">
+                    <div className="col-span-5">
+                      <Label className="text-xs">Produto</Label>
+                      <Select value={selectedProduto} onValueChange={(v) => {
+                        setSelectedProduto(v);
+                        const prod = produtos.find(p => p.id === v);
+                        if (prod?.preco_base) setPrecoUnitario(parseFloat(prod.preco_base));
+                      }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Escolher produto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {produtos.map((produto) => (
+                            <SelectItem key={produto.id} value={produto.id}>
+                              {produto.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Qtd</Label>
+                      <Input 
+                        type="number" 
+                        min="1"
+                        value={quantidade}
+                        onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)}
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <Label className="text-xs">Preço Unit.</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01"
+                        value={precoUnitario}
+                        onChange={(e) => setPrecoUnitario(parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="col-span-2 flex items-end">
+                      <Button type="button" onClick={adicionarProduto} className="w-full">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {produtosEscolhidos.length > 0 && (
+                    <div className="border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Produto</TableHead>
+                            <TableHead className="text-right">Qtd</TableHead>
+                            <TableHead className="text-right">Preço</TableHead>
+                            <TableHead className="text-right">Subtotal</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {produtosEscolhidos.map((item, index) => (
+                            <TableRow key={index}>
+                              <TableCell>{item.nome}</TableCell>
+                              <TableCell className="text-right">{item.quantidade}</TableCell>
+                              <TableCell className="text-right">
+                                R$ {item.preco_unitario.toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                R$ {(item.quantidade * item.preco_unitario).toFixed(2)}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removerProduto(index)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-right font-bold">Total:</TableCell>
+                            <TableCell className="text-right font-bold text-primary text-lg">
+                              R$ {calcularTotal().toFixed(2)}
+                            </TableCell>
+                            <TableCell></TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 border-t pt-4">
                   <div>
                     <Label htmlFor="numero_pedido">Número do Pedido</Label>
                     <Input id="numero_pedido" name="numero_pedido" placeholder="Ex: PED-001" />
@@ -211,32 +378,19 @@ const LancarPedido = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="valor_total">Valor Total *</Label>
-                    <Input 
-                      id="valor_total" 
-                      name="valor_total" 
-                      type="number" 
-                      step="0.01" 
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <Select name="status" defaultValue="pendente">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                        <SelectItem value="em_producao">Em Produção</SelectItem>
-                        <SelectItem value="enviado">Enviado</SelectItem>
-                        <SelectItem value="entregue">Entregue</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select name="status" defaultValue="pendente">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="em_producao">Em Produção</SelectItem>
+                      <SelectItem value="enviado">Enviado</SelectItem>
+                      <SelectItem value="entregue">Entregue</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -244,12 +398,13 @@ const LancarPedido = () => {
                   <Textarea 
                     id="observacoes" 
                     name="observacoes" 
-                    placeholder="Observações sobre o pedido..."
+                    placeholder="Observações adicionais sobre o pedido..."
+                    rows={3}
                   />
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full">
-                  {loading ? "Salvando..." : "Criar Pedido"}
+                <Button type="submit" disabled={loading || produtosEscolhidos.length === 0} className="w-full">
+                  {loading ? "Salvando..." : `Criar Pedido - R$ ${calcularTotal().toFixed(2)}`}
                 </Button>
               </form>
             </CardContent>
@@ -270,19 +425,15 @@ const LancarPedido = () => {
             <CardContent>
               <form onSubmit={handlePdfUpload} className="space-y-4">
                 <div>
-                  <Label htmlFor="cliente_pdf">Cliente *</Label>
-                  <Select value={selectedCliente} onValueChange={setSelectedCliente} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientes.map((cliente) => (
-                        <SelectItem key={cliente.id} value={cliente.id}>
-                          {cliente.nome_fantasia}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Cliente *</Label>
+                  <Combobox
+                    options={clientes.map(c => ({ value: c.id, label: c.nome_fantasia }))}
+                    value={selectedCliente}
+                    onValueChange={setSelectedCliente}
+                    placeholder="Selecione um cliente..."
+                    searchPlaceholder="Buscar cliente..."
+                    emptyText="Nenhum cliente encontrado."
+                  />
                 </div>
 
                 <div>
