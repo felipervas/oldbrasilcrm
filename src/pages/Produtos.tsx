@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, Package, Upload, Edit, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Plus, Package, Upload, Edit, ArrowUpCircle, ArrowDownCircle, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -211,6 +211,19 @@ const Produtos = () => {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+
+    const { error } = await supabase.from("produtos").delete().eq("id", id);
+
+    if (error) {
+      toast({ title: "Erro ao excluir produto", variant: "destructive" });
+    } else {
+      toast({ title: "Produto excluído com sucesso!" });
+      loadProdutos();
+    }
+  };
+
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8">
       <div className="flex items-center justify-between">
@@ -356,6 +369,9 @@ const Produtos = () => {
                      <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => handleEdit(produto)}>
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleDelete(produto.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   </div>

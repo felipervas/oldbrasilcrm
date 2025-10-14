@@ -195,7 +195,7 @@ const LancarPedido = () => {
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const page = await pdf.getPage(1); // Pega apenas a primeira página
         
-        const viewport = page.getViewport({ scale: 2.0 }); // Escala maior para melhor qualidade
+        const viewport = page.getViewport({ scale: 1.5 }); // Escala otimizada para velocidade
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         
@@ -212,8 +212,8 @@ const LancarPedido = () => {
           viewport: viewport,
         } as any).promise;
 
-        // Converter canvas para base64
-        const imageBase64 = canvas.toDataURL('image/jpeg', 0.95);
+        // Converter canvas para base64 com compressão otimizada
+        const imageBase64 = canvas.toDataURL('image/jpeg', 0.85);
         resolve(imageBase64);
       } catch (error) {
         reject(error);
