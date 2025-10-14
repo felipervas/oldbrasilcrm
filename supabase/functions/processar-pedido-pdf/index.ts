@@ -11,9 +11,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { pdfBase64, clienteId, fileName } = await req.json();
+    const { imageBase64, clienteId, fileName } = await req.json();
 
-    if (!pdfBase64 || !clienteId) {
+    if (!imageBase64 || !clienteId) {
       throw new Error("Dados incompletos");
     }
 
@@ -22,11 +22,14 @@ Deno.serve(async (req) => {
       throw new Error("LOVABLE_API_KEY não configurada");
     }
 
-    // Extrair apenas a parte base64 (remover o prefixo data:application/pdf;base64,)
-    const base64Content = pdfBase64.split(',')[1] || pdfBase64;
+    // Extrair apenas a parte base64 (remover o prefixo se existir)
+    const base64Content = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+    const mimeType = imageBase64.includes('image/jpeg') ? 'image/jpeg' : 'image/png';
 
-    // Chamar Lovable AI para extrair informações do PDF
-      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    console.log('Processando imagem do pedido...');
+
+    // Chamar Lovable AI para extrair informações da imagem do pedido
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
@@ -40,28 +43,32 @@ Deno.serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: `Analise este pedido/nota fiscal e extraia as informações principais.
-                
-Retorne APENAS um JSON válido com esta estrutura:
+                text: `Analise esta imagem de pedido da OLD Brasil e extraia APENAS as seguintes informações:
+
+1. Número do Pedido (campo "Pedido:")
+2. Data do pedido (formato YYYY-MM-DD)
+3. Valor Total (valor total geral do pedido)
+4. Lista de produtos com quantidade e valores para as observações
+
+Retorne APENAS um JSON válido, SEM markdown, SEM explicações, neste formato exato:
 {
-  "numero_pedido": "número do pedido",
-  "data_pedido": "YYYY-MM-DD",
-  "valor_total": número decimal,
-  "valor_unitario": número decimal médio dos produtos,
-  "observacoes": "resumo com produtos principais"
+  "numero_pedido": "491",
+  "data_pedido": "2025-10-13",
+  "valor_total": 19770.75,
+  "observacoes": "LQX02 - LIQUOR DE CACAU XINGU 02 (175kg × R$69,24)\\nMCC01 - MANTEIGA DE CACAU CRYSTAL 01 (75kg × R$80,90)"
 }
 
-IMPORTANTE:
-- Extraia o valor total
-- Calcule um valor unitário médio dos produtos
-- Nas observações, liste os principais produtos
-- Converta valores para números (remova R$, símbolos)
-- Retorne apenas o JSON, sem markdown`
+REGRAS IMPORTANTES:
+- numero_pedido: apenas o número, sem prefixos
+- data_pedido: formato YYYY-MM-DD
+- valor_total: número decimal, sem R$ ou símbolos
+- observacoes: lista de produtos separada por \\n, formato "CODIGO - NOME (quantidade × preço)"
+- Retorne apenas o JSON puro, sem \`\`\`json ou qualquer markdown`
               },
               {
                 type: 'image_url',
                 image_url: {
-                  url: `data:application/pdf;base64,${base64Content}`
+                  url: `data:${mimeType};base64,${base64Content}`
                 }
               }
             ]

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Combobox } from "@/components/ui/combobox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import * as pdfjsLib from 'pdfjs-dist';
 
 interface ProdutoItem {
   produto_id: string;
@@ -184,9 +185,45 @@ const LancarPedido = () => {
     }
   };
 
+  const convertPdfToImage = async (file: File): Promise<string> => {
+    // Configurar worker do PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1); // Pega apenas a primeira página
+        
+        const viewport = page.getViewport({ scale: 2.0 }); // Escala maior para melhor qualidade
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        
+        if (!context) {
+          reject(new Error('Não foi possível criar contexto do canvas'));
+          return;
+        }
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport,
+        } as any).promise;
+
+        // Converter canvas para base64
+        const imageBase64 = canvas.toDataURL('image/jpeg', 0.95);
+        resolve(imageBase64);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
+
   const processPdfFile = async () => {
     if (!pdfFile) {
-      toast({ title: "Selecione um arquivo PDF", variant: "destructive" });
+      toast({ title: "Selecione um arquivo PDF ou imagem", variant: "destructive" });
       return;
     }
     if (!selectedCliente) {
@@ -197,7 +234,7 @@ const LancarPedido = () => {
     setUploadLoading(true);
 
     try {
-      // 1. Upload do PDF para o storage
+      // 1. Upload do arquivo para o storage
       const fileName = `${Date.now()}_${pdfFile.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("pedidos")
@@ -210,59 +247,62 @@ const LancarPedido = () => {
         .from("pedidos")
         .getPublicUrl(fileName);
 
-      // 3. Converter PDF para base64 para enviar à IA
-      const reader = new FileReader();
-      reader.readAsDataURL(pdfFile);
+      // 3. Converter arquivo para imagem base64
+      let imageBase64: string;
       
-      reader.onload = async () => {
-        try {
-          const base64Data = reader.result as string;
+      if (pdfFile.type === 'application/pdf') {
+        toast({ title: "Convertendo PDF em imagem...", description: "Isso pode levar alguns segundos" });
+        imageBase64 = await convertPdfToImage(pdfFile);
+      } else if (pdfFile.type.startsWith('image/')) {
+        // Se já é imagem, apenas converter para base64
+        const reader = new FileReader();
+        imageBase64 = await new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(pdfFile);
+        });
+      } else {
+        throw new Error('Tipo de arquivo não suportado');
+      }
 
-          // 4. Chamar edge function para processar com IA
-          const { data: aiData, error: aiError } = await supabase.functions.invoke('processar-pedido-pdf', {
-            body: { 
-              pdfBase64: base64Data,
-              clienteId: selectedCliente,
-              fileName: fileName
-            }
-          });
+      toast({ title: "Processando com IA...", description: "Extraindo informações do pedido" });
 
-          if (aiError) throw aiError;
-
-          // 5. Criar pedido com dados extraídos
-          const { error: pedidoError } = await supabase.from("pedidos").insert({
-            cliente_id: selectedCliente,
-            numero_pedido: aiData.numero_pedido || null,
-            data_pedido: aiData.data_pedido || new Date().toISOString().split('T')[0],
-            valor_total: aiData.valor_total || 0,
-            status: "pendente",
-            observacoes: aiData.observacoes || null,
-            arquivo_url: publicUrl,
-            arquivo_nome: pdfFile.name,
-          });
-
-          if (pedidoError) throw pedidoError;
-
-          toast({ title: "Pedido extraído do PDF e criado com sucesso!" });
-          navigate("/pedidos");
-        } catch (error: any) {
-          console.error(error);
-          toast({ 
-            title: "Erro ao processar PDF", 
-            description: error.message,
-            variant: "destructive" 
-          });
-        } finally {
-          setUploadLoading(false);
+      // 4. Chamar edge function para processar com IA
+      const { data: aiData, error: aiError } = await supabase.functions.invoke('processar-pedido-pdf', {
+        body: { 
+          imageBase64: imageBase64,
+          clienteId: selectedCliente,
+          fileName: fileName
         }
-      };
+      });
+
+      if (aiError) throw aiError;
+
+      // 5. Criar pedido com dados extraídos
+      const { error: pedidoError } = await supabase.from("pedidos").insert({
+        cliente_id: selectedCliente,
+        numero_pedido: aiData.numero_pedido || null,
+        data_pedido: aiData.data_pedido || new Date().toISOString().split('T')[0],
+        valor_total: aiData.valor_total || 0,
+        status: "pendente",
+        observacoes: aiData.observacoes || null,
+        arquivo_url: publicUrl,
+        arquivo_nome: pdfFile.name,
+      });
+
+      if (pedidoError) throw pedidoError;
+
+      toast({ title: "Pedido extraído e criado com sucesso!" });
+      setPdfFile(null);
+      navigate("/pedidos");
     } catch (error: any) {
       console.error(error);
       toast({ 
-        title: "Erro ao fazer upload", 
+        title: "Erro ao processar arquivo", 
         description: error.message,
         variant: "destructive" 
       });
+    } finally {
       setUploadLoading(false);
     }
   };
