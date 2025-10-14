@@ -102,6 +102,7 @@ export type Database = {
           cep: string | null
           cidade: string | null
           cnpj_cpf: string | null
+          compra_mensal_media: number | null
           created_at: string
           email: string | null
           historico_pedidos: string | null
@@ -116,6 +117,7 @@ export type Database = {
           tags: string[] | null
           tamanho: string | null
           telefone: string | null
+          total_comprado: number | null
           uf: string | null
           ultima_compra_data: string | null
           updated_at: string
@@ -126,6 +128,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           cnpj_cpf?: string | null
+          compra_mensal_media?: number | null
           created_at?: string
           email?: string | null
           historico_pedidos?: string | null
@@ -140,6 +143,7 @@ export type Database = {
           tags?: string[] | null
           tamanho?: string | null
           telefone?: string | null
+          total_comprado?: number | null
           uf?: string | null
           ultima_compra_data?: string | null
           updated_at?: string
@@ -150,6 +154,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           cnpj_cpf?: string | null
+          compra_mensal_media?: number | null
           created_at?: string
           email?: string | null
           historico_pedidos?: string | null
@@ -164,6 +169,7 @@ export type Database = {
           tags?: string[] | null
           tamanho?: string | null
           telefone?: string | null
+          total_comprado?: number | null
           uf?: string | null
           ultima_compra_data?: string | null
           updated_at?: string
@@ -599,6 +605,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calcular_metricas_cliente: {
+        Args: { cliente_uuid: string }
+        Returns: {
+          compra_mensal_media: number
+          total_comprado: number
+        }[]
+      }
       has_any_role: {
         Args: {
           _roles: Database["public"]["Enums"]["user_role"][]

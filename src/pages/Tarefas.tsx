@@ -353,7 +353,7 @@ const Tarefas = () => {
                     <div className="flex-1">
                       <h3 className="font-semibold">{tarefa.titulo}</h3>
                       <p className="text-sm text-muted-foreground">Cliente: {tarefa.clientes?.nome_fantasia}</p>
-                      <div className="flex gap-2 mt-2 text-xs">
+                      <div className="flex gap-2 mt-2 text-xs flex-wrap">
                         <span className="px-2 py-1 bg-secondary rounded">{tarefa.tipo}</span>
                         <span className={`px-2 py-1 rounded ${
                           tarefa.prioridade === 'alta' ? 'bg-destructive text-destructive-foreground' :
@@ -367,6 +367,11 @@ const Tarefas = () => {
                             {tarefa.horario && ` às ${tarefa.horario.slice(0, 5)}`}
                           </span>
                         )}
+                        {tarefa.created_at && (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+                            Criada: {new Date(tarefa.created_at).toLocaleDateString('pt-BR')}
+                          </span>
+                        )}
                       </div>
                       {tarefa.descricao && <p className="text-sm mt-2">{tarefa.descricao}</p>}
                     </div>
@@ -378,17 +383,40 @@ const Tarefas = () => {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      {tarefa.status === 'pendente' && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => {
-                            setTarefaSelecionada(tarefa);
-                            setConclusaoOpen(true);
-                          }}
-                        >
-                          Executar
-                        </Button>
-                      )}
+                      <div className="flex gap-2">
+                        {tarefa.status === 'pendente' && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              onClick={() => {
+                                setTarefaSelecionada(tarefa);
+                                setConclusaoOpen(true);
+                              }}
+                            >
+                              Executar
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                const { error } = await supabase
+                                  .from("tarefas")
+                                  .update({ 
+                                    status: "concluida",
+                                    data_conclusao: new Date().toISOString()
+                                  })
+                                  .eq("id", tarefa.id);
+                                if (!error) {
+                                  toast({ title: "Tarefa concluída!" });
+                                  loadTarefas();
+                                }
+                              }}
+                            >
+                              ✓ Concluir
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { DollarSign, TrendingUp, Package, Calendar } from "lucide-react";
+import { DollarSign, TrendingUp, Package, Calendar, Trash2, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -11,6 +12,8 @@ interface PedidoStats {
   pedidosMes: number;
   ticketMedio: number;
   pedidosAbertos: number;
+  pedidosCancelados: number;
+  totalCancelado: number;
 }
 
 const Pedidos = () => {
@@ -19,6 +22,8 @@ const Pedidos = () => {
     pedidosMes: 0,
     ticketMedio: 0,
     pedidosAbertos: 0,
+    pedidosCancelados: 0,
+    totalCancelado: 0,
   });
   const [pedidosRecentes, setPedidosRecentes] = useState<any[]>([]);
   const [podeverFaturamento, setPodeVerFaturamento] = useState(false);
@@ -83,11 +88,18 @@ const Pedidos = () => {
         p.status === 'pendente' || p.status === 'em_producao'
       ).length;
 
+      const pedidosCancelados = todosPedidos.filter(p => p.status === 'cancelado').length;
+      const totalCancelado = todosPedidos
+        .filter(p => p.status === 'cancelado')
+        .reduce((acc, p) => acc + (parseFloat(String(p.valor_total || 0))), 0);
+
       setStats({
         totalFaturamento,
         pedidosMes: pedidosMes.length,
         ticketMedio,
         pedidosAbertos,
+        pedidosCancelados,
+        totalCancelado,
       });
 
     } catch (error) {
@@ -106,6 +118,27 @@ const Pedidos = () => {
       style: 'currency',
       currency: 'BRL',
     }).format(value);
+  };
+
+  const handleDeletePedido = async (pedidoId: string) => {
+    if (!confirm("Cancelar este pedido? Ele será movido para pedidos cancelados.")) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("pedidos")
+      .update({ status: "cancelado" })
+      .eq("id", pedidoId);
+
+    if (error) {
+      toast({ 
+        title: "Erro ao cancelar pedido", 
+        variant: "destructive" 
+      });
+    } else {
+      toast({ title: "Pedido cancelado com sucesso!" });
+      loadPedidos();
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -230,6 +263,47 @@ const Pedidos = () => {
         </Card>
       </div>
 
+      {/* Cards de Cancelamentos */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="shadow-card border-destructive/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Pedidos Cancelados
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-destructive/10">
+              <XCircle className="h-4 w-4 text-destructive" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">
+              {loading ? "..." : stats.pedidosCancelados}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total de cancelamentos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card border-destructive/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Valor Cancelado
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-destructive/10">
+              <DollarSign className="h-4 w-4 text-destructive" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">
+              {loading ? "..." : formatCurrency(stats.totalCancelado)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Perdido em cancelamentos
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Lista de Pedidos Recentes */}
       <Card className="shadow-card">
         <CardHeader>
@@ -274,22 +348,33 @@ const Pedidos = () => {
                           Vendedor: {pedido.clientes.profiles.nome}
                         </p>
                       )}
-                      {pedido.observacoes && (
-                        <p className="text-sm mt-2">{pedido.observacoes}</p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      {pedido.valor_total && (
-                        <p className="text-lg font-bold text-primary">
-                          {formatCurrency(parseFloat(pedido.valor_total))}
-                        </p>
-                      )}
-                      {pedido.data_pedido && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(pedido.data_pedido).toLocaleDateString('pt-BR')}
-                        </p>
-                      )}
-                    </div>
+                        {pedido.observacoes && (
+                          <p className="text-sm mt-2">{pedido.observacoes}</p>
+                        )}
+                      </div>
+                      <div className="text-right flex flex-col items-end gap-2">
+                        <div>
+                          {pedido.valor_total && (
+                            <p className="text-lg font-bold text-primary">
+                              {formatCurrency(parseFloat(pedido.valor_total))}
+                            </p>
+                          )}
+                          {pedido.data_pedido && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(pedido.data_pedido).toLocaleDateString('pt-BR')}
+                            </p>
+                          )}
+                        </div>
+                        {pedido.status !== 'cancelado' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeletePedido(pedido.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
                   </div>
                 </div>
               ))}

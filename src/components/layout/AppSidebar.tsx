@@ -40,6 +40,7 @@ const menuItems = [
   { title: "Marcas", url: "/marcas", icon: Tag },
   { title: "Catálogos", url: "/catalogos", icon: FileText },
   { title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
+  { title: "Lançar Pedido", url: "/lancar-pedido", icon: Briefcase },
 ];
 
 export function AppSidebar() {

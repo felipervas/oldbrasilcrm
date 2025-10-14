@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, MessageCircle, Edit, FileText, UserPlus, Upload } from "lucide-react";
+import { Plus, Users, MessageCircle, Edit, FileText, UserPlus, Upload, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -130,6 +130,17 @@ const Clientes = () => {
       .select("*, profiles(nome)")
       .order("created_at", { ascending: false });
     if (data) setClientes(data);
+  };
+
+  const handleDelete = async (clienteId: string) => {
+    if (!confirm("Tem certeza que deseja excluir este cliente?")) return;
+    const { error } = await supabase.from("clientes").delete().eq("id", clienteId);
+    if (error) {
+      toast({ title: "Erro ao excluir cliente", variant: "destructive" });
+    } else {
+      toast({ title: "Cliente excluído!" });
+      loadClientes();
+    }
   };
 
   const loadResponsaveis = async () => {
@@ -640,6 +651,22 @@ const Clientes = () => {
                         {cliente.ultima_compra_data && (
                           <p>🛒 Última compra: {new Date(cliente.ultima_compra_data).toLocaleDateString('pt-BR')}</p>
                         )}
+                        {cliente.total_comprado > 0 && (
+                          <>
+                            <p className="font-semibold text-primary">
+                              💰 Total: {new Intl.NumberFormat('pt-BR', { 
+                                style: 'currency', 
+                                currency: 'BRL' 
+                              }).format(cliente.total_comprado)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Média/mês: {new Intl.NumberFormat('pt-BR', { 
+                                style: 'currency', 
+                                currency: 'BRL' 
+                              }).format(cliente.compra_mensal_media || 0)}
+                            </p>
+                          </>
+                        )}
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs text-muted-foreground">Responsável:</span>
                           <Select 
@@ -657,6 +684,30 @@ const Clientes = () => {
                                   {resp.nome}
                                 </SelectItem>
                               ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-xs text-muted-foreground">Status:</span>
+                          <Select 
+                            value={cliente.ativo ? "ativo" : "inativo"} 
+                            onValueChange={async (v) => {
+                              const { error } = await supabase
+                                .from("clientes")
+                                .update({ ativo: v === "ativo" })
+                                .eq("id", cliente.id);
+                              if (!error) {
+                                toast({ title: "Status atualizado!" });
+                                loadClientes();
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-7 w-[120px] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ativo">Ativo</SelectItem>
+                              <SelectItem value="inativo">Inativo</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -684,6 +735,13 @@ const Clientes = () => {
                           <MessageCircle className="h-4 w-4" />
                         </Button>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(cliente.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -727,7 +785,59 @@ const Clientes = () => {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="font-semibold mb-3">Endereço</h3>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="col-span-2">
+                        <Label htmlFor="edit_logradouro">Logradouro</Label>
+                        <Input
+                          id="edit_logradouro"
+                          value={formData.logradouro}
+                          onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit_numero">Número</Label>
+                        <Input
+                          id="edit_numero"
+                          value={formData.numero}
+                          onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="edit_cep">CEP</Label>
+                        <Input
+                          id="edit_cep"
+                          value={formData.cep}
+                          onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit_cidade">Cidade</Label>
+                        <Input
+                          id="edit_cidade"
+                          value={formData.cidade}
+                          onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit_uf">UF</Label>
+                        <Input
+                          id="edit_uf"
+                          value={formData.uf}
+                          onChange={(e) => setFormData({ ...formData, uf: e.target.value })}
+                          maxLength={2}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit_email">Email</Label>
                     <Input
