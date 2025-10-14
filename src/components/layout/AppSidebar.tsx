@@ -34,7 +34,7 @@ const menuItems = [
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Tarefas", url: "/tarefas", icon: CheckSquare },
   { title: "Interações", url: "/interacoes", icon: MessageSquare },
-  { title: "Colaboradores", url: "/colaboradores", icon: Users },
+  { title: "Responsáveis", url: "/colaboradores", icon: Users },
   { title: "Produtos", url: "/produtos", icon: Package },
   { title: "Marcas", url: "/marcas", icon: Tag },
   { title: "Catálogos", url: "/catalogos", icon: FileText },
