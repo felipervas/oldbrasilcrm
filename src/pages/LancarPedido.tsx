@@ -20,6 +20,7 @@ interface ProdutoItem {
   nome: string;
   quantidade: number;
   preco_unitario: number;
+  observacoes?: string;
 }
 
 const LancarPedido = () => {
@@ -32,6 +33,7 @@ const LancarPedido = () => {
   const [selectedProduto, setSelectedProduto] = useState("");
   const [quantidade, setQuantidade] = useState(1);
   const [precoUnitario, setPrecoUnitario] = useState(0);
+  const [observacoesProduto, setObservacoesProduto] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
@@ -93,12 +95,14 @@ const LancarPedido = () => {
       nome: produto.nome,
       quantidade: quantidade,
       preco_unitario: precoUnitario || produto.preco_base || 0,
+      observacoes: observacoesProduto || undefined,
     };
 
     setProdutosEscolhidos([...produtosEscolhidos, novoProduto]);
     setSelectedProduto("");
     setQuantidade(1);
     setPrecoUnitario(0);
+    setObservacoesProduto("");
   };
 
   const removerProduto = (index: number) => {
@@ -366,67 +370,77 @@ const LancarPedido = () => {
                 <div className="border-t pt-4">
                   <h3 className="font-semibold mb-3">Produtos do Pedido</h3>
                   
-                  <div className="grid grid-cols-12 gap-2 mb-3">
-                    <div className="col-span-5">
-                      <Label className="text-xs">Produto</Label>
-                      <Select value={selectedProduto} onValueChange={(v) => {
-                        setSelectedProduto(v);
-                        const prod = produtos.find(p => p.id === v);
-                        if (prod?.preco_base) {
-                          setPrecoUnitario(parseFloat(prod.preco_base));
-                        }
-                      }}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Escolher produto" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {produtos.map((produto) => (
-                            <SelectItem key={produto.id} value={produto.id}>
-                              {produto.nome}
-                              {produto.peso_unidade_kg && ` (${produto.peso_unidade_kg}kg)`}
-                              {produto.rendimento_dose_gramas && ` (${produto.rendimento_dose_gramas}g/kg)`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {selectedProduto && (() => {
-                        const prod = produtos.find(p => p.id === selectedProduto);
-                        if (!prod) return null;
-                        const precoKilo = calcularPrecoKilo(prod);
-                        if (precoKilo === 0 || precoKilo === parseFloat(prod.preco_base || 0)) return null;
-                        return (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {prod.rendimento_dose_gramas 
-                              ? `Preço por kg (gelato): R$ ${precoKilo.toFixed(2)}`
-                              : `Preço por kg: R$ ${precoKilo.toFixed(2)}`
-                            }
-                          </p>
-                        );
-                      })()}
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-12 gap-2">
+                      <div className="col-span-5">
+                        <Label className="text-xs">Produto</Label>
+                        <Select value={selectedProduto} onValueChange={(v) => {
+                          setSelectedProduto(v);
+                          const prod = produtos.find(p => p.id === v);
+                          if (prod?.preco_base) {
+                            setPrecoUnitario(parseFloat(prod.preco_base));
+                          }
+                        }}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Escolher produto" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {produtos.map((produto) => (
+                              <SelectItem key={produto.id} value={produto.id}>
+                                {produto.nome}
+                                {produto.peso_unidade_kg && ` (${produto.peso_unidade_kg}kg)`}
+                                {produto.rendimento_dose_gramas && ` (${produto.rendimento_dose_gramas}g/kg)`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {selectedProduto && (() => {
+                          const prod = produtos.find(p => p.id === selectedProduto);
+                          if (!prod) return null;
+                          const precoKilo = calcularPrecoKilo(prod);
+                          if (precoKilo === 0 || precoKilo === parseFloat(prod.preco_base || 0)) return null;
+                          return (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {prod.rendimento_dose_gramas 
+                                ? `Preço por kg (gelato): R$ ${precoKilo.toFixed(2)}`
+                                : `Preço por kg: R$ ${precoKilo.toFixed(2)}`
+                              }
+                            </p>
+                          );
+                        })()}
+                      </div>
+                      <div className="col-span-2">
+                        <Label className="text-xs">Qtd</Label>
+                        <Input 
+                          type="number" 
+                          min="1"
+                          value={quantidade}
+                          onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)}
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <Label className="text-xs">Preço Unit.</Label>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          value={precoUnitario}
+                          onChange={(e) => setPrecoUnitario(parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div className="col-span-2 flex items-end">
+                        <Button type="button" onClick={adicionarProduto} className="w-full">
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="col-span-2">
-                      <Label className="text-xs">Qtd</Label>
-                      <Input 
-                        type="number" 
-                        min="1"
-                        value={quantidade}
-                        onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)}
+                    <div>
+                      <Label className="text-xs">Observações do Produto</Label>
+                      <Input
+                        placeholder="Ex: Extra chocolate, sem açúcar..."
+                        value={observacoesProduto}
+                        onChange={(e) => setObservacoesProduto(e.target.value)}
                       />
-                    </div>
-                    <div className="col-span-3">
-                      <Label className="text-xs">Preço Unit.</Label>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        value={precoUnitario}
-                        onChange={(e) => setPrecoUnitario(parseFloat(e.target.value) || 0)}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <div className="col-span-2 flex items-end">
-                      <Button type="button" onClick={adicionarProduto} className="w-full">
-                        <Plus className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
 
@@ -445,7 +459,16 @@ const LancarPedido = () => {
                         <TableBody>
                           {produtosEscolhidos.map((item, index) => (
                             <TableRow key={index}>
-                              <TableCell>{item.nome}</TableCell>
+                              <TableCell>
+                                <div>
+                                  <div>{item.nome}</div>
+                                  {item.observacoes && (
+                                    <div className="text-xs text-muted-foreground italic">
+                                      Obs: {item.observacoes}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
                               <TableCell className="text-right">{item.quantidade}</TableCell>
                               <TableCell className="text-right">
                                 R$ {item.preco_unitario.toFixed(2)}

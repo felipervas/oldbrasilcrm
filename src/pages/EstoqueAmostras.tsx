@@ -210,14 +210,17 @@ const EstoqueAmostras = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Quantidade (kg) *</Label>
+                  <Label>Quantidade (gramas) *</Label>
                   <Input
                     type="number"
-                    step="0.01"
+                    step="1"
+                    min="1"
                     value={formData.quantidade}
                     onChange={(e) => setFormData({ ...formData, quantidade: e.target.value })}
+                    placeholder="Ex: 500"
                     required
                   />
+                  <p className="text-xs text-muted-foreground">Digite em gramas (ex: 500g)</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Data de Entrega *</Label>
@@ -288,7 +291,7 @@ const EstoqueAmostras = () => {
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Produto: {amostra.produtos?.nome} • Quantidade: {amostra.quantidade} kg
+                        Produto: {amostra.produtos?.nome} • Quantidade: {amostra.quantidade}g
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Entregue em: {new Date(amostra.data_entrega).toLocaleDateString('pt-BR')}

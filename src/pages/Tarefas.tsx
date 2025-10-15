@@ -76,7 +76,6 @@ const Tarefas = () => {
       
       if (!user) {
         toast({ title: "Erro de autenticação", variant: "destructive" });
-        setLoading(false);
         return;
       }
       
@@ -96,15 +95,15 @@ const Tarefas = () => {
 
       if (error) throw error;
 
-      toast({ title: "Tarefa criada com sucesso!" });
+      toast({ title: "Tarefa criada!" });
       setOpen(false);
       setClienteSelecionado("");
       setColaboradorSelecionado("");
       setTipoTarefa("");
       loadTarefas();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao criar tarefa:", error);
-      toast({ title: "Erro ao criar tarefa", variant: "destructive" });
+      toast({ title: "Erro: " + (error?.message || "Erro desconhecido"), variant: "destructive" });
     } finally {
       setLoading(false);
     }

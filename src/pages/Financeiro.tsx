@@ -2,16 +2,18 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, DollarSign, TrendingUp, TrendingDown, Upload, Trash2 } from "lucide-react";
+import { Plus, DollarSign, TrendingUp, TrendingDown, Upload, Trash2, Receipt } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { FinanceiroBoletos } from "@/components/FinanceiroBoletos";
 
 type Transacao = {
   id: string;
@@ -172,9 +174,21 @@ const Financeiro = () => {
         <SidebarTrigger />
         <div>
           <h1 className="text-3xl font-bold text-foreground">Financeiro</h1>
-          <p className="text-muted-foreground">Gestão de receitas e despesas</p>
+          <p className="text-muted-foreground">Gestão de receitas, despesas e boletos</p>
         </div>
       </div>
+
+      <Tabs defaultValue="transacoes" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="transacoes">Transações</TabsTrigger>
+          <TabsTrigger value="boletos">
+            <Receipt className="h-4 w-4 mr-2" />
+            Boletos
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="transacoes" className="space-y-6">
+      
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-primary/20 shadow-elegant">
@@ -409,6 +423,12 @@ const Financeiro = () => {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="boletos">
+          <FinanceiroBoletos />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

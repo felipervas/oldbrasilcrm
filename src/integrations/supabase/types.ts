@@ -319,44 +319,62 @@ export type Database = {
         Row: {
           arquivo_nome: string | null
           arquivo_url: string | null
+          beneficiario: string | null
           categoria: string | null
+          codigo_barras: string | null
           created_at: string
           data: string
+          data_vencimento: string | null
           descricao: string
           id: string
           observacoes: string | null
+          status_pagamento: string | null
           tipo: Database["public"]["Enums"]["transaction_type"]
+          tipo_transacao: string | null
           updated_at: string
           usuario_id: string
           valor: number
+          valor_boleto: number | null
         }
         Insert: {
           arquivo_nome?: string | null
           arquivo_url?: string | null
+          beneficiario?: string | null
           categoria?: string | null
+          codigo_barras?: string | null
           created_at?: string
           data?: string
+          data_vencimento?: string | null
           descricao: string
           id?: string
           observacoes?: string | null
+          status_pagamento?: string | null
           tipo: Database["public"]["Enums"]["transaction_type"]
+          tipo_transacao?: string | null
           updated_at?: string
           usuario_id: string
           valor: number
+          valor_boleto?: number | null
         }
         Update: {
           arquivo_nome?: string | null
           arquivo_url?: string | null
+          beneficiario?: string | null
           categoria?: string | null
+          codigo_barras?: string | null
           created_at?: string
           data?: string
+          data_vencimento?: string | null
           descricao?: string
           id?: string
           observacoes?: string | null
+          status_pagamento?: string | null
           tipo?: Database["public"]["Enums"]["transaction_type"]
+          tipo_transacao?: string | null
           updated_at?: string
           usuario_id?: string
           valor?: number
+          valor_boleto?: number | null
         }
         Relationships: []
       }
@@ -534,6 +552,51 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedidos_produtos: {
+        Row: {
+          created_at: string
+          id: string
+          observacoes: string | null
+          pedido_id: string | null
+          preco_unitario: number
+          produto_id: string | null
+          quantidade: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          pedido_id?: string | null
+          preco_unitario: number
+          produto_id?: string | null
+          quantidade: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          pedido_id?: string | null
+          preco_unitario?: number
+          produto_id?: string | null
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_produtos_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_produtos_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
             referencedColumns: ["id"]
           },
         ]

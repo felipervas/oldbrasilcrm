@@ -33,6 +33,41 @@ const Produtos = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const calcularEExibir = (preco: number, peso: number, rendimento: number) => {
+    const resultadoDiv = document.getElementById('calculos-resultado');
+    const precoKgDiv = document.getElementById('calc-preco-kg');
+    const rendimentoDiv = document.getElementById('calc-rendimento');
+    const custoDoseDiv = document.getElementById('calc-custo-dose');
+
+    if (!resultadoDiv || !precoKgDiv || !rendimentoDiv || !custoDoseDiv) return;
+
+    if (preco === 0) {
+      resultadoDiv.classList.add('hidden');
+      return;
+    }
+
+    resultadoDiv.classList.remove('hidden');
+
+    // Preço por kg
+    if (peso > 0) {
+      const precoKg = preco / peso;
+      precoKgDiv.innerHTML = `<strong>Preço/kg:</strong> R$ ${precoKg.toFixed(2)}`;
+    } else {
+      precoKgDiv.innerHTML = '';
+    }
+
+    // Rendimento
+    if (rendimento > 0) {
+      const dosesParaUmKg = 1000 / rendimento;
+      const precoPorKgGelato = preco * dosesParaUmKg;
+      rendimentoDiv.innerHTML = `<strong>Preço/kg gelato:</strong> R$ ${precoPorKgGelato.toFixed(2)} (${dosesParaUmKg.toFixed(1)} doses)`;
+      custoDoseDiv.innerHTML = `<strong>Custo por dose (${rendimento}g):</strong> R$ ${preco.toFixed(2)}`;
+    } else {
+      rendimentoDiv.innerHTML = '';
+      custoDoseDiv.innerHTML = '';
+    }
+  };
+
   const produtosFiltrados = produtos.filter(produto =>
     produto.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     produto.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -302,20 +337,61 @@ const Produtos = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="preco_base">Preço Base</Label>
-                <Input id="preco_base" name="preco_base" type="number" step="0.01" />
+                <Label htmlFor="preco_base">Preço Base *</Label>
+                <Input 
+                  id="preco_base" 
+                  name="preco_base" 
+                  type="number" 
+                  step="0.01" 
+                  required
+                  onChange={(e) => {
+                    const preco = parseFloat(e.target.value) || 0;
+                    const peso = parseFloat((document.getElementById('peso_unidade_kg') as HTMLInputElement)?.value) || 0;
+                    const rendimento = parseFloat((document.getElementById('rendimento_dose_gramas') as HTMLInputElement)?.value) || 0;
+                    calcularEExibir(preco, peso, rendimento);
+                  }}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="peso_unidade_kg">Peso da Unidade (kg)</Label>
-                  <Input id="peso_unidade_kg" name="peso_unidade_kg" type="number" step="0.001" placeholder="Ex: 3.5" />
+                  <Input 
+                    id="peso_unidade_kg" 
+                    name="peso_unidade_kg" 
+                    type="number" 
+                    step="0.001" 
+                    placeholder="Ex: 3.5"
+                    onChange={(e) => {
+                      const peso = parseFloat(e.target.value) || 0;
+                      const preco = parseFloat((document.getElementById('preco_base') as HTMLInputElement)?.value) || 0;
+                      const rendimento = parseFloat((document.getElementById('rendimento_dose_gramas') as HTMLInputElement)?.value) || 0;
+                      calcularEExibir(preco, peso, rendimento);
+                    }}
+                  />
                   <p className="text-xs text-muted-foreground mt-1">Para calcular preço por kilo</p>
                 </div>
                 <div>
                   <Label htmlFor="rendimento_dose_gramas">Rendimento (g/kg)</Label>
-                  <Input id="rendimento_dose_gramas" name="rendimento_dose_gramas" type="number" placeholder="Ex: 30" />
+                  <Input 
+                    id="rendimento_dose_gramas" 
+                    name="rendimento_dose_gramas" 
+                    type="number" 
+                    placeholder="Ex: 30"
+                    onChange={(e) => {
+                      const rendimento = parseFloat(e.target.value) || 0;
+                      const preco = parseFloat((document.getElementById('preco_base') as HTMLInputElement)?.value) || 0;
+                      const peso = parseFloat((document.getElementById('peso_unidade_kg') as HTMLInputElement)?.value) || 0;
+                      calcularEExibir(preco, peso, rendimento);
+                    }}
+                  />
                   <p className="text-xs text-muted-foreground mt-1">Gramas para 1kg de gelato</p>
                 </div>
+              </div>
+              <div id="calculos-resultado" className="bg-muted/50 p-3 rounded-lg text-sm space-y-1 hidden">
+                <h4 className="font-semibold mb-2">📊 Cálculos Automáticos:</h4>
+                <div id="calc-preco-kg"></div>
+                <div id="calc-rendimento"></div>
+                <div id="calc-custo-dose"></div>
               </div>
               <div>
                 <Label htmlFor="descricao">Descrição</Label>
