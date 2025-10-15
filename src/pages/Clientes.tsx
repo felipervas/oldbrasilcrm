@@ -133,13 +133,24 @@ const Clientes = () => {
   };
 
   const handleDelete = async (clienteId: string) => {
-    if (!confirm("Tem certeza que deseja excluir este cliente?")) return;
-    const { error } = await supabase.from("clientes").delete().eq("id", clienteId);
-    if (error) {
-      toast({ title: "Erro ao excluir cliente", variant: "destructive" });
-    } else {
-      toast({ title: "Cliente excluído!" });
+    if (!confirm("Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.")) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase.from("clientes").delete().eq("id", clienteId);
+      if (error) throw error;
+      
+      toast({ title: "Cliente excluído com sucesso!" });
       loadClientes();
+    } catch (error: any) {
+      console.error("Erro ao excluir cliente:", error);
+      toast({ 
+        title: "Erro ao excluir cliente", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

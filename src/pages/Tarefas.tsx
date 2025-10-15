@@ -71,111 +71,92 @@ const Tarefas = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { data: { user } } = await supabase.auth.getUser();
-    const formData = new FormData(e.currentTarget);
-    
-    // Usa o colaborador selecionado ou o próprio usuário
-    const responsavelId = colaboradorSelecionado || user?.id as string;
-    
-    const { data: tarefaData, error } = await supabase.from("tarefas").insert({
-      titulo: formData.get("titulo") as string,
-      descricao: formData.get("descricao") as string || null,
-      cliente_id: clienteSelecionado,
-      tipo: tipoTarefa as "visitar" | "ligar",
-      data_prevista: (formData.get("data_prevista") as string) || null,
-      horario: (formData.get("horario") as string) || null,
-      prioridade: (formData.get("prioridade") as "baixa" | "media" | "alta") || "media",
-      responsavel_id: responsavelId,
-    }).select().single();
-
-    const tarefa = tarefaData as any;
-
-    if (error) {
-      setLoading(false);
-      toast({ title: "Erro ao criar tarefa", variant: "destructive" });
-      console.error(error);
-      return;
-    }
-
-    // Enviar notificação
-    if (tarefa) {
-      try {
-        const { data: funcData } = await supabase.functions.invoke('send-task-notification', {
-          body: {
-            tarefa_id: tarefa.id,
-            responsavel_id: responsavelId,
-            titulo: formData.get("titulo") as string,
-            cliente_id: clienteSelecionado,
-            data_prevista: formData.get("data_prevista") as string,
-            horario: formData.get("horario") as string,
-            tipo: tipoTarefa,
-          }
-        });
-
-        if (funcData?.whatsappUrl) {
-          window.open(funcData.whatsappUrl, '_blank');
-        }
-      } catch (notifError) {
-        console.error("Erro ao enviar notificação:", notifError);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({ title: "Erro de autenticação", variant: "destructive" });
+        setLoading(false);
+        return;
       }
-    }
+      
+      const formData = new FormData(e.currentTarget);
+      const responsavelId = colaboradorSelecionado || user.id;
+      
+      const { error } = await supabase.from("tarefas").insert({
+        titulo: formData.get("titulo") as string,
+        descricao: formData.get("descricao") as string || null,
+        cliente_id: clienteSelecionado,
+        tipo: tipoTarefa as "visitar" | "ligar",
+        data_prevista: (formData.get("data_prevista") as string) || null,
+        horario: (formData.get("horario") as string) || null,
+        prioridade: (formData.get("prioridade") as "baixa" | "media" | "alta") || "media",
+        responsavel_id: responsavelId,
+      });
 
-    setLoading(false);
-    toast({ title: "Tarefa criada e notificação enviada!" });
-    setOpen(false);
-    setClienteSelecionado("");
-    setColaboradorSelecionado("");
-    setTipoTarefa("");
-    loadTarefas();
+      if (error) throw error;
+
+      toast({ title: "Tarefa criada com sucesso!" });
+      setOpen(false);
+      setClienteSelecionado("");
+      setColaboradorSelecionado("");
+      setTipoTarefa("");
+      loadTarefas();
+    } catch (error) {
+      console.error("Erro ao criar tarefa:", error);
+      toast({ title: "Erro ao criar tarefa", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleConclusao = async (resultado: "concluida" | "nao_concluida" | "reagendar", motivo?: string, novaData?: string) => {
     if (!tarefaSelecionada) return;
     setLoading(true);
 
-    const updates: any = {
-      status: resultado === "concluida" ? "concluida" : resultado === "nao_concluida" ? "cancelada" : "pendente",
-    };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
 
-    if (resultado === "concluida" || resultado === "nao_concluida") {
-      updates.data_conclusao = new Date().toISOString();
-    }
+      const updates: any = {
+        status: resultado === "concluida" ? "concluida" : resultado === "nao_concluida" ? "cancelada" : "pendente",
+      };
 
-    if (resultado === "reagendar" && novaData) {
-      updates.data_prevista = novaData;
-    }
+      if (resultado === "concluida" || resultado === "nao_concluida") {
+        updates.data_conclusao = new Date().toISOString();
+      }
 
-    const { error: tarefaError } = await supabase
-      .from("tarefas")
-      .update(updates)
-      .eq("id", tarefaSelecionada.id);
+      if (resultado === "reagendar" && novaData) {
+        updates.data_prevista = novaData;
+      }
 
-    // Registrar interação
-    const { data: { user } } = await supabase.auth.getUser();
-    const interacaoData: any = {
-      cliente_id: tarefaSelecionada.cliente_id,
-      usuario_id: user?.id,
-      tipo: tarefaSelecionada.tipo,
-      resultado: resultado === "concluida" ? "concluida" : resultado === "nao_concluida" ? "nao_concluida" : "remarcada",
-    };
+      const { error: tarefaError } = await supabase
+        .from("tarefas")
+        .update(updates)
+        .eq("id", tarefaSelecionada.id);
 
-    if (motivo) {
-      interacaoData.motivo = motivo;
-    }
+      if (tarefaError) throw tarefaError;
 
-    const { error: interacaoError } = await supabase.from("interacoes").insert(interacaoData);
+      // Registrar interação (não espera completar)
+      supabase.from("interacoes").insert({
+        cliente_id: tarefaSelecionada.cliente_id,
+        usuario_id: user.id,
+        tipo: tarefaSelecionada.tipo === "visitar" ? "visita" : "ligacao",
+        resultado: "concluida" as const,
+        motivo: motivo || null,
+      });
 
-    setLoading(false);
-
-    if (tarefaError || interacaoError) {
-      toast({ title: "Erro ao finalizar tarefa", variant: "destructive" });
-    } else {
       toast({ 
         title: resultado === "concluida" ? "Tarefa concluída!" : resultado === "nao_concluida" ? "Tarefa não concluída" : "Tarefa reagendada" 
       });
       setConclusaoOpen(false);
       setTarefaSelecionada(null);
       loadTarefas();
+    } catch (error) {
+      console.error("Erro ao finalizar tarefa:", error);
+      toast({ title: "Erro ao finalizar tarefa", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
