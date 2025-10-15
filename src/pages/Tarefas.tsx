@@ -92,12 +92,12 @@ const Tarefas = () => {
       const { error } = await supabase.from("tarefas").insert({
         titulo: formTarefa.titulo,
         descricao: formTarefa.descricao || null,
-        cliente_id: clienteSelecionado,
+        cliente_id: clienteSelecionado || null,
         tipo: tipoTarefa as "visitar" | "ligar",
         data_prevista: formTarefa.data_prevista || null,
         horario: formTarefa.horario || null,
         prioridade: formTarefa.prioridade,
-        responsavel_id: responsavelId,
+        responsavel_id: responsavelId || null,
       });
 
       if (error) throw error;

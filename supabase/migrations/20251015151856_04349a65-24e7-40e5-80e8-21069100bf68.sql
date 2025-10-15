@@ -1,0 +1,12 @@
+-- Adicionar índices para melhorar performance das queries
+CREATE INDEX IF NOT EXISTS idx_tarefas_responsavel ON tarefas(responsavel_id);
+CREATE INDEX IF NOT EXISTS idx_tarefas_status ON tarefas(status);
+CREATE INDEX IF NOT EXISTS idx_tarefas_cliente ON tarefas(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_tarefas_data_prevista ON tarefas(data_prevista);
+CREATE INDEX IF NOT EXISTS idx_clientes_responsavel ON clientes(responsavel_id);
+CREATE INDEX IF NOT EXISTS idx_clientes_ativo ON clientes(ativo);
+CREATE INDEX IF NOT EXISTS idx_interacoes_cliente ON interacoes(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_interacoes_usuario ON interacoes(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_pedidos_cliente ON pedidos(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_pedidos_status ON pedidos(status);
+CREATE INDEX IF NOT EXISTS idx_pedidos_data ON pedidos(data_pedido);
