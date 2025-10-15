@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ProdutoTooltip } from "@/components/ProdutoTooltip";
 
 interface PedidoStats {
   totalFaturamento: number;
@@ -26,6 +27,7 @@ const Pedidos = () => {
     totalCancelado: 0,
   });
   const [pedidosRecentes, setPedidosRecentes] = useState<any[]>([]);
+  const [produtosPorPedido, setProdutosPorPedido] = useState<Record<string, any[]>>({});
   const [podeverFaturamento, setPodeVerFaturamento] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,6 +43,28 @@ const Pedidos = () => {
     verificarPermissao();
     loadPedidos();
   }, []);
+
+  // Carregar produtos de um pedido sob demanda (lazy loading)
+  const loadProdutosPedido = async (pedidoId: string) => {
+    // Se já carregou, não carrega novamente
+    if (produtosPorPedido[pedidoId]) return;
+
+    const { data, error } = await supabase
+      .from('pedidos_produtos')
+      .select('quantidade, preco_unitario, produtos(nome)')
+      .eq('pedido_id', pedidoId);
+
+    if (!error && data) {
+      setProdutosPorPedido(prev => ({
+        ...prev,
+        [pedidoId]: data.map(p => ({
+          nome: (p as any).produtos?.nome || 'N/A',
+          quantidade: p.quantidade,
+          preco_unitario: p.preco_unitario
+        }))
+      }));
+    }
+  };
 
   const verificarPermissao = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -58,11 +82,12 @@ const Pedidos = () => {
       inicioMes.setDate(1);
       const inicioMesStr = inicioMes.toISOString().split('T')[0];
 
+      // Otimizado: carregar apenas campos necessários
       const { data: pedidos, error } = await supabase
         .from("pedidos")
-        .select("*, clientes(nome_fantasia, responsavel_id, profiles(nome))")
+        .select("id, numero_pedido, data_pedido, valor_total, status, observacoes, clientes(nome_fantasia, profiles(nome))")
         .order("data_pedido", { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (error) throw error;
 
@@ -371,58 +396,67 @@ const Pedidos = () => {
               <p className="text-lg font-medium mb-2">Nenhum pedido registrado</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {pedidosFiltrados.map((pedido) => (
-                <div key={pedido.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{pedido.clientes?.nome_fantasia}</h3>
-                        <span className={`text-xs px-2 py-1 rounded-full border ${getStatusBadge(pedido.status).color}`}>
-                          {getStatusBadge(pedido.status).text}
-                        </span>
-                      </div>
-                      {pedido.numero_pedido && (
-                        <p className="text-sm text-muted-foreground">Pedido: {pedido.numero_pedido}</p>
-                      )}
-                      {pedido.clientes?.profiles && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Vendedor: {pedido.clientes.profiles.nome}
-                        </p>
-                      )}
-                        {pedido.observacoes && (
-                          <p className="text-sm mt-2">{pedido.observacoes}</p>
-                        )}
-                      </div>
-                      <div className="text-right flex flex-col items-end gap-2">
-                        <div>
-                          {pedido.valor_total && (
-                            <p className="text-lg font-bold text-primary">
-                              {formatCurrency(parseFloat(pedido.valor_total))}
-                            </p>
-                          )}
-                          {pedido.data_pedido && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {new Date(pedido.data_pedido).toLocaleDateString('pt-BR')}
-                            </p>
-                          )}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeletePedido(pedido.id, pedido.status)}
-                          className={pedido.status === 'cancelado' ? 'border-destructive' : ''}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                          {pedido.status === 'cancelado' && (
-                            <span className="ml-1 text-xs">Excluir</span>
-                          )}
-                        </Button>
-                      </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+             <div className="space-y-4">
+               {pedidosFiltrados.map((pedido) => (
+                 <div 
+                   key={pedido.id} 
+                   className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                   onMouseEnter={() => loadProdutosPedido(pedido.id)}
+                 >
+                   <div className="flex items-start justify-between">
+                     <div className="flex-1">
+                       <div className="flex items-center gap-2">
+                         <h3 className="font-semibold">{pedido.clientes?.nome_fantasia}</h3>
+                         <span className={`text-xs px-2 py-1 rounded-full border ${getStatusBadge(pedido.status).color}`}>
+                           {getStatusBadge(pedido.status).text}
+                         </span>
+                       </div>
+                       {pedido.numero_pedido && (
+                         <p className="text-sm text-muted-foreground">Pedido: {pedido.numero_pedido}</p>
+                       )}
+                       {pedido.clientes?.profiles && (
+                         <p className="text-xs text-muted-foreground mt-1">
+                           Vendedor: {pedido.clientes.profiles.nome}
+                         </p>
+                       )}
+                       {produtosPorPedido[pedido.id] && (
+                         <div className="mt-2">
+                           <ProdutoTooltip produtos={produtosPorPedido[pedido.id]} />
+                         </div>
+                       )}
+                       {pedido.observacoes && (
+                         <p className="text-sm mt-2">{pedido.observacoes}</p>
+                       )}
+                     </div>
+                     <div className="text-right flex flex-col items-end gap-2">
+                       <div>
+                         {pedido.valor_total && (
+                           <p className="text-lg font-bold text-primary">
+                             {formatCurrency(parseFloat(pedido.valor_total))}
+                           </p>
+                         )}
+                         {pedido.data_pedido && (
+                           <p className="text-xs text-muted-foreground mt-1">
+                             {new Date(pedido.data_pedido).toLocaleDateString('pt-BR')}
+                           </p>
+                         )}
+                       </div>
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={() => handleDeletePedido(pedido.id, pedido.status)}
+                         className={pedido.status === 'cancelado' ? 'border-destructive' : ''}
+                       >
+                         <Trash2 className="h-4 w-4 text-destructive" />
+                         {pedido.status === 'cancelado' && (
+                           <span className="ml-1 text-xs">Excluir</span>
+                         )}
+                       </Button>
+                     </div>
+                   </div>
+                 </div>
+               ))}
+             </div>
           )}
         </CardContent>
       </Card>

@@ -30,11 +30,13 @@ const Tarefas = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Carregar todas as tarefas (não apenas as do usuário)
+    // Carregar apenas tarefas pendentes para otimizar
     const { data, error } = await supabase
       .from("tarefas")
-      .select("*, clientes(nome_fantasia), profiles(nome)")
-      .order("data_prevista", { ascending: true });
+      .select("id, titulo, descricao, tipo, prioridade, data_prevista, horario, status, created_at, cliente_id, clientes(nome_fantasia), profiles(nome)")
+      .eq("status", "pendente")
+      .order("data_prevista", { ascending: true })
+      .limit(50);
 
     if (error) {
       toast({ title: "Erro ao carregar tarefas", variant: "destructive" });
@@ -89,15 +91,25 @@ const Tarefas = () => {
       
       const responsavelId = colaboradorSelecionado || user.id;
       
+      // Garantir que IDs vazios sejam null, não strings vazias
+      const clienteIdFinal = clienteSelecionado && clienteSelecionado.trim() !== "" ? clienteSelecionado : null;
+      const responsavelIdFinal = responsavelId && responsavelId.trim() !== "" ? responsavelId : null;
+      
+      if (!clienteIdFinal) {
+        toast({ title: "Selecione um cliente", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      
       const { error } = await supabase.from("tarefas").insert({
         titulo: formTarefa.titulo,
         descricao: formTarefa.descricao || null,
-        cliente_id: clienteSelecionado || null,
+        cliente_id: clienteIdFinal,
         tipo: tipoTarefa as "visitar" | "ligar",
         data_prevista: formTarefa.data_prevista || null,
         horario: formTarefa.horario || null,
         prioridade: formTarefa.prioridade,
-        responsavel_id: responsavelId || null,
+        responsavel_id: responsavelIdFinal,
       });
 
       if (error) throw error;
@@ -192,6 +204,15 @@ const Tarefas = () => {
     e.preventDefault();
     if (!tarefaSelecionada) return;
 
+    // Garantir que IDs vazios sejam null
+    const clienteIdFinal = clienteSelecionado && clienteSelecionado.trim() !== "" ? clienteSelecionado : null;
+    const responsavelIdFinal = colaboradorSelecionado && colaboradorSelecionado.trim() !== "" ? colaboradorSelecionado : null;
+    
+    if (!clienteIdFinal) {
+      toast({ title: "Selecione um cliente", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
     const { error } = await supabase
       .from("tarefas")
@@ -201,8 +222,8 @@ const Tarefas = () => {
         data_prevista: editFormData.data_prevista || null,
         horario: editFormData.horario || null,
         prioridade: editFormData.prioridade,
-        cliente_id: clienteSelecionado,
-        responsavel_id: colaboradorSelecionado,
+        cliente_id: clienteIdFinal,
+        responsavel_id: responsavelIdFinal,
         tipo: tipoTarefa as "visitar" | "ligar",
       })
       .eq("id", tarefaSelecionada.id);

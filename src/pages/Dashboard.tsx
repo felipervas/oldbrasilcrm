@@ -30,12 +30,12 @@ const Dashboard = () => {
     try {
       const hoje = new Date().toISOString().split('T')[0];
 
-      // Otimizado: usar count apenas, sem carregar dados
+      // Super otimizado: apenas contagens sem carregar dados
       const [clientesRes, tarefasRes, interacoesRes, tarefasAtrasadasRes] = await Promise.all([
-        supabase.from('clientes').select('*', { count: 'exact', head: true }).eq('ativo', true),
-        supabase.from('tarefas').select('*', { count: 'exact', head: true }).eq('status', 'pendente'),
-        supabase.from('interacoes').select('*', { count: 'exact', head: true }).gte('data_hora', `${hoje}T00:00:00`),
-        supabase.from('tarefas').select('*', { count: 'exact', head: true }).eq('status', 'pendente').lt('data_prevista', hoje),
+        supabase.from('clientes').select('id', { count: 'exact', head: true }).eq('ativo', true),
+        supabase.from('tarefas').select('id', { count: 'exact', head: true }).eq('status', 'pendente'),
+        supabase.from('interacoes').select('id', { count: 'exact', head: true }).gte('data_hora', `${hoje}T00:00:00`),
+        supabase.from('tarefas').select('id', { count: 'exact', head: true }).eq('status', 'pendente').lt('data_prevista', hoje),
       ]);
 
       setStats({

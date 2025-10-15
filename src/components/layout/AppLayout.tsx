@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { useTestNotification } from "@/hooks/useTestNotification";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -13,6 +14,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Hook de teste para notificações de tarefas (verifica a cada 1 minuto)
+  useTestNotification();
 
   useEffect(() => {
     // Check current session
