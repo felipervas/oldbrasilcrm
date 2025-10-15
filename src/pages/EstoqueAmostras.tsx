@@ -46,13 +46,16 @@ const EstoqueAmostras = () => {
 
   const [formData, setFormData] = useState({
     cliente_id: "",
-    produto_id: "",
-    quantidade: "",
     data_entrega: new Date().toISOString().split('T')[0],
     status: "pendente",
     retorno: "",
-    observacoes: "",
   });
+
+  const [produtosAmostras, setProdutosAmostras] = useState<Array<{
+    produto_id: string;
+    quantidade: string;
+    observacoes: string;
+  }>>([{ produto_id: "", quantidade: "", observacoes: "" }]);
 
   useEffect(() => {
     loadData();
@@ -100,43 +103,56 @@ const EstoqueAmostras = () => {
       if (!user) return;
 
       if (editingAmostra) {
+        const produtoAtual = produtosAmostras[0];
         const { error } = await supabase
           .from("amostras")
           .update({
             cliente_id: formData.cliente_id,
-            produto_id: formData.produto_id,
-            quantidade: parseFloat(formData.quantidade),
+            produto_id: produtoAtual.produto_id,
+            quantidade: parseFloat(produtoAtual.quantidade),
             data_entrega: formData.data_entrega,
             status: formData.status,
             retorno: formData.retorno,
-            observacoes: formData.observacoes,
+            observacoes: produtoAtual.observacoes,
           })
           .eq("id", editingAmostra.id);
 
         if (error) throw error;
         toast({ title: "Amostra atualizada com sucesso!" });
       } else {
-        const { error } = await supabase.from("amostras").insert({
-          ...formData,
-          quantidade: parseFloat(formData.quantidade),
-          responsavel_id: user.id,
-        });
+        const amostrasParaInserir = produtosAmostras
+          .filter(p => p.produto_id && p.quantidade)
+          .map(p => ({
+            cliente_id: formData.cliente_id,
+            produto_id: p.produto_id,
+            quantidade: parseFloat(p.quantidade),
+            data_entrega: formData.data_entrega,
+            status: formData.status,
+            retorno: formData.retorno,
+            observacoes: p.observacoes,
+            responsavel_id: user.id,
+          }));
+
+        if (amostrasParaInserir.length === 0) {
+          toast({ title: "Adicione pelo menos um produto", variant: "destructive" });
+          return;
+        }
+
+        const { error } = await supabase.from("amostras").insert(amostrasParaInserir);
 
         if (error) throw error;
-        toast({ title: "Amostra registrada com sucesso!" });
+        toast({ title: `${amostrasParaInserir.length} amostra(s) registrada(s)!` });
       }
 
       setDialogOpen(false);
       setEditingAmostra(null);
       setFormData({
         cliente_id: "",
-        produto_id: "",
-        quantidade: "",
         data_entrega: new Date().toISOString().split('T')[0],
         status: "pendente",
         retorno: "",
-        observacoes: "",
       });
+      setProdutosAmostras([{ produto_id: "", quantidade: "", observacoes: "" }]);
       loadData();
     } catch (error: any) {
       console.error("Erro ao salvar amostra:", error);
@@ -168,13 +184,15 @@ const EstoqueAmostras = () => {
     setEditingAmostra(amostra);
     setFormData({
       cliente_id: amostra.cliente_id,
-      produto_id: amostra.produto_id,
-      quantidade: amostra.quantidade.toString(),
       data_entrega: amostra.data_entrega,
       status: amostra.status,
       retorno: amostra.retorno || "",
-      observacoes: amostra.observacoes || "",
     });
+    setProdutosAmostras([{
+      produto_id: amostra.produto_id,
+      quantidade: amostra.quantidade.toString(),
+      observacoes: amostra.observacoes || "",
+    }]);
     setDialogOpen(true);
   };
 
@@ -248,13 +266,11 @@ const EstoqueAmostras = () => {
             setEditingAmostra(null);
             setFormData({
               cliente_id: "",
-              produto_id: "",
-              quantidade: "",
               data_entrega: new Date().toISOString().split('T')[0],
               status: "pendente",
               retorno: "",
-              observacoes: "",
             });
+            setProdutosAmostras([{ produto_id: "", quantidade: "", observacoes: "" }]);
           }
         }}>
           <DialogTrigger asChild>
@@ -268,77 +284,115 @@ const EstoqueAmostras = () => {
               <DialogTitle>{editingAmostra ? "Editar Amostra" : "Registrar Nova Amostra"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Cliente *</Label>
-                  <Select
-                    value={formData.cliente_id}
-                    onValueChange={(value) => setFormData({ ...formData, cliente_id: value })}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientes.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.nome_fantasia}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Produto *</Label>
-                  <Select
-                    value={formData.produto_id}
-                    onValueChange={(value) => setFormData({ ...formData, produto_id: value })}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o produto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {produtos.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Quantidade (gramas) *</Label>
-                  <Input
-                    type="number"
-                    step="1"
-                    min="1"
-                    value={formData.quantidade}
-                    onChange={(e) => setFormData({ ...formData, quantidade: e.target.value })}
-                    placeholder="Ex: 500"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">Digite em gramas (ex: 500g)</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Data de Entrega *</Label>
-                  <Input
-                    type="date"
-                    value={formData.data_entrega}
-                    onChange={(e) => setFormData({ ...formData, data_entrega: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
               <div className="space-y-2">
-                <Label>Observações</Label>
-                <Textarea
-                  value={formData.observacoes}
-                  onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                  placeholder="Informações adicionais sobre a amostra..."
+                <Label>Cliente *</Label>
+                <Select
+                  value={formData.cliente_id}
+                  onValueChange={(value) => setFormData({ ...formData, cliente_id: value })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientes.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome_fantasia}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Data de Entrega *</Label>
+                <Input
+                  type="date"
+                  value={formData.data_entrega}
+                  onChange={(e) => setFormData({ ...formData, data_entrega: e.target.value })}
+                  required
                 />
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Produtos *</Label>
+                  {!editingAmostra && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setProdutosAmostras([...produtosAmostras, { produto_id: "", quantidade: "", observacoes: "" }])}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Adicionar Produto
+                    </Button>
+                  )}
+                </div>
+                
+                {produtosAmostras.map((prod, idx) => (
+                  <div key={idx} className="border rounded-lg p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Produto {idx + 1}</span>
+                      {!editingAmostra && produtosAmostras.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setProdutosAmostras(produtosAmostras.filter((_, i) => i !== idx))}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <Select
+                      value={prod.produto_id}
+                      onValueChange={(value) => {
+                        const novos = [...produtosAmostras];
+                        novos[idx].produto_id = value;
+                        setProdutosAmostras(novos);
+                      }}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o produto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {produtos.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Input
+                      type="number"
+                      step="1"
+                      min="1"
+                      value={prod.quantidade}
+                      onChange={(e) => {
+                        const novos = [...produtosAmostras];
+                        novos[idx].quantidade = e.target.value;
+                        setProdutosAmostras(novos);
+                      }}
+                      placeholder="Quantidade em gramas (ex: 500)"
+                      required
+                    />
+
+                    <Textarea
+                      value={prod.observacoes}
+                      onChange={(e) => {
+                        const novos = [...produtosAmostras];
+                        novos[idx].observacoes = e.target.value;
+                        setProdutosAmostras(novos);
+                      }}
+                      placeholder="Observações deste produto..."
+                      rows={2}
+                    />
+                  </div>
+                ))}
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>

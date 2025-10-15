@@ -31,6 +31,7 @@ export const useClientes = (page: number = 0, pageSize: number = 50, searchTerm:
       if (error) throw error;
       return { data: data || [], count: count || 0 };
     },
+    staleTime: 15 * 60 * 1000, // 15 minutos - clientes mudam pouco
   });
 };
 

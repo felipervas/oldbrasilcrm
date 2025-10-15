@@ -31,9 +31,10 @@ const LoadingFallback = () => (
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutos
-      gcTime: 10 * 60 * 1000, // 10 minutos (antes era cacheTime)
+      staleTime: 10 * 60 * 1000, // 10 minutos - cache agressivo
+      gcTime: 30 * 60 * 1000, // 30 minutos
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
       retry: 1,
     },
   },

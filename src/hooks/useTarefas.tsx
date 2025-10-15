@@ -11,13 +11,14 @@ export const useTarefas = (page: number = 0, pageSize: number = 20) => {
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from('tarefas')
-        .select('*, clientes(nome_fantasia), profiles(nome)', { count: 'exact' })
+        .select('id, titulo, descricao, status, tipo, prioridade, data_prevista, cliente_id, responsavel_id, clientes(nome_fantasia), profiles(nome)', { count: 'exact' })
         .order('data_prevista', { ascending: true })
         .range(start, end);
 
       if (error) throw error;
       return { data: data || [], count: count || 0 };
     },
+    staleTime: 2 * 60 * 1000, // 2 minutos para tarefas (dados mais dinâmicos)
   });
 };
 

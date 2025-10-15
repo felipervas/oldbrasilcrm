@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Users, CheckSquare, Shield, Plus, Pencil, Trash2 } from "lucide-react";
+import { Users, CheckSquare, Shield, Plus, Pencil, Trash2, History, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -11,12 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 const Colaboradores = () => {
   const [colaboradores, setColaboradores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [canEdit, setCanEdit] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [historicoOpen, setHistoricoOpen] = useState(false);
+  const [selectedColaborador, setSelectedColaborador] = useState<any>(null);
+  const [tarefasHistorico, setTarefasHistorico] = useState<any[]>([]);
   const [editingColaborador, setEditingColaborador] = useState<any>(null);
   const [formData, setFormData] = useState<{
     nome: string;
@@ -173,6 +177,26 @@ const Colaboradores = () => {
     }
   };
 
+  const loadHistorico = async (colaborador: any) => {
+    setSelectedColaborador(colaborador);
+    setHistoricoOpen(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from("tarefas")
+        .select("id, titulo, descricao, status, tipo, prioridade, data_prevista, data_conclusao, created_at, clientes(nome_fantasia)")
+        .eq("responsavel_id", colaborador.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setTarefasHistorico(data || []);
+    } catch (error) {
+      console.error("Erro ao carregar histórico:", error);
+      toast({ title: "Erro ao carregar histórico", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8">
       <div className="flex items-center justify-between">
@@ -273,6 +297,14 @@ const Colaboradores = () => {
                         <CheckSquare className="h-4 w-4 text-primary" />
                         <span>{getTarefasCount(colab)} tarefas</span>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => loadHistorico(colab)}
+                      >
+                        <History className="h-4 w-4 mr-2" />
+                        Histórico
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -343,6 +375,58 @@ const Colaboradores = () => {
                 <Button onClick={handleSave}>
                   Salvar
                 </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={historicoOpen} onOpenChange={setHistoricoOpen}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Histórico de Tarefas - {selectedColaborador?.nome}</DialogTitle>
+                <DialogDescription>
+                  Todas as tarefas atribuídas a este colaborador
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                {tarefasHistorico.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">Nenhuma tarefa encontrada</p>
+                ) : (
+                  tarefasHistorico.map((tarefa) => (
+                    <div key={tarefa.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{tarefa.titulo}</h4>
+                          {tarefa.clientes && (
+                            <p className="text-sm text-muted-foreground">
+                              Cliente: {tarefa.clientes.nome_fantasia}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge variant={tarefa.status === 'concluida' ? 'default' : 'secondary'}>
+                            {tarefa.status}
+                          </Badge>
+                          <Badge variant="outline">{tarefa.tipo}</Badge>
+                        </div>
+                      </div>
+                      {tarefa.descricao && (
+                        <p className="text-sm text-muted-foreground mb-2">{tarefa.descricao}</p>
+                      )}
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Criada: {new Date(tarefa.created_at).toLocaleDateString('pt-BR')}
+                        </span>
+                        {tarefa.data_prevista && (
+                          <span>Prevista: {new Date(tarefa.data_prevista).toLocaleDateString('pt-BR')}</span>
+                        )}
+                        {tarefa.data_conclusao && (
+                          <span>Concluída: {new Date(tarefa.data_conclusao).toLocaleDateString('pt-BR')}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </DialogContent>
           </Dialog>
