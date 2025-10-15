@@ -95,12 +95,6 @@ const Tarefas = () => {
       const clienteIdFinal = clienteSelecionado && clienteSelecionado.trim() !== "" ? clienteSelecionado : null;
       const responsavelIdFinal = responsavelId && responsavelId.trim() !== "" ? responsavelId : null;
       
-      if (!clienteIdFinal) {
-        toast({ title: "Selecione um cliente", variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-      
       const { error } = await supabase.from("tarefas").insert({
         titulo: formTarefa.titulo,
         descricao: formTarefa.descricao || null,
@@ -275,10 +269,10 @@ const Tarefas = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="cliente">Cliente *</Label>
-                <Select value={clienteSelecionado} onValueChange={setClienteSelecionado} required>
+                <Label htmlFor="cliente">Cliente (Opcional)</Label>
+                <Select value={clienteSelecionado} onValueChange={setClienteSelecionado}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
+                    <SelectValue placeholder="Sem cliente específico" />
                   </SelectTrigger>
                   <SelectContent>
                     {clientes.map((cliente) => (

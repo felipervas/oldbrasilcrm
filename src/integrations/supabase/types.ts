@@ -104,6 +104,44 @@ export type Database = {
         }
         Relationships: []
       }
+      cliente_historico: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          observacao: string
+          referencia_id: string | null
+          tipo: string
+          usuario_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          observacao: string
+          referencia_id?: string | null
+          tipo?: string
+          usuario_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          observacao?: string
+          referencia_id?: string | null
+          tipo?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_historico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cliente_produtos: {
         Row: {
           cliente_id: string
@@ -686,7 +724,7 @@ export type Database = {
       }
       tarefas: {
         Row: {
-          cliente_id: string
+          cliente_id: string | null
           created_at: string
           data_conclusao: string | null
           data_prevista: string | null
@@ -703,7 +741,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          cliente_id: string
+          cliente_id?: string | null
           created_at?: string
           data_conclusao?: string | null
           data_prevista?: string | null
@@ -720,7 +758,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          cliente_id?: string
+          cliente_id?: string | null
           created_at?: string
           data_conclusao?: string | null
           data_prevista?: string | null

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Package, Plus, Search } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Package, Plus, Search, Pencil, Trash2, History, Box } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useDebounce } from "@/hooks/useDebounce";
+import { ListLoadingSkeleton } from "@/components/LoadingSkeleton";
 
 interface Amostra {
   id: string;
@@ -17,7 +21,7 @@ interface Amostra {
   produto_id: string;
   quantidade: number;
   data_entrega: string;
-  responsavel_id: string;
+  responsavel_id?: string;
   retorno: string | null;
   status: string;
   observacoes: string | null;
@@ -29,9 +33,15 @@ const EstoqueAmostras = () => {
   const [amostras, setAmostras] = useState<Amostra[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
   const [produtos, setProdutos] = useState<any[]>([]);
+  const [historico, setHistorico] = useState<any[]>([]);
+  const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingAmostra, setEditingAmostra] = useState<Amostra | null>(null);
+  const [deleteAmostra, setDeleteAmostra] = useState<Amostra | null>(null);
+  const [historicoCliente, setHistoricoCliente] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -51,16 +61,19 @@ const EstoqueAmostras = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const [amostrasRes, clientesRes, produtosRes] = await Promise.all([
+      const [amostrasRes, clientesRes, produtosRes, movimentacoesRes] = await Promise.all([
         supabase
           .from("amostras")
-          .select("*, clientes(nome_fantasia), produtos(nome)")
-          .order("data_entrega", { ascending: false }),
-        supabase.from("clientes").select("id, nome_fantasia").order("nome_fantasia"),
-        supabase.from("produtos").select("id, nome").eq("ativo", true).order("nome"),
+          .select("id, cliente_id, produto_id, quantidade, data_entrega, status, retorno, observacoes, clientes(nome_fantasia), produtos(nome)")
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase.from("clientes").select("id, nome_fantasia").eq("ativo", true).order("nome_fantasia").limit(100),
+        supabase.from("produtos").select("id, nome, estoque_escritorio").eq("ativo", true).order("nome").limit(100),
+        supabase
+          .from("movimentacao_estoque")
+          .select("id, produto_id, quantidade, tipo, created_at, observacao, produtos(nome)")
+          .order("created_at", { ascending: false })
+          .limit(50)
       ]);
 
       if (amostrasRes.error) throw amostrasRes.error;
@@ -70,6 +83,7 @@ const EstoqueAmostras = () => {
       setAmostras(amostrasRes.data || []);
       setClientes(clientesRes.data || []);
       setProdutos(produtosRes.data || []);
+      setMovimentacoes(movimentacoesRes.data || []);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
       toast({ title: "Erro ao carregar dados", variant: "destructive" });
@@ -85,16 +99,35 @@ const EstoqueAmostras = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase.from("amostras").insert({
-        ...formData,
-        quantidade: parseFloat(formData.quantidade),
-        responsavel_id: user.id,
-      });
+      if (editingAmostra) {
+        const { error } = await supabase
+          .from("amostras")
+          .update({
+            cliente_id: formData.cliente_id,
+            produto_id: formData.produto_id,
+            quantidade: parseFloat(formData.quantidade),
+            data_entrega: formData.data_entrega,
+            status: formData.status,
+            retorno: formData.retorno,
+            observacoes: formData.observacoes,
+          })
+          .eq("id", editingAmostra.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast({ title: "Amostra atualizada com sucesso!" });
+      } else {
+        const { error } = await supabase.from("amostras").insert({
+          ...formData,
+          quantidade: parseFloat(formData.quantidade),
+          responsavel_id: user.id,
+        });
 
-      toast({ title: "Amostra registrada com sucesso!" });
+        if (error) throw error;
+        toast({ title: "Amostra registrada com sucesso!" });
+      }
+
       setDialogOpen(false);
+      setEditingAmostra(null);
       setFormData({
         cliente_id: "",
         produto_id: "",
@@ -106,8 +139,59 @@ const EstoqueAmostras = () => {
       });
       loadData();
     } catch (error: any) {
-      console.error("Erro ao registrar amostra:", error);
-      toast({ title: "Erro ao registrar amostra", variant: "destructive" });
+      console.error("Erro ao salvar amostra:", error);
+      toast({ title: "Erro ao salvar amostra", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteAmostra) return;
+
+    try {
+      const { error } = await supabase
+        .from("amostras")
+        .delete()
+        .eq("id", deleteAmostra.id);
+
+      if (error) throw error;
+
+      toast({ title: "Amostra excluída com sucesso!" });
+      setDeleteAmostra(null);
+      loadData();
+    } catch (error) {
+      console.error("Erro ao excluir amostra:", error);
+      toast({ title: "Erro ao excluir amostra", variant: "destructive" });
+    }
+  };
+
+  const handleEdit = (amostra: Amostra) => {
+    setEditingAmostra(amostra);
+    setFormData({
+      cliente_id: amostra.cliente_id,
+      produto_id: amostra.produto_id,
+      quantidade: amostra.quantidade.toString(),
+      data_entrega: amostra.data_entrega,
+      status: amostra.status,
+      retorno: amostra.retorno || "",
+      observacoes: amostra.observacoes || "",
+    });
+    setDialogOpen(true);
+  };
+
+  const loadHistorico = async (clienteId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("cliente_historico")
+        .select("*")
+        .eq("cliente_id", clienteId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setHistorico(data || []);
+      setHistoricoCliente(clienteId);
+    } catch (error) {
+      console.error("Erro ao carregar histórico:", error);
+      toast({ title: "Erro ao carregar histórico", variant: "destructive" });
     }
   };
 
@@ -128,9 +212,11 @@ const EstoqueAmostras = () => {
     }
   };
 
-  const amostrasFiltered = amostras.filter(a =>
-    a.clientes?.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.produtos?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+  const amostrasFiltered = useMemo(() => 
+    amostras.filter(a =>
+      a.clientes?.nome_fantasia?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      a.produtos?.nome?.toLowerCase().includes(debouncedSearch.toLowerCase())
+    ), [amostras, debouncedSearch]
   );
 
   const getStatusColor = (status: string) => {
@@ -152,11 +238,25 @@ const EstoqueAmostras = () => {
               Estoque & Amostras
             </h1>
             <p className="text-muted-foreground">
-              Gerencie amostras entregues aos clientes
+              Gerencie amostras e controle de estoque
             </p>
           </div>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            setEditingAmostra(null);
+            setFormData({
+              cliente_id: "",
+              produto_id: "",
+              quantidade: "",
+              data_entrega: new Date().toISOString().split('T')[0],
+              status: "pendente",
+              retorno: "",
+              observacoes: "",
+            });
+          }
+        }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -165,7 +265,7 @@ const EstoqueAmostras = () => {
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Registrar Nova Amostra</DialogTitle>
+              <DialogTitle>{editingAmostra ? "Editar Amostra" : "Registrar Nova Amostra"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -251,6 +351,19 @@ const EstoqueAmostras = () => {
         </Dialog>
       </div>
 
+      <Tabs defaultValue="amostras" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="amostras">
+            <Package className="h-4 w-4 mr-2" />
+            Amostras
+          </TabsTrigger>
+          <TabsTrigger value="estoque">
+            <Box className="h-4 w-4 mr-2" />
+            Estoque
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="amostras">
       <Card className="shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -272,7 +385,7 @@ const EstoqueAmostras = () => {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">Carregando...</div>
+            <ListLoadingSkeleton count={3} type="produto" />
           ) : amostrasFiltered.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -304,40 +417,157 @@ const EstoqueAmostras = () => {
                           <strong>Retorno:</strong> {amostra.retorno}
                         </p>
                       )}
+                     </div>
+                     <div className="flex gap-2">
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         onClick={() => loadHistorico(amostra.cliente_id)}
+                       >
+                         <History className="h-4 w-4" />
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         onClick={() => handleEdit(amostra)}
+                       >
+                         <Pencil className="h-4 w-4" />
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         onClick={() => setDeleteAmostra(amostra)}
+                       >
+                         <Trash2 className="h-4 w-4 text-destructive" />
+                       </Button>
+                       {amostra.status === 'pendente' && (
+                         <>
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => {
+                               const retorno = prompt("Qual foi o retorno do cliente?");
+                               if (retorno) handleUpdateStatus(amostra.id, 'positivo', retorno);
+                             }}
+                           >
+                             Positivo
+                           </Button>
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => {
+                               const retorno = prompt("Qual foi o retorno do cliente?");
+                               if (retorno) handleUpdateStatus(amostra.id, 'negativo', retorno);
+                             }}
+                           >
+                             Negativo
+                           </Button>
+                         </>
+                       )}
+                     </div>
+                   </div>
+                 </div>
+               ))}
+             </div>
+           )}
+         </CardContent>
+       </Card>
+        </TabsContent>
+
+        <TabsContent value="estoque">
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Box className="h-5 w-5 text-primary" />
+                Controle de Estoque
+              </CardTitle>
+              <CardDescription>Movimentações de entrada e saída</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <ListLoadingSkeleton count={3} type="produto" />
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {produtos.slice(0, 20).map((produto: any) => (
+                      <Card key={produto.id}>
+                        <CardContent className="pt-6">
+                          <h3 className="font-semibold mb-2">{produto.nome}</h3>
+                          <p className="text-2xl font-bold text-primary">
+                            {produto.estoque_escritorio || 0} unidades
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold mb-4">Últimas Movimentações</h3>
+                    <div className="space-y-2">
+                      {movimentacoes.slice(0, 20).map((mov: any) => (
+                        <div key={mov.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div>
+                            <p className="font-medium">{mov.produtos?.nome}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {mov.observacao || "Sem observação"}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`font-semibold ${mov.tipo === 'entrada' ? 'text-green-600' : 'text-red-600'}`}>
+                              {mov.tipo === 'entrada' ? '+' : '-'}{mov.quantidade}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(mov.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    {amostra.status === 'pendente' && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const retorno = prompt("Qual foi o retorno do cliente?");
-                            if (retorno) handleUpdateStatus(amostra.id, 'positivo', retorno);
-                          }}
-                        >
-                          Positivo
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const retorno = prompt("Qual foi o retorno do cliente?");
-                            if (retorno) handleUpdateStatus(amostra.id, 'negativo', retorno);
-                          }}
-                        >
-                          Negativo
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-export default EstoqueAmostras;
+      <AlertDialog open={!!deleteAmostra} onOpenChange={(open) => !open && setDeleteAmostra(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta amostra? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={!!historicoCliente} onOpenChange={(open) => !open && setHistoricoCliente(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Histórico do Cliente</DialogTitle>
+            <DialogDescription>Todas as interações e observações registradas</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto space-y-3">
+            {historico.map((h) => (
+              <div key={h.id} className="border-l-2 border-primary pl-4 py-2">
+                <p className="text-sm font-medium">{h.observacao}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(h.created_at).toLocaleString('pt-BR')} • {h.tipo}
+                </p>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+     </div>
+   );
+ };
+ 
+ export default EstoqueAmostras;
