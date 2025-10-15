@@ -1,6 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { Resend } from "npm:resend@2.0.0";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +17,6 @@ serve(async (req) => {
     const resendKey = Deno.env.get("RESEND_API_KEY");
     
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const resend = resendKey ? new Resend(resendKey) : null;
 
     // Buscar tarefas que devem ser notificadas (data/hora chegou e notificação não foi enviada)
     const agora = new Date();
@@ -75,43 +73,54 @@ serve(async (req) => {
     for (const tarefa of tarefasParaNotificar) {
       const email = emailMap.get(tarefa.responsavel_id);
       
-      if (email && resend) {
+      if (email && resendKey) {
         try {
-          // Enviar email
-          await resend.emails.send({
-            from: "CRM Old Brasil <onboarding@resend.dev>",
-            to: [email],
-            subject: `🔔 Tarefa Agendada: ${tarefa.titulo}`,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #333;">Olá ${tarefa.profiles?.nome || 'Colaborador'}!</h2>
-                <p style="color: #666; font-size: 16px;">Você tem uma tarefa agendada:</p>
-                
-                <div style="background: #f5f5f5; border-left: 4px solid #4CAF50; padding: 15px; margin: 20px 0;">
-                  <h3 style="margin: 0 0 10px 0; color: #333;">${tarefa.titulo}</h3>
-                  <p style="margin: 5px 0; color: #666;">
-                    <strong>Cliente:</strong> ${tarefa.clientes?.nome_fantasia || 'N/A'}
+          // Enviar email via API Resend
+          const emailResponse = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${resendKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: 'CRM Old Brasil <onboarding@resend.dev>',
+              to: [email],
+              subject: `🔔 Tarefa Agendada: ${tarefa.titulo}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <h2 style="color: #333;">Olá ${tarefa.profiles?.nome || 'Colaborador'}!</h2>
+                  <p style="color: #666; font-size: 16px;">Você tem uma tarefa agendada:</p>
+                  
+                  <div style="background: #f5f5f5; border-left: 4px solid #4CAF50; padding: 15px; margin: 20px 0;">
+                    <h3 style="margin: 0 0 10px 0; color: #333;">${tarefa.titulo}</h3>
+                    <p style="margin: 5px 0; color: #666;">
+                      <strong>Cliente:</strong> ${tarefa.clientes?.nome_fantasia || 'N/A'}
+                    </p>
+                    <p style="margin: 5px 0; color: #666;">
+                      <strong>Tipo:</strong> ${tarefa.tipo === 'visitar' ? '🏢 Visita' : '📞 Ligação'}
+                    </p>
+                    ${tarefa.data_prevista ? `<p style="margin: 5px 0; color: #666;">
+                      <strong>Data:</strong> ${new Date(tarefa.data_prevista).toLocaleDateString('pt-BR')}
+                      ${tarefa.horario ? `às ${tarefa.horario}` : ''}
+                    </p>` : ''}
+                    ${tarefa.descricao ? `<p style="margin: 10px 0 0 0; color: #666;">
+                      <strong>Descrição:</strong><br/>${tarefa.descricao}
+                    </p>` : ''}
+                  </div>
+                  
+                  <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                    Acesse o sistema para marcar como concluída.
                   </p>
-                  <p style="margin: 5px 0; color: #666;">
-                    <strong>Tipo:</strong> ${tarefa.tipo === 'visitar' ? '🏢 Visita' : '📞 Ligação'}
-                  </p>
-                  ${tarefa.data_prevista ? `<p style="margin: 5px 0; color: #666;">
-                    <strong>Data:</strong> ${new Date(tarefa.data_prevista).toLocaleDateString('pt-BR')}
-                    ${tarefa.horario ? `às ${tarefa.horario}` : ''}
-                  </p>` : ''}
-                  ${tarefa.descricao ? `<p style="margin: 10px 0 0 0; color: #666;">
-                    <strong>Descrição:</strong><br/>${tarefa.descricao}
-                  </p>` : ''}
                 </div>
-                
-                <p style="color: #666; font-size: 14px; margin-top: 30px;">
-                  Acesse o sistema para marcar como concluída.
-                </p>
-              </div>
-            `,
+              `,
+            }),
           });
-          
-          console.log(`Email enviado para ${email} - Tarefa: ${tarefa.titulo}`);
+
+          if (!emailResponse.ok) {
+            console.error(`Erro ao enviar email para ${email}:`, await emailResponse.text());
+          } else {
+            console.log(`Email enviado para ${email} - Tarefa: ${tarefa.titulo}`);
+          }
         } catch (emailError) {
           console.error(`Erro ao enviar email para ${email}:`, emailError);
         }
