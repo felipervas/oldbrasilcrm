@@ -67,7 +67,15 @@ const Tarefas = () => {
     loadColaboradores();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const [formTarefa, setFormTarefa] = useState({
+    titulo: "",
+    descricao: "",
+    data_prevista: "",
+    horario: "",
+    prioridade: "media" as "baixa" | "media" | "alta",
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -79,17 +87,16 @@ const Tarefas = () => {
         return;
       }
       
-      const formData = new FormData(e.currentTarget);
       const responsavelId = colaboradorSelecionado || user.id;
       
       const { error } = await supabase.from("tarefas").insert({
-        titulo: formData.get("titulo") as string,
-        descricao: formData.get("descricao") as string || null,
+        titulo: formTarefa.titulo,
+        descricao: formTarefa.descricao || null,
         cliente_id: clienteSelecionado,
         tipo: tipoTarefa as "visitar" | "ligar",
-        data_prevista: (formData.get("data_prevista") as string) || null,
-        horario: (formData.get("horario") as string) || null,
-        prioridade: (formData.get("prioridade") as "baixa" | "media" | "alta") || "media",
+        data_prevista: formTarefa.data_prevista || null,
+        horario: formTarefa.horario || null,
+        prioridade: formTarefa.prioridade,
         responsavel_id: responsavelId,
       });
 
@@ -100,6 +107,13 @@ const Tarefas = () => {
       setClienteSelecionado("");
       setColaboradorSelecionado("");
       setTipoTarefa("");
+      setFormTarefa({
+        titulo: "",
+        descricao: "",
+        data_prevista: "",
+        horario: "",
+        prioridade: "media",
+      });
       loadTarefas();
     } catch (error: any) {
       console.error("Erro ao criar tarefa:", error);
@@ -231,7 +245,13 @@ const Tarefas = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="titulo">Título *</Label>
-                <Input id="titulo" name="titulo" required placeholder="Ex: Contatar Alex" />
+                <Input 
+                  id="titulo" 
+                  value={formTarefa.titulo}
+                  onChange={(e) => setFormTarefa({ ...formTarefa, titulo: e.target.value })}
+                  required 
+                  placeholder="Ex: Contatar Alex" 
+                />
               </div>
               <div>
                 <Label htmlFor="cliente">Cliente *</Label>
@@ -277,15 +297,28 @@ const Tarefas = () => {
               </div>
               <div>
                 <Label htmlFor="data_prevista">Data Prevista</Label>
-                <Input id="data_prevista" name="data_prevista" type="date" />
+                <Input 
+                  id="data_prevista" 
+                  type="date"
+                  value={formTarefa.data_prevista}
+                  onChange={(e) => setFormTarefa({ ...formTarefa, data_prevista: e.target.value })}
+                />
               </div>
               <div>
                 <Label htmlFor="horario">Horário</Label>
-                <Input id="horario" name="horario" type="time" />
+                <Input 
+                  id="horario" 
+                  type="time"
+                  value={formTarefa.horario}
+                  onChange={(e) => setFormTarefa({ ...formTarefa, horario: e.target.value })}
+                />
               </div>
               <div>
                 <Label htmlFor="prioridade">Prioridade</Label>
-                <Select name="prioridade" defaultValue="media">
+                <Select 
+                  value={formTarefa.prioridade} 
+                  onValueChange={(value: "baixa" | "media" | "alta") => setFormTarefa({ ...formTarefa, prioridade: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -298,7 +331,12 @@ const Tarefas = () => {
               </div>
               <div>
                 <Label htmlFor="descricao">Descrição</Label>
-                <Textarea id="descricao" name="descricao" placeholder="Ex: Apresentar novo produto Invento Cacau" />
+                <Textarea 
+                  id="descricao" 
+                  value={formTarefa.descricao}
+                  onChange={(e) => setFormTarefa({ ...formTarefa, descricao: e.target.value })}
+                  placeholder="Ex: Apresentar novo produto Invento Cacau" 
+                />
               </div>
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Salvando..." : "Criar Tarefa"}

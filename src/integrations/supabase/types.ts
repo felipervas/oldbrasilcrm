@@ -693,6 +693,7 @@ export type Database = {
           descricao: string | null
           horario: string | null
           id: string
+          notificacao_enviada: boolean | null
           origem: string | null
           prioridade: Database["public"]["Enums"]["priority_type"]
           responsavel_id: string
@@ -709,6 +710,7 @@ export type Database = {
           descricao?: string | null
           horario?: string | null
           id?: string
+          notificacao_enviada?: boolean | null
           origem?: string | null
           prioridade?: Database["public"]["Enums"]["priority_type"]
           responsavel_id: string
@@ -725,6 +727,7 @@ export type Database = {
           descricao?: string | null
           horario?: string | null
           id?: string
+          notificacao_enviada?: boolean | null
           origem?: string | null
           prioridade?: Database["public"]["Enums"]["priority_type"]
           responsavel_id?: string
