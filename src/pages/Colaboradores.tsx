@@ -33,27 +33,23 @@ const Colaboradores = () => {
   const navigate = useNavigate();
 
   const checkAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate("/login");
-      return;
-    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate('/login');
+        return;
+      }
 
-    const email = user.email?.toLowerCase() || "";
-    const hasAccess = email === "felipervas@gmail.com" || email.endsWith("@oldvasconcellos.com");
-    
-    if (!hasAccess) {
-      toast({
-        title: "Acesso negado",
-        description: "Você não tem permissão para acessar esta página",
-        variant: "destructive",
-      });
-      navigate("/");
-      return;
+      // Todos os usuários autenticados podem ver colaboradores
+      // Apenas admins específicos podem editar
+      const email = user.email;
+      setCanEdit(email === 'felipervas@gmail.com' || email === 'oldvasconcellos@gmail.com');
+      
+      loadColaboradores();
+    } catch (error) {
+      console.error('Erro ao verificar acesso:', error);
     }
-
-    setCanEdit(hasAccess);
-    loadColaboradores();
   };
 
   const loadColaboradores = async () => {

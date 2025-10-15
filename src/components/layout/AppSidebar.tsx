@@ -121,9 +121,13 @@ export function AppSidebar() {
   }, []);
 
   const checkFinanceiroAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.email === 'felipervas@gmail.com' || user?.email === 'oldvasconcellos@gmail.com') {
-      setCanViewFinanceiro(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email === 'felipervas@gmail.com' || user?.email === 'oldvasconcellos@gmail.com') {
+        setCanViewFinanceiro(true);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar acesso financeiro:', error);
     }
   };
 

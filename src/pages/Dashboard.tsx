@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Users, CheckSquare, MessageSquare, TrendingUp, Clock, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardStats {
   totalClientes: number;
@@ -12,6 +13,7 @@ interface DashboardStats {
 }
 
 const Dashboard = () => {
+  const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
     totalClientes: 0,
     tarefasPendentes: 0,
@@ -28,11 +30,12 @@ const Dashboard = () => {
     try {
       const hoje = new Date().toISOString().split('T')[0];
 
+      // Otimizado: usar count apenas, sem carregar dados
       const [clientesRes, tarefasRes, interacoesRes, tarefasAtrasadasRes] = await Promise.all([
-        supabase.from('clientes').select('id', { count: 'exact', head: true }),
-        supabase.from('tarefas').select('id', { count: 'exact', head: true }).eq('status', 'pendente'),
-        supabase.from('interacoes').select('id', { count: 'exact', head: true }).gte('data_hora', hoje),
-        supabase.from('tarefas').select('id', { count: 'exact', head: true }).eq('status', 'pendente').lt('data_prevista', hoje),
+        supabase.from('clientes').select('*', { count: 'exact', head: true }).eq('ativo', true),
+        supabase.from('tarefas').select('*', { count: 'exact', head: true }).eq('status', 'pendente'),
+        supabase.from('interacoes').select('*', { count: 'exact', head: true }).gte('data_hora', `${hoje}T00:00:00`),
+        supabase.from('tarefas').select('*', { count: 'exact', head: true }).eq('status', 'pendente').lt('data_prevista', hoje),
       ]);
 
       setStats({
@@ -43,6 +46,11 @@ const Dashboard = () => {
       });
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
+      toast({
+        title: "Erro ao carregar estatísticas",
+        description: "Tente recarregar a página",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

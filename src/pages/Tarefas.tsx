@@ -30,10 +30,10 @@ const Tarefas = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Carregar todas as tarefas (não apenas as do usuário)
     const { data, error } = await supabase
       .from("tarefas")
       .select("*, clientes(nome_fantasia), profiles(nome)")
-      .eq("responsavel_id", user.id)
       .order("data_prevista", { ascending: true });
 
     if (error) {
@@ -53,11 +53,11 @@ const Tarefas = () => {
   };
 
   const loadColaboradores = async () => {
-    // Buscar os colaboradores principais do sistema
+    // Buscar todos os colaboradores/usuários do sistema
     const { data } = await supabase
       .from("profiles")
       .select("id, nome")
-      .in("nome", ["Felipe", "Oswaldo", "Leandro", "Alex", "Kamila"]);
+      .order("nome");
     setColaboradores(data || []);
   };
 
