@@ -132,6 +132,25 @@ const Clientes = () => {
     if (data) setClientes(data);
   };
 
+  const checkUserProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("perfil")
+        .eq("id", user.id)
+        .single();
+      return profile?.perfil === "gestor" || profile?.perfil === "admin";
+    }
+    return false;
+  };
+
+  const [isGestor, setIsGestor] = useState(false);
+
+  useEffect(() => {
+    checkUserProfile().then(setIsGestor);
+  }, []);
+
   const handleDelete = async (clienteId: string) => {
     if (!confirm("Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.")) return;
     
@@ -662,7 +681,10 @@ const Clientes = () => {
                         {cliente.ultima_compra_data && (
                           <p>🛒 Última compra: {new Date(cliente.ultima_compra_data).toLocaleDateString('pt-BR')}</p>
                         )}
-                        {cliente.total_comprado > 0 && (
+                        <p className="text-sm border-t pt-2 mt-2">
+                          📦 <span className="font-medium">Total de pedidos:</span> <span className="font-bold">{cliente.total_pedidos || 0}</span>
+                        </p>
+                        {isGestor && cliente.total_comprado > 0 && (
                           <>
                             <p className="font-semibold text-primary">
                               💰 Total: {new Intl.NumberFormat('pt-BR', { 

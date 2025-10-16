@@ -15,79 +15,129 @@ export function ImprimirPedido({ pedido, produtos }: ImprimirPedidoProps) {
     const printContent = printRef.current;
     if (!printContent) return;
 
-    const printWindow = window.open('', '', 'height=800,width=800');
+    const printWindow = window.open('', '', 'height=900,width=800');
     if (!printWindow) return;
 
     printWindow.document.write('<html><head><title>Pedido</title>');
     printWindow.document.write(`
       <style>
+        @page { size: A4; margin: 15mm; }
         body { 
           font-family: Arial, sans-serif; 
-          padding: 20px;
-          color: #333;
+          padding: 0;
+          margin: 0;
+          color: #000;
+          font-size: 11pt;
         }
         .header {
           text-align: center;
-          border-bottom: 2px solid #333;
-          padding-bottom: 20px;
+          border-bottom: 3px solid #000;
+          padding-bottom: 15px;
           margin-bottom: 20px;
         }
         .logo {
-          width: 150px;
+          max-width: 180px;
+          height: auto;
           margin-bottom: 10px;
         }
         .company-info {
-          font-size: 12px;
-          line-height: 1.6;
+          font-size: 10pt;
+          line-height: 1.5;
+          margin-top: 8px;
+        }
+        .company-name {
+          font-weight: bold;
+          font-size: 12pt;
+          margin-bottom: 4px;
+        }
+        .pedido-info {
+          text-align: center;
+          font-size: 13pt;
+          font-weight: bold;
+          margin: 15px 0;
+          padding: 8px;
+          background: #f5f5f5;
+          border-radius: 4px;
         }
         .section-title {
-          font-size: 18px;
+          font-size: 12pt;
           font-weight: bold;
-          margin: 20px 0 10px 0;
-          border-bottom: 1px solid #ddd;
-          padding-bottom: 5px;
+          margin: 18px 0 8px 0;
+          padding-bottom: 4px;
+          border-bottom: 2px solid #666;
+          color: #333;
         }
-        .info-row {
-          display: flex;
-          margin: 5px 0;
-          font-size: 14px;
+        .info-grid {
+          display: grid;
+          grid-template-columns: 150px 1fr;
+          gap: 6px 12px;
+          margin: 10px 0;
+          font-size: 10pt;
         }
         .info-label {
           font-weight: bold;
-          width: 150px;
+          color: #444;
+        }
+        .info-value {
+          color: #000;
         }
         table {
           width: 100%;
           border-collapse: collapse;
-          margin: 20px 0;
-        }
-        th, td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
-          font-size: 12px;
+          margin: 15px 0;
+          font-size: 10pt;
         }
         th {
-          background-color: #f0f0f0;
+          background-color: #e8e8e8;
           font-weight: bold;
+          padding: 10px 8px;
+          text-align: left;
+          border: 1px solid #999;
         }
-        .totals {
+        td {
+          border: 1px solid #ccc;
+          padding: 8px;
+          vertical-align: top;
+        }
+        .totals-box {
           margin-top: 20px;
-          text-align: right;
-          font-size: 14px;
+          border: 2px solid #000;
+          padding: 12px;
+          background: #f9f9f9;
         }
         .total-row {
-          margin: 5px 0;
+          display: flex;
+          justify-content: space-between;
+          margin: 6px 0;
+          font-size: 11pt;
         }
         .total-final {
-          font-size: 18px;
+          display: flex;
+          justify-content: space-between;
+          font-size: 14pt;
           font-weight: bold;
-          border-top: 2px solid #333;
+          border-top: 2px solid #000;
           padding-top: 10px;
           margin-top: 10px;
         }
+        .footer {
+          margin-top: 30px;
+          font-size: 9pt;
+          text-align: center;
+          color: #666;
+          border-top: 1px solid #ccc;
+          padding-top: 10px;
+        }
+        .obs-box {
+          border: 1px solid #ccc;
+          padding: 10px;
+          background: #fafafa;
+          margin: 10px 0;
+          font-size: 10pt;
+        }
         @media print {
           body { margin: 0; }
+          .no-print { display: none; }
         }
       </style>
     `);
@@ -133,67 +183,57 @@ export function ImprimirPedido({ pedido, produtos }: ImprimirPedidoProps) {
               className="logo"
             />
             <div className="company-info">
-              <strong>DALBERTO VASCONCELLOS LTDA - OLD Brasil</strong><br />
-              CNPJ: 59.224.429/0001-05<br />
-              RUA BAHIA, 34 - UNIVERSITARIO - Tijucas - SC - CEP: 88200-000<br />
-              Fone: (47) 99155-0525 | (47) 99231-0525<br />
+              <div className="company-name">DALBERTO VASCONCELLOS LTDA - OLD Brasil</div>
+              CPF/CNPJ: 59.224.429/0001-05<br />
+              RUA BAHIA, 34 - CXPST 03 UNIVERSITARIO - Tijucas - SC - CEP: 88200-000<br />
+              Fones: (47)99155-0525 (47)99231-0525<br />
               oldvasconcellos@gmail.com
             </div>
           </div>
 
-          <div className="info-row">
-            <span className="info-label">Pedido:</span>
-            <span>{pedido.numero_pedido || 'N/A'}</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Data:</span>
-            <span>{pedido.data_pedido ? new Date(pedido.data_pedido).toLocaleDateString('pt-BR') : 'N/A'}</span>
+          <div className="pedido-info">
+            Pedido: {pedido.numero_pedido || 'N/A'} - Criação: {pedido.data_pedido ? new Date(pedido.data_pedido).toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR') : 'N/A'}
           </div>
 
-          <div className="section-title">Dados do Cliente</div>
-          <div className="info-row">
+          <div className="section-title"># Dados cadastrais:</div>
+          <div className="info-grid">
             <span className="info-label">Nome:</span>
-            <span>{pedido.clientes?.razao_social || pedido.clientes?.nome_fantasia || 'N/A'}</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Nome Fantasia:</span>
-            <span>{pedido.clientes?.nome_fantasia || 'N/A'}</span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">CNPJ/CPF:</span>
-            <span>{pedido.clientes?.cnpj_cpf || 'N/A'}</span>
-          </div>
-          <div className="info-row">
+            <span className="info-value">{pedido.clientes?.razao_social || pedido.clientes?.nome_fantasia || 'N/A'}</span>
+            
+            <span className="info-label">Fantasia:</span>
+            <span className="info-value">{pedido.clientes?.nome_fantasia || 'N/A'}</span>
+            
+            <span className="info-label">CPF/CNPJ:</span>
+            <span className="info-value">{pedido.clientes?.cnpj_cpf || 'N/A'}</span>
+            
             <span className="info-label">Endereço:</span>
-            <span>
-              {pedido.clientes?.logradouro && `${pedido.clientes.logradouro}${pedido.clientes.numero ? ', ' + pedido.clientes.numero : ''}`}
+            <span className="info-value">
+              {pedido.clientes?.logradouro ? `${pedido.clientes.logradouro}${pedido.clientes.numero ? ', ' + pedido.clientes.numero : ''}` : 'N/A'}
             </span>
-          </div>
-          <div className="info-row">
-            <span className="info-label">Cidade/UF:</span>
-            <span>{pedido.clientes?.cidade && pedido.clientes?.uf ? `${pedido.clientes.cidade} - ${pedido.clientes.uf}` : 'N/A'}</span>
-          </div>
-          <div className="info-row">
+            
+            <span className="info-label">Bairro:</span>
+            <span className="info-value">{pedido.clientes?.cidade || 'N/A'}</span>
+            
+            <span className="info-label">Cidade:</span>
+            <span className="info-value">{pedido.clientes?.cidade && pedido.clientes?.uf ? `${pedido.clientes.cidade} - ${pedido.clientes.uf}` : 'N/A'}</span>
+            
             <span className="info-label">CEP:</span>
-            <span>{pedido.clientes?.cep || 'N/A'}</span>
-          </div>
-          <div className="info-row">
+            <span className="info-value">{pedido.clientes?.cep || 'N/A'}</span>
+            
             <span className="info-label">Telefone:</span>
-            <span>{pedido.clientes?.telefone || 'N/A'}</span>
-          </div>
-          <div className="info-row">
+            <span className="info-value">{pedido.clientes?.telefone || 'N/A'}</span>
+            
             <span className="info-label">Email:</span>
-            <span>{pedido.clientes?.email || 'N/A'}</span>
-          </div>
-          <div className="info-row">
+            <span className="info-value">{pedido.clientes?.email || 'N/A'}</span>
+            
             <span className="info-label">Vendedor:</span>
-            <span>{pedido.clientes?.profiles?.nome || 'N/A'}</span>
+            <span className="info-value">{pedido.clientes?.profiles?.nome || 'N/A'}</span>
           </div>
 
           {pedido.observacoes && (
             <>
-              <div className="section-title">Observações</div>
-              <p style={{ fontSize: '12px', margin: '10px 0' }}>{pedido.observacoes}</p>
+              <div className="section-title"># Observações:</div>
+              <div className="obs-box">{pedido.observacoes}</div>
             </>
           )}
 
@@ -221,39 +261,55 @@ export function ImprimirPedido({ pedido, produtos }: ImprimirPedidoProps) {
             </tbody>
           </table>
 
-          <div className="totals">
+          <div className="totals-box">
             <div className="total-row">
-              <strong>Quantidade total:</strong> {quantidadeTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              <span>Quantidade total:</span>
+              <span>{quantidadeTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
             </div>
             <div className="total-row">
-              <strong>Sub total:</strong> {formatCurrency(subtotal)}
+              <span>Sub total:</span>
+              <span>{formatCurrency(subtotal)}</span>
             </div>
             <div className="total-row">
-              <strong>Forma de pagamento:</strong> {pedido.forma_pagamento?.toUpperCase() || 'N/A'}
+              <span>Forma de pagamento:</span>
+              <span>{pedido.forma_pagamento?.toUpperCase() || 'N/A'}</span>
             </div>
             {pedido.parcelas && (
               <div className="total-row">
-                <strong>Parcelas:</strong> {pedido.parcelas}x
+                <span>Parcelas:</span>
+                <span>{pedido.parcelas}x</span>
               </div>
             )}
             {pedido.dias_pagamento && (
               <div className="total-row">
-                <strong>Prazo de pagamento:</strong> {pedido.dias_pagamento} dias
+                <span>Prazo de pagamento:</span>
+                <span>{pedido.dias_pagamento} dias</span>
               </div>
             )}
             {pedido.tipo_frete && (
               <div className="total-row">
-                <strong>Frete:</strong> {pedido.tipo_frete.toUpperCase()}
-                {pedido.transportadora && ` - ${pedido.transportadora}`}
+                <span>Frete:</span>
+                <span>{pedido.tipo_frete.toUpperCase()}{pedido.transportadora && ` - ${pedido.transportadora}`}</span>
+              </div>
+            )}
+            {pedido.transportadora && !pedido.tipo_frete && (
+              <div className="total-row">
+                <span>Transporte:</span>
+                <span>{pedido.transportadora}</span>
               </div>
             )}
             <div className="total-final">
-              <strong>Total geral:</strong> {formatCurrency(subtotal)}
+              <span>Total geral:</span>
+              <span>{formatCurrency(subtotal)}</span>
+            </div>
+            <div className="total-row" style={{ marginTop: '8px', fontSize: '10pt' }}>
+              <span>Pago:</span>
+              <span>R$ 0,00</span>
             </div>
           </div>
 
-          <div style={{ marginTop: '40px', fontSize: '10px', textAlign: 'center', color: '#666' }}>
-            Gerado em {new Date().toLocaleString('pt-BR')}
+          <div className="footer">
+            Gerado em {new Date().toLocaleString('pt-BR')} por OLD Brasil
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-4">

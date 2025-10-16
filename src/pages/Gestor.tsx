@@ -178,14 +178,45 @@ const Financeiro = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="transacoes" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="transacoes">Transações</TabsTrigger>
+      <Tabs defaultValue="calendario" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+          <TabsTrigger value="calendario">📅 Calendário</TabsTrigger>
+          <TabsTrigger value="transacoes">💰 Transações</TabsTrigger>
           <TabsTrigger value="boletos">
             <Receipt className="h-4 w-4 mr-2" />
             Boletos
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="calendario" className="space-y-6">
+          <Card className="border-primary/20 shadow-elegant">
+            <CardHeader>
+              <CardTitle>Calendário Financeiro</CardTitle>
+              <CardDescription>Visualize receitas e despesas programadas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {transacoes
+                  .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
+                  .map((t) => (
+                    <div key={t.id} className={`p-3 border-l-4 rounded ${t.tipo === 'receita' ? 'border-success bg-success/5' : 'border-destructive bg-destructive/5'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium">{t.descricao}</div>
+                          <div className="text-sm text-muted-foreground">
+                            📅 {format(new Date(t.data), "dd/MM/yyyy")}
+                          </div>
+                        </div>
+                        <div className={`text-lg font-bold ${t.tipo === 'receita' ? 'text-success' : 'text-destructive'}`}>
+                          {t.tipo === 'receita' ? '+' : '-'}R$ {Number(t.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="transacoes" className="space-y-6">
       

@@ -285,6 +285,42 @@ export type Database = {
           },
         ]
       }
+      colaborador_eventos: {
+        Row: {
+          colaborador_id: string
+          created_at: string
+          data: string
+          descricao: string | null
+          horario: string | null
+          id: string
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          colaborador_id: string
+          created_at?: string
+          data: string
+          descricao?: string | null
+          horario?: string | null
+          id?: string
+          tipo?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          colaborador_id?: string
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          horario?: string | null
+          id?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       comentarios: {
         Row: {
           comentario: string

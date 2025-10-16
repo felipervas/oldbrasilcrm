@@ -70,8 +70,15 @@ const Pedidos = () => {
   };
 
   const verificarPermissao = async () => {
-    // Todos podem ver pedidos agora
-    setPodeVerFaturamento(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("perfil")
+        .eq("id", user.id)
+        .single();
+      setPodeVerFaturamento(profile?.perfil === "gestor" || profile?.perfil === "admin");
+    }
   };
 
   const loadPedidos = async () => {

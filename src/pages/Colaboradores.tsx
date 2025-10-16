@@ -302,7 +302,7 @@ const Colaboradores = () => {
                       </p>
                     )}
 
-                    <div className="flex gap-4 mt-4 pt-3 border-t">
+                    <div className="flex gap-2 mt-4 pt-3 border-t">
                       <div className="flex items-center gap-2 text-sm">
                         <CheckSquare className="h-4 w-4 text-primary" />
                         <span>{getTarefasCount(colab)} tarefas</span>
@@ -314,6 +314,14 @@ const Colaboradores = () => {
                       >
                         <History className="h-4 w-4 mr-2" />
                         Histórico
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/colaborador/${colab.id}`)}
+                      >
+                        <Users className="h-4 w-4 mr-2" />
+                        Perfil
                       </Button>
                     </div>
                   </div>
