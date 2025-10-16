@@ -7,6 +7,7 @@ import { Calendar, TrendingUp, Users, Package, DollarSign } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { GerenciarEquipe } from "@/components/GerenciarEquipe";
 
 interface FaturamentoPorCliente {
   cliente: string;
@@ -207,6 +208,7 @@ const GestorDashboard = () => {
           <TabsTrigger value="marcas">Faturamento por Marca</TabsTrigger>
           <TabsTrigger value="vendedores">Vendedores</TabsTrigger>
           <TabsTrigger value="calendario">Calendário Financeiro</TabsTrigger>
+          <TabsTrigger value="equipe">Gerenciar Equipe</TabsTrigger>
         </TabsList>
 
         <TabsContent value="clientes" className="space-y-4">
@@ -303,6 +305,10 @@ const GestorDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="equipe" className="space-y-4">
+          <GerenciarEquipe />
         </TabsContent>
       </Tabs>
     </div>
