@@ -107,6 +107,7 @@ export function AppSidebar() {
   const { toast } = useToast();
   const [menuItems, setMenuItems] = useState(defaultMenuItems);
   const [canViewFinanceiro, setCanViewFinanceiro] = useState(false);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -123,7 +124,11 @@ export function AppSidebar() {
   const checkFinanceiroAccess = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setCanViewFinanceiro(false);
+        setUserRoles([]);
+        return;
+      }
 
       const { data: roles, error } = await supabase
         .from('user_roles')
@@ -132,13 +137,22 @@ export function AppSidebar() {
 
       if (error) {
         console.error('Erro ao buscar roles:', error);
+        setCanViewFinanceiro(false);
+        setUserRoles([]);
         return;
       }
 
-      const hasGestorRole = roles?.some(r => r.role === 'gestor' || r.role === 'admin');
+      const rolesList = roles?.map(r => r.role) || [];
+      setUserRoles(rolesList);
+      
+      const hasGestorRole = rolesList.some(r => r === 'gestor' || r === 'admin');
       setCanViewFinanceiro(hasGestorRole);
+      
+      console.log('Roles carregados:', rolesList, 'Pode ver financeiro:', hasGestorRole);
     } catch (error) {
       console.error('Erro ao verificar acesso financeiro:', error);
+      setCanViewFinanceiro(false);
+      setUserRoles([]);
     }
   };
 

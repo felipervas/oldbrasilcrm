@@ -45,13 +45,6 @@ export function GerenciarEquipe() {
 
       if (profilesError) throw profilesError;
 
-      // Buscar os emails dos usuários da tabela auth
-      const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
-      
-      if (usersError) {
-        console.error('Erro ao buscar usuários:', usersError);
-      }
-
       // Buscar roles
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
@@ -59,15 +52,14 @@ export function GerenciarEquipe() {
 
       if (rolesError) throw rolesError;
 
-      // Combinar dados
+      // Combinar dados - sem buscar emails do auth
       const membersData: TeamMember[] = (profiles || []).map(profile => {
-        const user = users?.find((u: any) => u.id === profile.id);
         const userRoles = rolesData?.filter(r => r.user_id === profile.id).map(r => r.role as UserRole) || [];
         
         return {
           id: profile.id,
           nome: profile.nome,
-          email: user?.email || 'N/A',
+          email: profile.id, // Usar ID como identificador já que não temos acesso aos emails
           roles: userRoles
         };
       });
@@ -160,23 +152,9 @@ export function GerenciarEquipe() {
 
       if (rolesError) throw rolesError;
 
-      // Deletar perfil
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', memberId);
-
-      if (profileError) throw profileError;
-
-      // Deletar usuário do auth (requer permissões de admin)
-      const { error: authError } = await supabase.auth.admin.deleteUser(memberId);
-      
-      if (authError) {
-        console.error('Erro ao deletar do auth:', authError);
-      }
-
       toast({
-        title: "Membro removido com sucesso!",
+        title: "Roles do membro removidos com sucesso!",
+        description: "O usuário ainda existe mas não tem mais permissões.",
       });
 
       loadMembers();
