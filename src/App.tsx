@@ -19,6 +19,7 @@ const Colaboradores = lazy(() => import("./pages/Colaboradores"));
 const Produtos = lazy(() => import("./pages/Produtos"));
 const Marcas = lazy(() => import("./pages/Marcas"));
 const Catalogos = lazy(() => import("./pages/Catalogos"));
+const Receitas = lazy(() => import("./pages/Receitas"));
 const Pedidos = lazy(() => import("./pages/Pedidos"));
 const LancarPedido = lazy(() => import("./pages/LancarPedido"));
 const EditarPedido = lazy(() => import("./pages/EditarPedido"));
@@ -122,6 +123,14 @@ const App = () => (
             element={
               <AppLayout>
                 <Catalogos />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/receitas"
+            element={
+              <AppLayout>
+                <Receitas />
               </AppLayout>
             }
           />

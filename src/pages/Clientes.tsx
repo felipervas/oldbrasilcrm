@@ -672,9 +672,10 @@ const Clientes = () => {
                       {cliente.razao_social && (
                         <p className="text-sm text-muted-foreground">{cliente.razao_social}</p>
                       )}
-                      <div className="mt-2 space-y-1 text-sm">
-                        {cliente.email && <p>📧 {cliente.email}</p>}
-                        {cliente.telefone && <p>📱 {cliente.telefone}</p>}
+                       <div className="mt-2 space-y-1 text-sm">
+                         {cliente.cnpj_cpf && <p>🏢 {cliente.cnpj_cpf}</p>}
+                         {cliente.email && <p>📧 {cliente.email}</p>}
+                         {cliente.telefone && <p>📱 {cliente.telefone}</p>}
                         {cliente.cidade && cliente.uf && (
                           <p>📍 {cliente.cidade}/{cliente.uf}</p>
                         )}

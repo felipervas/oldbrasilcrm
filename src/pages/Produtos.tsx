@@ -77,7 +77,7 @@ const Produtos = () => {
   const loadProdutos = async () => {
     const { data, error } = await supabase
       .from("produtos")
-      .select("*, marcas(nome)")
+      .select("*, marcas(nome, id)")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -102,12 +102,19 @@ const Produtos = () => {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
+    const preco_base = formData.get("preco_base") ? parseFloat(formData.get("preco_base") as string) : null;
+    const preco_por_kg = formData.get("preco_por_kg") ? parseFloat(formData.get("preco_por_kg") as string) : null;
+    const peso_embalagem_kg = formData.get("peso_embalagem_kg") ? parseFloat(formData.get("peso_embalagem_kg") as string) : 25;
+    
     const { error } = await supabase.from("produtos").insert({
       nome: formData.get("nome") as string,
       sku: formData.get("sku") as string,
       descricao: formData.get("descricao") as string,
       marca_id: marcaSelecionada || null,
-      preco_base: formData.get("preco_base") ? parseFloat(formData.get("preco_base") as string) : null,
+      preco_base,
+      preco_por_kg,
+      peso_embalagem_kg,
+      tipo_calculo: formData.get("tipo_calculo") as string || 'normal',
       peso_unidade_kg: formData.get("peso_unidade_kg") ? parseFloat(formData.get("peso_unidade_kg") as string) : null,
       rendimento_dose_gramas: formData.get("rendimento_dose_gramas") ? parseInt(formData.get("rendimento_dose_gramas") as string) : null,
     });
@@ -323,7 +330,19 @@ const Produtos = () => {
               </div>
               <div>
                 <Label htmlFor="marca">Marca</Label>
-                <Select value={marcaSelecionada} onValueChange={setMarcaSelecionada}>
+                <Select 
+                  value={marcaSelecionada} 
+                  onValueChange={(value) => {
+                    setMarcaSelecionada(value);
+                    const marca = marcas.find(m => m.id === value);
+                    const isGenial = marca?.nome?.toLowerCase().includes('gencau') || marca?.nome?.toLowerCase().includes('genial');
+                    // Atualizar tipo_calculo dinamicamente
+                    const tipoInput = document.getElementById('tipo_calculo') as HTMLInputElement;
+                    if (tipoInput && isGenial) {
+                      tipoInput.value = 'por_kg';
+                    }
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma marca" />
                   </SelectTrigger>
@@ -335,12 +354,24 @@ const Produtos = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                <input type="hidden" id="tipo_calculo" name="tipo_calculo" value="normal" />
               </div>
               <div>
-                <Label htmlFor="preco_base">Preço Base *</Label>
+                <Label htmlFor="preco_base">
+                  {marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
+                   marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial') 
+                    ? 'Preço por Kg *' 
+                    : 'Preço Base *'}
+                </Label>
                 <Input 
-                  id="preco_base" 
-                  name="preco_base" 
+                  id={marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
+                      marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')
+                    ? 'preco_por_kg'
+                    : 'preco_base'}
+                  name={marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
+                        marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')
+                    ? 'preco_por_kg'
+                    : 'preco_base'}
                   type="number" 
                   step="0.01" 
                   required
@@ -349,8 +380,39 @@ const Produtos = () => {
                     const peso = parseFloat((document.getElementById('peso_unidade_kg') as HTMLInputElement)?.value) || 0;
                     const rendimento = parseFloat((document.getElementById('rendimento_dose_gramas') as HTMLInputElement)?.value) || 0;
                     calcularEExibir(preco, peso, rendimento);
+                    
+                    // Se for produto Genial, calcular preço da caixa
+                    const isGenial = marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
+                                   marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial');
+                    if (isGenial) {
+                      const precoCaixa = preco * 25;
+                      const inputPrecoBase = document.getElementById('preco_base_hidden') as HTMLInputElement;
+                      if (inputPrecoBase) inputPrecoBase.value = precoCaixa.toFixed(2);
+                      const pesoInput = document.getElementById('peso_embalagem_kg') as HTMLInputElement;
+                      if (pesoInput && !pesoInput.value) pesoInput.value = '25';
+                      
+                      // Mostrar cálculo
+                      const calcDiv = document.getElementById('genial-calc');
+                      if (calcDiv) {
+                        calcDiv.innerHTML = `<p class="text-sm text-muted-foreground mt-1">Preço por caixa (25kg): R$ ${precoCaixa.toFixed(2)}</p>`;
+                      }
+                    }
                   }}
                 />
+                {(marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
+                  marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')) && (
+                  <>
+                    <div id="genial-calc"></div>
+                    <input type="hidden" id="preco_base_hidden" name="preco_base" />
+                    <input type="hidden" id="peso_embalagem_kg" name="peso_embalagem_kg" value="25" />
+                    <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mt-2">
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        ⚖️ <strong>Produto com Preço Volátil (Cacau)</strong><br />
+                        Digite o preço por kg. O sistema calculará automaticamente o preço por caixa de 25kg.
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

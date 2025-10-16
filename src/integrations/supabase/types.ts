@@ -715,11 +715,14 @@ export type Database = {
           id: string
           marca_id: string | null
           nome: string
+          peso_embalagem_kg: number | null
           peso_unidade_kg: number | null
           preco_base: number | null
+          preco_por_kg: number | null
           rendimento_dose_gramas: number | null
           sku: string | null
           submarca: string | null
+          tipo_calculo: string | null
           updated_at: string
         }
         Insert: {
@@ -730,11 +733,14 @@ export type Database = {
           id?: string
           marca_id?: string | null
           nome: string
+          peso_embalagem_kg?: number | null
           peso_unidade_kg?: number | null
           preco_base?: number | null
+          preco_por_kg?: number | null
           rendimento_dose_gramas?: number | null
           sku?: string | null
           submarca?: string | null
+          tipo_calculo?: string | null
           updated_at?: string
         }
         Update: {
@@ -745,11 +751,14 @@ export type Database = {
           id?: string
           marca_id?: string | null
           nome?: string
+          peso_embalagem_kg?: number | null
           peso_unidade_kg?: number | null
           preco_base?: number | null
+          preco_por_kg?: number | null
           rendimento_dose_gramas?: number | null
           sku?: string | null
           submarca?: string | null
+          tipo_calculo?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -789,6 +798,42 @@ export type Database = {
           perfil?: Database["public"]["Enums"]["user_role"]
           telefone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      receitas: {
+        Row: {
+          arquivo_nome: string
+          arquivo_url: string
+          categoria: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          arquivo_nome: string
+          arquivo_url: string
+          categoria?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          arquivo_nome?: string
+          arquivo_url?: string
+          categoria?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+          usuario_id?: string
         }
         Relationships: []
       }

@@ -61,6 +61,7 @@ const defaultMenuItems = [
   { id: "produtos", title: "Produtos", url: "/produtos", icon: Package },
   { id: "marcas", title: "Marcas", url: "/marcas", icon: Tag },
   { id: "catalogos", title: "Catálogos", url: "/catalogos", icon: FileText },
+  { id: "receitas", title: "Receitas", url: "/receitas", icon: FileText },
   { id: "pedidos", title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
   { id: "lancar-pedido", title: "Lançar Pedido", url: "/lancar-pedido", icon: Briefcase },
   { id: "estoque", title: "Estoque & Amostras", url: "/estoque-amostras", icon: Boxes },

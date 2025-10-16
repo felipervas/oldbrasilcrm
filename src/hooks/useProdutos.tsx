@@ -10,7 +10,7 @@ export const useProdutos = (page: number = 0, pageSize: number = 50, searchTerm:
     queryFn: async () => {
       let query = supabase
         .from('produtos')
-        .select('id, nome, sku, preco_base, estoque_escritorio, ativo, marcas(nome)', { count: 'exact' });
+        .select('id, nome, sku, preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo, estoque_escritorio, ativo, marcas(nome, id)', { count: 'exact' });
 
       if (searchTerm) {
         query = query.or(`nome.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%`);
