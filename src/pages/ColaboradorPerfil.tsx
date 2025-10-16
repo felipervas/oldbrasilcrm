@@ -2,21 +2,19 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Calendar, Plus, Trash2, Edit2, CheckSquare, Clock, TrendingUp } from "lucide-react";
+import { Calendar, Plus, Trash2, CheckSquare, Clock, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format } from "date-fns";
 
 const ColaboradorPerfil = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [colaborador, setColaborador] = useState<any>(null);
   const [eventos, setEventos] = useState<any[]>([]);
@@ -24,7 +22,6 @@ const ColaboradorPerfil = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvento, setEditingEvento] = useState<any>(null);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [stats, setStats] = useState({
     tarefasConcluidas: 0,
     tarefasPendentes: 0,
@@ -48,7 +45,6 @@ const ColaboradorPerfil = () => {
     
     setLoading(true);
     try {
-      // Carregar dados do colaborador
       const { data: colabData, error: colabError } = await supabase
         .from("profiles")
         .select("*")
@@ -58,7 +54,6 @@ const ColaboradorPerfil = () => {
       if (colabError) throw colabError;
       setColaborador(colabData);
 
-      // Carregar eventos
       const { data: eventosData, error: eventosError } = await supabase
         .from("colaborador_eventos")
         .select("*")
@@ -68,7 +63,6 @@ const ColaboradorPerfil = () => {
       if (eventosError) throw eventosError;
       setEventos(eventosData || []);
 
-      // Carregar tarefas
       const { data: tarefasData, error: tarefasError } = await supabase
         .from("tarefas")
         .select("*, clientes(nome_fantasia)")
@@ -79,7 +73,6 @@ const ColaboradorPerfil = () => {
       if (tarefasError) throw tarefasError;
       setTarefas(tarefasData || []);
 
-      // Calcular estatísticas
       const concluidas = tarefasData?.filter(t => t.status === "concluida").length || 0;
       const pendentes = tarefasData?.filter(t => t.status === "pendente" || t.status === "em_andamento").length || 0;
 
@@ -188,78 +181,82 @@ const ColaboradorPerfil = () => {
     setDialogOpen(true);
   };
 
-  const getEventosDoMes = () => {
-    const start = startOfMonth(currentMonth);
-    const end = endOfMonth(currentMonth);
-    return eventos.filter(e => {
-      const eventDate = new Date(e.data);
-      return eventDate >= start && eventDate <= end;
-    });
-  };
+  const renderEventos = () => {
+    const hoje = new Date();
+    const proximosEventos = eventos
+      .filter(e => new Date(e.data) >= hoje)
+      .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
+      .slice(0, 10);
 
-  const getTarefasDoMes = () => {
-    const start = startOfMonth(currentMonth);
-    const end = endOfMonth(currentMonth);
-    return tarefas.filter(t => {
-      if (!t.data_prevista) return false;
-      const tarefaDate = new Date(t.data_prevista);
-      return tarefaDate >= start && tarefaDate <= end;
-    });
-  };
-
-  const renderCalendar = () => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
-    const startDate = startOfWeek(monthStart, { locale: ptBR });
-    const endDate = endOfWeek(monthEnd, { locale: ptBR });
-    const days = eachDayOfInterval({ start: startDate, end: endDate });
-
-    const eventosDoMes = getEventosDoMes();
-    const tarefasDoMes = getTarefasDoMes();
+    const eventosPassados = eventos
+      .filter(e => new Date(e.data) < hoje)
+      .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+      .slice(0, 10);
 
     return (
-      <div className="grid grid-cols-7 gap-2">
-        {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(day => (
-          <div key={day} className="text-center font-semibold text-sm p-2">
-            {day}
+      <div className="space-y-6">
+        <div>
+          <h3 className="font-semibold text-lg mb-3">Próximos Eventos</h3>
+          <div className="space-y-2">
+            {proximosEventos.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">Nenhum evento próximo</p>
+            ) : (
+              proximosEventos.map(evento => (
+                <div
+                  key={evento.id}
+                  className="p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex items-center justify-between"
+                  onClick={() => handleEditEvento(evento)}
+                >
+                  <div className="flex-1">
+                    <div className="font-medium">{evento.titulo}</div>
+                    {evento.descricao && (
+                      <div className="text-sm text-muted-foreground">{evento.descricao}</div>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-1">
+                      📅 {format(new Date(evento.data), 'dd/MM/yyyy')}
+                      {evento.horario && ` • ${evento.horario}`}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteEvento(evento.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))
+            )}
           </div>
-        ))}
-        {days.map(day => {
-          const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-          const eventosNoDia = eventosDoMes.filter(e => isSameDay(new Date(e.data), day));
-          const tarefasNoDia = tarefasDoMes.filter(t => t.data_prevista && isSameDay(new Date(t.data_prevista), day));
-          const isToday = isSameDay(day, new Date());
+        </div>
 
-          return (
-            <div
-              key={day.toString()}
-              className={`min-h-24 p-2 border rounded-lg ${
-                isCurrentMonth ? "bg-card" : "bg-muted/30"
-              } ${isToday ? "ring-2 ring-primary" : ""}`}
-            >
-              <div className="font-medium text-sm mb-1">{format(day, "d")}</div>
-              <div className="space-y-1">
-                {eventosNoDia.map(evento => (
-                  <div
-                    key={evento.id}
-                    className="text-xs p-1 bg-primary/10 text-primary rounded cursor-pointer hover:bg-primary/20"
-                    onClick={() => handleEditEvento(evento)}
-                  >
-                    {evento.titulo}
+        <div>
+          <h3 className="font-semibold text-lg mb-3">Eventos Passados</h3>
+          <div className="space-y-2">
+            {eventosPassados.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">Nenhum evento passado</p>
+            ) : (
+              eventosPassados.map(evento => (
+                <div
+                  key={evento.id}
+                  className="p-3 border rounded-lg opacity-60"
+                >
+                  <div className="font-medium">{evento.titulo}</div>
+                  {evento.descricao && (
+                    <div className="text-sm text-muted-foreground">{evento.descricao}</div>
+                  )}
+                  <div className="text-xs text-muted-foreground mt-1">
+                    📅 {format(new Date(evento.data), 'dd/MM/yyyy')}
+                    {evento.horario && ` • ${evento.horario}`}
                   </div>
-                ))}
-                {tarefasNoDia.map(tarefa => (
-                  <div
-                    key={tarefa.id}
-                    className="text-xs p-1 bg-accent rounded"
-                  >
-                    📋 {tarefa.titulo}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     );
   };
@@ -294,7 +291,6 @@ const ColaboradorPerfil = () => {
         </div>
       </div>
 
-      {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="pb-2">
@@ -333,115 +329,90 @@ const ColaboradorPerfil = () => {
         </Card>
       </div>
 
-      {/* Calendário */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Meu Calendário
+                Minha Agenda
               </CardTitle>
               <CardDescription>
-                {format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}
+                Organize seus compromissos e eventos
               </CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() - 1)))}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentMonth(new Date())}
-              >
-                Hoje
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)))}
-              >
-                Próximo
-              </Button>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Evento
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingEvento ? "Editar Evento" : "Novo Evento"}</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmitEvento} className="space-y-4">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Evento
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingEvento ? "Editar Evento" : "Novo Evento"}</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmitEvento} className="space-y-4">
+                  <div>
+                    <Label>Título *</Label>
+                    <Input
+                      required
+                      value={formData.titulo}
+                      onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Descrição</Label>
+                    <Textarea
+                      value={formData.descricao}
+                      onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Título *</Label>
+                      <Label>Data *</Label>
                       <Input
+                        type="date"
                         required
-                        value={formData.titulo}
-                        onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
+                        value={formData.data}
+                        onChange={(e) => setFormData({ ...formData, data: e.target.value })}
                       />
                     </div>
                     <div>
-                      <Label>Descrição</Label>
-                      <Textarea
-                        value={formData.descricao}
-                        onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                        rows={3}
+                      <Label>Horário</Label>
+                      <Input
+                        type="time"
+                        value={formData.horario}
+                        onChange={(e) => setFormData({ ...formData, horario: e.target.value })}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Data *</Label>
-                        <Input
-                          type="date"
-                          required
-                          value={formData.data}
-                          onChange={(e) => setFormData({ ...formData, data: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label>Horário</Label>
-                        <Input
-                          type="time"
-                          value={formData.horario}
-                          onChange={(e) => setFormData({ ...formData, horario: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      {editingEvento && (
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          onClick={() => handleDeleteEvento(editingEvento.id)}
-                        >
-                          Excluir
-                        </Button>
-                      )}
-                      <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                        Cancelar
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    {editingEvento && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => handleDeleteEvento(editingEvento.id)}
+                      >
+                        Excluir
                       </Button>
-                      <Button type="submit">Salvar</Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
+                    )}
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit">Salvar</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
-          {renderCalendar()}
+          {renderEventos()}
         </CardContent>
       </Card>
 
-      {/* Lista de tarefas recentes */}
       <Card>
         <CardHeader>
           <CardTitle>Minhas Tarefas Recentes</CardTitle>
