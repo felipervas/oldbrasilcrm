@@ -908,6 +908,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       pode_ver_faturamento: {
         Args: { user_id: string }
         Returns: boolean

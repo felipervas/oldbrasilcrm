@@ -54,16 +54,18 @@ export function GerenciarEquipe() {
       if (rolesError) throw rolesError;
 
       // Combinar dados - sem buscar emails do auth
-      const membersData: TeamMember[] = (profiles || []).map(profile => {
-        const userRoles = rolesData?.filter(r => r.user_id === profile.id).map(r => r.role as UserRole) || [];
-        
-        return {
-          id: profile.id,
-          nome: profile.nome,
-          email: profile.id, // Usar ID como identificador já que não temos acesso aos emails
-          roles: userRoles
-        };
-      });
+      const membersData: TeamMember[] = (profiles || [])
+        .map(profile => {
+          const userRoles = rolesData?.filter(r => r.user_id === profile.id).map(r => r.role as UserRole) || [];
+          
+          return {
+            id: profile.id,
+            nome: profile.nome,
+            email: profile.id, // Usar ID como identificador já que não temos acesso aos emails
+            roles: userRoles
+          };
+        })
+        .filter(member => member.roles.length > 0); // Filtrar apenas membros com roles
 
       setMembers(membersData);
     } catch (error) {

@@ -122,15 +122,16 @@ export function AppSidebar() {
     checkFinanceiroAccess();
     loadMenuOrder();
     
-    // Limpar cache de menu ao carregar para garantir que novos itens apareçam
-    const savedOrder = localStorage.getItem('menuOrder');
-    if (savedOrder) {
-      const savedIds = JSON.parse(savedOrder);
-      // Se o menu salvo não tem o item gestor, limpar
-      if (!savedIds.includes('gestor')) {
-        localStorage.removeItem('menuOrder');
+    // Listener para mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        checkFinanceiroAccess();
       }
-    }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const checkFinanceiroAccess = async () => {
@@ -172,10 +173,18 @@ export function AppSidebar() {
     const saved = localStorage.getItem('menuOrder');
     if (saved) {
       const savedIds = JSON.parse(saved);
+      
+      // Mesclar itens salvos com novos itens padrão
       const orderedItems = savedIds
         .map((id: string) => defaultMenuItems.find(item => item.id === id))
         .filter(Boolean);
-      setMenuItems(orderedItems as typeof defaultMenuItems);
+      
+      // Adicionar novos itens que não estão na ordem salva
+      const newItems = defaultMenuItems.filter(
+        item => !savedIds.includes(item.id)
+      );
+      
+      setMenuItems([...orderedItems, ...newItems] as typeof defaultMenuItems);
     }
   };
 
