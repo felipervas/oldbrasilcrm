@@ -161,15 +161,15 @@ const App = () => (
             path="/gestor"
             element={
               <AppLayout>
-                <GestorDashboard />
+                <Gestor />
               </AppLayout>
             }
           />
           <Route
-            path="/gestor/financeiro"
+            path="/gestor/dashboard"
             element={
               <AppLayout>
-                <Gestor />
+                <GestorDashboard />
               </AppLayout>
             }
           />

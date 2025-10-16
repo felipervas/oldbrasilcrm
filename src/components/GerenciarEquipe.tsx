@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, UserCog } from "lucide-react";
+import { Plus, Trash2, UserCog, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 type UserRole = 'admin' | 'gestor' | 'colaborador';
 
@@ -140,11 +141,9 @@ export function GerenciarEquipe() {
     }
   };
 
-  const handleDeleteMember = async (memberId: string) => {
-    if (!confirm("Tem certeza que deseja excluir este membro da equipe?")) return;
-
+  const handleDeleteMember = async (memberId: string, memberName: string) => {
     try {
-      // Deletar roles
+      // Apenas remove os roles - o usuário continua existindo
       const { error: rolesError } = await supabase
         .from('user_roles')
         .delete()
@@ -153,8 +152,8 @@ export function GerenciarEquipe() {
       if (rolesError) throw rolesError;
 
       toast({
-        title: "Roles do membro removidos com sucesso!",
-        description: "O usuário ainda existe mas não tem mais permissões.",
+        title: "Permissões removidas!",
+        description: `${memberName} não tem mais acesso ao sistema.`,
       });
 
       loadMembers();
@@ -285,14 +284,32 @@ export function GerenciarEquipe() {
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteMember(member.id)}
-                  className="ml-2"
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="ml-2"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remover acesso de {member.nome}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Isso removerá todas as permissões deste usuário. Ele não poderá mais acessar o sistema.
+                        O usuário não será deletado, apenas perderá o acesso.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteMember(member.id, member.nome)}>
+                        Remover Acesso
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             ))}
           </div>

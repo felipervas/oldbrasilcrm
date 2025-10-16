@@ -119,6 +119,16 @@ export function AppSidebar() {
   useEffect(() => {
     checkFinanceiroAccess();
     loadMenuOrder();
+    
+    // Limpar cache de menu ao carregar para garantir que novos itens apareçam
+    const savedOrder = localStorage.getItem('menuOrder');
+    if (savedOrder) {
+      const savedIds = JSON.parse(savedOrder);
+      // Se o menu salvo não tem o item gestor, limpar
+      if (!savedIds.includes('gestor')) {
+        localStorage.removeItem('menuOrder');
+      }
+    }
   }, []);
 
   const checkFinanceiroAccess = async () => {

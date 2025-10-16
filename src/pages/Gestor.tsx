@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { FinanceiroBoletos } from "@/components/FinanceiroBoletos";
+import { GerenciarEquipe } from "@/components/GerenciarEquipe";
 
 type Transacao = {
   id: string;
@@ -179,13 +180,14 @@ const Financeiro = () => {
       </div>
 
       <Tabs defaultValue="calendario" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+        <TabsList className="grid w-full grid-cols-4 max-w-3xl">
           <TabsTrigger value="calendario">📅 Calendário</TabsTrigger>
           <TabsTrigger value="transacoes">💰 Transações</TabsTrigger>
           <TabsTrigger value="boletos">
             <Receipt className="h-4 w-4 mr-2" />
             Boletos
           </TabsTrigger>
+          <TabsTrigger value="equipe">👥 Equipe</TabsTrigger>
         </TabsList>
 
         <TabsContent value="calendario" className="space-y-6">
@@ -458,6 +460,10 @@ const Financeiro = () => {
 
         <TabsContent value="boletos">
           <FinanceiroBoletos />
+        </TabsContent>
+
+        <TabsContent value="equipe">
+          <GerenciarEquipe />
         </TabsContent>
       </Tabs>
     </div>
