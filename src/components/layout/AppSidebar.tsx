@@ -28,6 +28,7 @@ import {
   ShoppingCart,
   Boxes,
   DollarSign,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +64,7 @@ const defaultMenuItems = [
   { id: "lancar-pedido", title: "Lançar Pedido", url: "/lancar-pedido", icon: Briefcase },
   { id: "estoque", title: "Estoque & Amostras", url: "/estoque-amostras", icon: Boxes },
   { id: "gestor", title: "Gestor", url: "/gestor", icon: DollarSign, restricted: true },
+  { id: "gestor-dashboard", title: "Dashboard Gestor", url: "/gestor/dashboard", icon: BarChart3, restricted: true },
 ];
 
 function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; open: boolean }) {
