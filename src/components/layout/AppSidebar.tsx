@@ -125,14 +125,18 @@ export function AppSidebar() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: roles } = await supabase
+      const { data: roles, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id);
 
-      if (roles?.some(r => r.role === 'gestor' || r.role === 'admin')) {
-        setCanViewFinanceiro(true);
+      if (error) {
+        console.error('Erro ao buscar roles:', error);
+        return;
       }
+
+      const hasGestorRole = roles?.some(r => r.role === 'gestor' || r.role === 'admin');
+      setCanViewFinanceiro(hasGestorRole);
     } catch (error) {
       console.error('Erro ao verificar acesso financeiro:', error);
     }
