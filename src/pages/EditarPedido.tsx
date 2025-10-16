@@ -17,6 +17,7 @@ const EditarPedido = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [pedido, setPedido] = useState<any>(null);
+  const [responsaveis, setResponsaveis] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     numero_pedido: "",
     data_pedido: "",
@@ -26,11 +27,26 @@ const EditarPedido = () => {
     parcelas: "",
     dias_pagamento: "",
     observacoes: "",
+    responsavel_venda_id: "",
+    tipo_frete: "",
+    transportadora: "",
   });
 
   useEffect(() => {
     loadPedido();
+    loadResponsaveis();
   }, [id]);
+
+  const loadResponsaveis = async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, nome")
+      .order("nome");
+
+    if (!error && data) {
+      setResponsaveis(data);
+    }
+  };
 
   const loadPedido = async () => {
     if (!id) return;
@@ -58,6 +74,9 @@ const EditarPedido = () => {
       parcelas: data.parcelas?.toString() || "",
       dias_pagamento: data.dias_pagamento || "",
       observacoes: data.observacoes || "",
+      responsavel_venda_id: data.responsavel_venda_id || "",
+      tipo_frete: data.tipo_frete || "",
+      transportadora: data.transportadora || "",
     });
     setLoading(false);
   };
@@ -77,6 +96,9 @@ const EditarPedido = () => {
         parcelas: formData.parcelas ? parseInt(formData.parcelas) : null,
         dias_pagamento: formData.dias_pagamento || null,
         observacoes: formData.observacoes || null,
+        responsavel_venda_id: formData.responsavel_venda_id || null,
+        tipo_frete: formData.tipo_frete || null,
+        transportadora: formData.transportadora || null,
       })
       .eq("id", id);
 
@@ -216,6 +238,53 @@ const EditarPedido = () => {
                   value={formData.dias_pagamento}
                   onChange={(e) => setFormData({ ...formData, dias_pagamento: e.target.value })}
                   placeholder="Ex: 30/60/90"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="responsavel_venda">Responsável pela Venda</Label>
+              <Select
+                value={formData.responsavel_venda_id}
+                onValueChange={(value) => setFormData({ ...formData, responsavel_venda_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {responsaveis.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="tipo_frete">Tipo de Frete</Label>
+                <Select
+                  value={formData.tipo_frete}
+                  onValueChange={(value) => setFormData({ ...formData, tipo_frete: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cif">CIF (Vendedor paga)</SelectItem>
+                    <SelectItem value="fob">FOB (Cliente paga)</SelectItem>
+                    <SelectItem value="cliente">Cliente cuida</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="transportadora">Transportadora</Label>
+                <Input
+                  id="transportadora"
+                  value={formData.transportadora}
+                  onChange={(e) => setFormData({ ...formData, transportadora: e.target.value })}
+                  placeholder="Nome da transportadora"
                 />
               </div>
             </div>

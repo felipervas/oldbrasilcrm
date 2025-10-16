@@ -55,14 +55,14 @@ const defaultMenuItems = [
   { id: "clientes", title: "Clientes", url: "/clientes", icon: Users },
   { id: "tarefas", title: "Tarefas", url: "/tarefas", icon: CheckSquare },
   { id: "interacoes", title: "Interações", url: "/interacoes", icon: MessageSquare },
-  { id: "colaboradores", title: "Responsáveis", url: "/colaboradores", icon: Users },
+  { id: "colaboradores", title: "Equipe", url: "/colaboradores", icon: Users },
   { id: "produtos", title: "Produtos", url: "/produtos", icon: Package },
   { id: "marcas", title: "Marcas", url: "/marcas", icon: Tag },
   { id: "catalogos", title: "Catálogos", url: "/catalogos", icon: FileText },
   { id: "pedidos", title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
   { id: "lancar-pedido", title: "Lançar Pedido", url: "/lancar-pedido", icon: Briefcase },
   { id: "estoque", title: "Estoque & Amostras", url: "/estoque-amostras", icon: Boxes },
-  { id: "financeiro", title: "Financeiro", url: "/financeiro", icon: DollarSign, restricted: true },
+  { id: "gestor", title: "Gestor", url: "/gestor", icon: DollarSign, restricted: true },
 ];
 
 function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; open: boolean }) {

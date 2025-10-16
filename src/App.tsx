@@ -11,7 +11,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Clientes = lazy(() => import("./pages/Clientes"));
 const Tarefas = lazy(() => import("./pages/Tarefas"));
-const Financeiro = lazy(() => import("./pages/Financeiro"));
+const Gestor = lazy(() => import("./pages/Gestor"));
 const Interacoes = lazy(() => import("./pages/Interacoes"));
 const Colaboradores = lazy(() => import("./pages/Colaboradores"));
 const Produtos = lazy(() => import("./pages/Produtos"));
@@ -156,10 +156,10 @@ const App = () => (
             }
           />
           <Route
-            path="/financeiro"
+            path="/gestor"
             element={
               <AppLayout>
-                <Financeiro />
+                <Gestor />
               </AppLayout>
             }
           />

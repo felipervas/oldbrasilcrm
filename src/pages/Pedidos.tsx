@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { DollarSign, TrendingUp, Package, Calendar, Trash2, XCircle, Edit } from "lucide-react";
+import { Package, Calendar, Trash2, Edit, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ProdutoTooltip } from "@/components/ProdutoTooltip";
+import { ImprimirPedido } from "@/components/ImprimirPedido";
 import { useNavigate } from "react-router-dom";
 
 interface PedidoStats {
@@ -69,12 +70,8 @@ const Pedidos = () => {
   };
 
   const verificarPermissao = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const email = user.email?.toLowerCase() || '';
-    const temPermissao = email === 'felipervas@gmail.com' || email.endsWith('@oldvasconcellos.com');
-    setPodeVerFaturamento(temPermissao);
+    // Todos podem ver pedidos agora
+    setPodeVerFaturamento(true);
   };
 
   const loadPedidos = async () => {
@@ -223,21 +220,6 @@ const Pedidos = () => {
     return badges[status] || { color: "bg-muted", text: status };
   };
 
-  if (!podeverFaturamento) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle className="text-destructive">Acesso Negado</CardTitle>
-            <CardDescription>
-              Você não tem permissão para visualizar o faturamento.
-              Apenas gestores autorizados podem acessar esta área.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8">
@@ -246,145 +228,33 @@ const Pedidos = () => {
           <SidebarTrigger />
           <div>
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Pedidos & Faturamento
+              Pedidos
             </h1>
             <p className="text-muted-foreground">
-              Análise de vendas e performance
+              Gestão de pedidos
             </p>
           </div>
         </div>
       </div>
 
-      {/* Cards de Estatísticas */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Faturamento Total
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-primary/10">
-              <DollarSign className="h-4 w-4 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? "..." : formatCurrency(stats.totalFaturamento)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Todos os pedidos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Pedidos no Mês
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-success/10">
-              <TrendingUp className="h-4 w-4 text-success" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? "..." : stats.pedidosMes}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Mês atual
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Ticket Médio
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-warning/10">
-              <DollarSign className="h-4 w-4 text-warning" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? "..." : formatCurrency(stats.ticketMedio)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Por pedido este mês
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Pedidos Abertos
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-destructive/10">
-              <Package className="h-4 w-4 text-destructive" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? "..." : stats.pedidosAbertos}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Em andamento
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Cards de Cancelamentos */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-card border-destructive/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Pedidos Cancelados
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-destructive/10">
-              <XCircle className="h-4 w-4 text-destructive" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              {loading ? "..." : stats.pedidosCancelados}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Total de cancelamentos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card border-destructive/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Valor Cancelado
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-destructive/10">
-              <DollarSign className="h-4 w-4 text-destructive" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              {loading ? "..." : formatCurrency(stats.totalCancelado)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Perdido em cancelamentos
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Lista de Pedidos Recentes */}
       <Card className="shadow-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Pedidos Recentes
-          </CardTitle>
-          <CardDescription>
-            Últimos 10 pedidos registrados
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Pedidos Recentes
+              </CardTitle>
+              <CardDescription>
+                Últimos 20 pedidos registrados
+              </CardDescription>
+            </div>
+            <Button onClick={() => navigate("/lancar-pedido")}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Pedido
+            </Button>
+          </div>
           <div className="mt-4">
             <Input
               placeholder="Buscar por cliente, número do pedido ou vendedor..."
@@ -445,26 +315,27 @@ const Pedidos = () => {
                            </p>
                          )}
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/pedidos/${pedido.id}/editar`)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeletePedido(pedido.id, pedido.status)}
-                            className={pedido.status === 'cancelado' ? 'border-destructive' : ''}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                            {pedido.status === 'cancelado' && (
-                              <span className="ml-1 text-xs">Excluir</span>
-                            )}
-                          </Button>
-                        </div>
+                         <div className="flex gap-2">
+                           <ImprimirPedido pedido={pedido} produtos={produtosPorPedido[pedido.id] || []} />
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => navigate(`/pedidos/${pedido.id}/editar`)}
+                           >
+                             <Edit className="h-4 w-4" />
+                           </Button>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => handleDeletePedido(pedido.id, pedido.status)}
+                             className={pedido.status === 'cancelado' ? 'border-destructive' : ''}
+                           >
+                             <Trash2 className="h-4 w-4 text-destructive" />
+                             {pedido.status === 'cancelado' && (
+                               <span className="ml-1 text-xs">Excluir</span>
+                             )}
+                           </Button>
+                         </div>
                       </div>
                     </div>
                   </div>

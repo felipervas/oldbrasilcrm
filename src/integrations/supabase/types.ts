@@ -216,6 +216,7 @@ export type Database = {
           tamanho: string | null
           telefone: string | null
           total_comprado: number | null
+          total_pedidos: number | null
           uf: string | null
           ultima_compra_data: string | null
           updated_at: string
@@ -242,6 +243,7 @@ export type Database = {
           tamanho?: string | null
           telefone?: string | null
           total_comprado?: number | null
+          total_pedidos?: number | null
           uf?: string | null
           ultima_compra_data?: string | null
           updated_at?: string
@@ -268,6 +270,7 @@ export type Database = {
           tamanho?: string | null
           telefone?: string | null
           total_comprado?: number | null
+          total_pedidos?: number | null
           uf?: string | null
           ultima_compra_data?: string | null
           updated_at?: string
@@ -560,7 +563,10 @@ export type Database = {
           numero_pedido: string | null
           observacoes: string | null
           parcelas: number | null
+          responsavel_venda_id: string | null
           status: string | null
+          tipo_frete: string | null
+          transportadora: string | null
           updated_at: string | null
           valor_total: number | null
         }
@@ -576,7 +582,10 @@ export type Database = {
           numero_pedido?: string | null
           observacoes?: string | null
           parcelas?: number | null
+          responsavel_venda_id?: string | null
           status?: string | null
+          tipo_frete?: string | null
+          transportadora?: string | null
           updated_at?: string | null
           valor_total?: number | null
         }
@@ -592,7 +601,10 @@ export type Database = {
           numero_pedido?: string | null
           observacoes?: string | null
           parcelas?: number | null
+          responsavel_venda_id?: string | null
           status?: string | null
+          tipo_frete?: string | null
+          transportadora?: string | null
           updated_at?: string | null
           valor_total?: number | null
         }
@@ -602,6 +614,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_responsavel_venda_id_fkey"
+            columns: ["responsavel_venda_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -749,10 +768,10 @@ export type Database = {
           notificacao_enviada: boolean | null
           origem: string | null
           prioridade: Database["public"]["Enums"]["priority_type"]
-          responsavel_id: string
+          responsavel_id: string | null
           status: Database["public"]["Enums"]["task_status"]
-          tipo: Database["public"]["Enums"]["task_type"]
-          titulo: string
+          tipo: Database["public"]["Enums"]["task_type"] | null
+          titulo: string | null
           updated_at: string
         }
         Insert: {
@@ -766,10 +785,10 @@ export type Database = {
           notificacao_enviada?: boolean | null
           origem?: string | null
           prioridade?: Database["public"]["Enums"]["priority_type"]
-          responsavel_id: string
+          responsavel_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
-          tipo: Database["public"]["Enums"]["task_type"]
-          titulo: string
+          tipo?: Database["public"]["Enums"]["task_type"] | null
+          titulo?: string | null
           updated_at?: string
         }
         Update: {
@@ -783,10 +802,10 @@ export type Database = {
           notificacao_enviada?: boolean | null
           origem?: string | null
           prioridade?: Database["public"]["Enums"]["priority_type"]
-          responsavel_id?: string
+          responsavel_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
-          tipo?: Database["public"]["Enums"]["task_type"]
-          titulo?: string
+          tipo?: Database["public"]["Enums"]["task_type"] | null
+          titulo?: string | null
           updated_at?: string
         }
         Relationships: [
