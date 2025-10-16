@@ -123,7 +123,14 @@ export function AppSidebar() {
   const checkFinanceiroAccess = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email === 'felipervas@gmail.com' || user?.email === 'oldvasconcellos@gmail.com') {
+      if (!user) return;
+
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+
+      if (roles?.some(r => r.role === 'gestor' || r.role === 'admin')) {
         setCanViewFinanceiro(true);
       }
     } catch (error) {

@@ -358,16 +358,97 @@ const LancarPedido = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleManualSubmit} className="space-y-6">
-                <div>
-                  <Label>Cliente *</Label>
-                  <Combobox
-                    options={clientes.map(c => ({ value: c.id, label: c.nome_fantasia }))}
-                    value={selectedCliente}
-                    onValueChange={setSelectedCliente}
-                    placeholder="Selecione um cliente..."
-                    searchPlaceholder="Buscar cliente..."
-                    emptyText="Nenhum cliente encontrado."
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Cliente *</Label>
+                    <Combobox
+                      options={clientes.map(c => ({ value: c.id, label: c.nome_fantasia }))}
+                      value={selectedCliente}
+                      onValueChange={setSelectedCliente}
+                      placeholder="Selecione um cliente..."
+                      searchPlaceholder="Buscar cliente..."
+                      emptyText="Nenhum cliente encontrado."
+                    />
+                  </div>
+                  <div>
+                    <Label>Responsável pela Venda</Label>
+                    <Input name="responsavel_venda_id" placeholder="Nome do responsável" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label>Número do Pedido</Label>
+                    <Input name="numero_pedido" placeholder="Ex: 001/2025" />
+                  </div>
+                  <div>
+                    <Label>Data do Pedido</Label>
+                    <Input type="date" name="data_pedido" defaultValue={new Date().toISOString().split('T')[0]} />
+                  </div>
+                  <div>
+                    <Label>Status</Label>
+                    <Select name="status" defaultValue="pendente">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pendente">Pendente</SelectItem>
+                        <SelectItem value="confirmado">Confirmado</SelectItem>
+                        <SelectItem value="entregue">Entregue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h3 className="font-semibold mb-3">Informações de Frete</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Tipo de Frete</Label>
+                      <Select name="tipo_frete">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="CIF">CIF (Pago pelo vendedor)</SelectItem>
+                          <SelectItem value="FOB">FOB (Pago pelo comprador)</SelectItem>
+                          <SelectItem value="cliente">Cliente cuida do frete</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Transportadora</Label>
+                      <Input name="transportadora" placeholder="Nome da transportadora" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h3 className="font-semibold mb-3">Informações de Pagamento</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label>Forma de Pagamento</Label>
+                      <Select name="forma_pagamento">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pix">PIX</SelectItem>
+                          <SelectItem value="boleto">Boleto</SelectItem>
+                          <SelectItem value="cartao">Cartão</SelectItem>
+                          <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Parcelas</Label>
+                      <Input type="number" name="parcelas" min="1" placeholder="1" />
+                    </div>
+                    <div>
+                      <Label>Dias para Pagamento</Label>
+                      <Input name="dias_pagamento" placeholder="Ex: 30, 60, 90" />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="border-t pt-4">
