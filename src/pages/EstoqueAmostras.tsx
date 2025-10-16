@@ -49,6 +49,7 @@ const EstoqueAmostras = () => {
     data_entrega: new Date().toISOString().split('T')[0],
     status: "pendente",
     retorno: "",
+    origem_saida: "escritorio",
   });
 
   const [produtosAmostras, setProdutosAmostras] = useState<Array<{
@@ -114,6 +115,7 @@ const EstoqueAmostras = () => {
             status: formData.status,
             retorno: formData.retorno,
             observacoes: produtoAtual.observacoes,
+            origem_saida: formData.origem_saida,
           })
           .eq("id", editingAmostra.id);
 
@@ -131,6 +133,7 @@ const EstoqueAmostras = () => {
             retorno: formData.retorno,
             observacoes: p.observacoes,
             responsavel_id: user.id,
+            origem_saida: formData.origem_saida,
           }));
 
         if (amostrasParaInserir.length === 0) {
@@ -151,6 +154,7 @@ const EstoqueAmostras = () => {
         data_entrega: new Date().toISOString().split('T')[0],
         status: "pendente",
         retorno: "",
+        origem_saida: "escritorio",
       });
       setProdutosAmostras([{ produto_id: "", quantidade: "", observacoes: "" }]);
       loadData();
@@ -180,13 +184,14 @@ const EstoqueAmostras = () => {
     }
   };
 
-  const handleEdit = (amostra: Amostra) => {
+  const handleEdit = (amostra: Amostra & { origem_saida?: string }) => {
     setEditingAmostra(amostra);
     setFormData({
       cliente_id: amostra.cliente_id,
       data_entrega: amostra.data_entrega,
       status: amostra.status,
       retorno: amostra.retorno || "",
+      origem_saida: amostra.origem_saida || "escritorio",
     });
     setProdutosAmostras([{
       produto_id: amostra.produto_id,
@@ -269,6 +274,7 @@ const EstoqueAmostras = () => {
               data_entrega: new Date().toISOString().split('T')[0],
               status: "pendente",
               retorno: "",
+              origem_saida: "escritorio",
             });
             setProdutosAmostras([{ produto_id: "", quantidade: "", observacoes: "" }]);
           }
@@ -394,11 +400,56 @@ const EstoqueAmostras = () => {
                   </div>
                 ))}
               </div>
+
+              <div className="space-y-2">
+                <Label>Origem da Saída</Label>
+                <Select
+                  value={formData.origem_saida}
+                  onValueChange={(value) => setFormData({ ...formData, origem_saida: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="escritorio">Estoque Escritório</SelectItem>
+                    <SelectItem value="fabrica">Saída Fábrica</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Status</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="entregue">Entregue</SelectItem>
+                      <SelectItem value="retornado">Retornado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Retorno</Label>
+                  <Input
+                    value={formData.retorno}
+                    onChange={(e) => setFormData({ ...formData, retorno: e.target.value })}
+                    placeholder="Feedback do cliente..."
+                  />
+                </div>
+              </div>
+
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit">Registrar Amostra</Button>
+                <Button type="submit">{editingAmostra ? "Atualizar" : "Registrar"} Amostra</Button>
               </div>
             </form>
           </DialogContent>

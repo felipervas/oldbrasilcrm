@@ -19,6 +19,8 @@ const Marcas = lazy(() => import("./pages/Marcas"));
 const Catalogos = lazy(() => import("./pages/Catalogos"));
 const Pedidos = lazy(() => import("./pages/Pedidos"));
 const LancarPedido = lazy(() => import("./pages/LancarPedido"));
+const EditarPedido = lazy(() => import("./pages/EditarPedido"));
+const MarcaDetalhes = lazy(() => import("./pages/MarcaDetalhes"));
 const EstoqueAmostras = lazy(() => import("./pages/EstoqueAmostras"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -106,6 +108,14 @@ const App = () => (
             }
           />
           <Route
+            path="/marcas/:id"
+            element={
+              <AppLayout>
+                <MarcaDetalhes />
+              </AppLayout>
+            }
+          />
+          <Route
             path="/catalogos"
             element={
               <AppLayout>
@@ -126,6 +136,14 @@ const App = () => (
             element={
               <AppLayout>
                 <LancarPedido />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/pedidos/:id/editar"
+            element={
+              <AppLayout>
+                <EditarPedido />
               </AppLayout>
             }
           />

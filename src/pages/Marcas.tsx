@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, Tag, Edit } from "lucide-react";
+import { Plus, Tag, Edit, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ const Marcas = () => {
   const [loading, setLoading] = useState(false);
   const [editFormData, setEditFormData] = useState<any>({});
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const loadMarcas = async () => {
     const { data, error } = await supabase
@@ -154,18 +156,38 @@ const Marcas = () => {
           ) : (
             <div className="space-y-4">
               {marcas.map((marca) => (
-                <div key={marca.id} className="border rounded-lg p-4">
+                <div 
+                  key={marca.id} 
+                  className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/marcas/${marca.id}`)}
+                >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h3 className="font-semibold">{marca.nome}</h3>
+                      <h3 className="font-semibold flex items-center gap-2">
+                        {marca.nome}
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </h3>
                       {marca.descricao && <p className="text-sm text-muted-foreground mt-1">{marca.descricao}</p>}
                       {marca.site && (
-                        <a href={marca.site} target="_blank" rel="noopener noreferrer" className="text-sm text-primary mt-2 inline-block">
+                        <a 
+                          href={marca.site} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-sm text-primary mt-2 inline-block"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {marca.site}
                         </a>
                       )}
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(marca)}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(marca);
+                      }}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                   </div>

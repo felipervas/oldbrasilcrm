@@ -155,10 +155,20 @@ const Colaboradores = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", id);
+      // Deletar usuário através do admin API
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Erro de autenticação",
+          description: "Você precisa estar autenticado",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Deletar profile (que automaticamente deleta o user devido ao cascade)
+      const { error } = await supabase.auth.admin.deleteUser(id);
 
       if (error) throw error;
 
@@ -171,7 +181,7 @@ const Colaboradores = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao remover",
-        description: error.message,
+        description: error.message || "Apenas administradores podem remover responsáveis",
         variant: "destructive",
       });
     }

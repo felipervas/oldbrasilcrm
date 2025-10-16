@@ -21,6 +21,7 @@ export type Database = {
           data_entrega: string
           id: string
           observacoes: string | null
+          origem_saida: string | null
           produto_id: string
           quantidade: number
           responsavel_id: string
@@ -34,6 +35,7 @@ export type Database = {
           data_entrega?: string
           id?: string
           observacoes?: string | null
+          origem_saida?: string | null
           produto_id: string
           quantidade: number
           responsavel_id: string
@@ -47,6 +49,7 @@ export type Database = {
           data_entrega?: string
           id?: string
           observacoes?: string | null
+          origem_saida?: string | null
           produto_id?: string
           quantidade?: number
           responsavel_id?: string
@@ -551,9 +554,12 @@ export type Database = {
           cliente_id: string
           created_at: string | null
           data_pedido: string | null
+          dias_pagamento: string | null
+          forma_pagamento: string | null
           id: string
           numero_pedido: string | null
           observacoes: string | null
+          parcelas: number | null
           status: string | null
           updated_at: string | null
           valor_total: number | null
@@ -564,9 +570,12 @@ export type Database = {
           cliente_id: string
           created_at?: string | null
           data_pedido?: string | null
+          dias_pagamento?: string | null
+          forma_pagamento?: string | null
           id?: string
           numero_pedido?: string | null
           observacoes?: string | null
+          parcelas?: number | null
           status?: string | null
           updated_at?: string | null
           valor_total?: number | null
@@ -577,9 +586,12 @@ export type Database = {
           cliente_id?: string
           created_at?: string | null
           data_pedido?: string | null
+          dias_pagamento?: string | null
+          forma_pagamento?: string | null
           id?: string
           numero_pedido?: string | null
           observacoes?: string | null
+          parcelas?: number | null
           status?: string | null
           updated_at?: string | null
           valor_total?: number | null
@@ -652,6 +664,7 @@ export type Database = {
           preco_base: number | null
           rendimento_dose_gramas: number | null
           sku: string | null
+          submarca: string | null
           updated_at: string
         }
         Insert: {
@@ -666,6 +679,7 @@ export type Database = {
           preco_base?: number | null
           rendimento_dose_gramas?: number | null
           sku?: string | null
+          submarca?: string | null
           updated_at?: string
         }
         Update: {
@@ -680,6 +694,7 @@ export type Database = {
           preco_base?: number | null
           rendimento_dose_gramas?: number | null
           sku?: string | null
+          submarca?: string | null
           updated_at?: string
         }
         Relationships: [

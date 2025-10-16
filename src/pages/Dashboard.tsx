@@ -2,23 +2,29 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Users, CheckSquare, MessageSquare, TrendingUp, Clock, AlertCircle } from "lucide-react";
+import { Users, CheckSquare, MessageSquare, TrendingUp, Clock, AlertCircle, Package, Boxes } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardStats {
   totalClientes: number;
   tarefasPendentes: number;
   interacoesHoje: number;
   tarefasAtrasadas: number;
+  amostrasEnviadas: number;
+  totalProdutos: number;
 }
 
 const Dashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalClientes: 0,
     tarefasPendentes: 0,
     interacoesHoje: 0,
     tarefasAtrasadas: 0,
+    amostrasEnviadas: 0,
+    totalProdutos: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -31,11 +37,13 @@ const Dashboard = () => {
       const hoje = new Date().toISOString().split('T')[0];
 
       // Super otimizado: apenas contagens sem carregar dados
-      const [clientesRes, tarefasRes, interacoesRes, tarefasAtrasadasRes] = await Promise.all([
+      const [clientesRes, tarefasRes, interacoesRes, tarefasAtrasadasRes, amostrasRes, produtosRes] = await Promise.all([
         supabase.from('clientes').select('id', { count: 'exact', head: true }).eq('ativo', true),
         supabase.from('tarefas').select('id', { count: 'exact', head: true }).eq('status', 'pendente'),
         supabase.from('interacoes').select('id', { count: 'exact', head: true }).gte('data_hora', `${hoje}T00:00:00`),
         supabase.from('tarefas').select('id', { count: 'exact', head: true }).eq('status', 'pendente').lt('data_prevista', hoje),
+        supabase.from('amostras').select('id', { count: 'exact', head: true }),
+        supabase.from('produtos').select('id', { count: 'exact', head: true }).eq('ativo', true),
       ]);
 
       setStats({
@@ -43,6 +51,8 @@ const Dashboard = () => {
         tarefasPendentes: tarefasRes.count || 0,
         interacoesHoje: interacoesRes.count || 0,
         tarefasAtrasadas: tarefasAtrasadasRes.count || 0,
+        amostrasEnviadas: amostrasRes.count || 0,
+        totalProdutos: produtosRes.count || 0,
       });
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
@@ -64,6 +74,7 @@ const Dashboard = () => {
       description: "Clientes cadastrados",
       color: "text-primary",
       bgColor: "bg-primary/10",
+      link: "/clientes",
     },
     {
       title: "Tarefas Pendentes",
@@ -72,14 +83,34 @@ const Dashboard = () => {
       description: "Aguardando execução",
       color: "text-warning",
       bgColor: "bg-warning/10",
+      link: "/tarefas",
+    },
+    {
+      title: "Amostras Enviadas",
+      value: stats.amostrasEnviadas,
+      icon: Package,
+      description: "Total de amostras",
+      color: "text-info",
+      bgColor: "bg-info/10",
+      link: "/estoque-amostras",
+    },
+    {
+      title: "Produtos Ativos",
+      value: stats.totalProdutos,
+      icon: Boxes,
+      description: "Produtos cadastrados",
+      color: "text-success",
+      bgColor: "bg-success/10",
+      link: "/produtos",
     },
     {
       title: "Interações Hoje",
       value: stats.interacoesHoje,
       icon: MessageSquare,
       description: "Visitas e ligações",
-      color: "text-success",
-      bgColor: "bg-success/10",
+      color: "text-accent",
+      bgColor: "bg-accent/10",
+      link: "/interacoes",
     },
     {
       title: "Tarefas Atrasadas",
@@ -88,6 +119,7 @@ const Dashboard = () => {
       description: "Requerem atenção",
       color: "text-destructive",
       bgColor: "bg-destructive/10",
+      link: "/tarefas",
     },
   ];
 
@@ -107,9 +139,13 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {statCards.map((stat) => (
-          <Card key={stat.title} className="shadow-card hover:shadow-elevated transition-shadow">
+          <Card 
+            key={stat.title} 
+            className="shadow-card hover:shadow-elevated transition-shadow cursor-pointer"
+            onClick={() => navigate(stat.link)}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 {stat.title}

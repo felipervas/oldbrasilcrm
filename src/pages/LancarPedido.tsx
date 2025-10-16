@@ -144,6 +144,9 @@ const LancarPedido = () => {
       data_pedido: formData.get("data_pedido") as string || new Date().toISOString().split('T')[0],
       valor_total: valorTotal,
       status: formData.get("status") as string || "pendente",
+      forma_pagamento: formData.get("forma_pagamento") as string || null,
+      parcelas: formData.get("parcelas") ? parseInt(formData.get("parcelas") as string) : null,
+      dias_pagamento: formData.get("dias_pagamento") as string || null,
       observacoes: `${descricaoProdutos}\n\n${formData.get("observacoes") || ""}`,
     });
 
@@ -517,19 +520,60 @@ const LancarPedido = () => {
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select name="status" defaultValue="pendente">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pendente">Pendente</SelectItem>
-                      <SelectItem value="em_producao">Em Produção</SelectItem>
-                      <SelectItem value="enviado">Enviado</SelectItem>
-                      <SelectItem value="entregue">Entregue</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select name="status" defaultValue="pendente">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cotacao">Cotação</SelectItem>
+                        <SelectItem value="pedido">Pedido</SelectItem>
+                        <SelectItem value="pendente">Pendente</SelectItem>
+                        <SelectItem value="em_producao">Em Produção</SelectItem>
+                        <SelectItem value="enviado">Enviado</SelectItem>
+                        <SelectItem value="entregue">Entregue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="forma_pagamento">Forma de Pagamento</Label>
+                    <Select name="forma_pagamento">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="faturamento">Faturamento</SelectItem>
+                        <SelectItem value="pix">PIX</SelectItem>
+                        <SelectItem value="boleto">Boleto</SelectItem>
+                        <SelectItem value="cartao">Cartão de Crédito</SelectItem>
+                        <SelectItem value="avista">À Vista</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="parcelas">Parcelas</Label>
+                    <Input 
+                      id="parcelas" 
+                      name="parcelas" 
+                      type="number"
+                      min="1"
+                      placeholder="Ex: 3"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="dias_pagamento">Dias de Pagamento</Label>
+                    <Input 
+                      id="dias_pagamento" 
+                      name="dias_pagamento" 
+                      placeholder="Ex: 30/60/90"
+                    />
+                  </div>
                 </div>
 
                 <div>

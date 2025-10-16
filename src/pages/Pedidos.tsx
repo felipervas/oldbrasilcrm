@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { DollarSign, TrendingUp, Package, Calendar, Trash2, XCircle } from "lucide-react";
+import { DollarSign, TrendingUp, Package, Calendar, Trash2, XCircle, Edit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ProdutoTooltip } from "@/components/ProdutoTooltip";
+import { useNavigate } from "react-router-dom";
 
 interface PedidoStats {
   totalFaturamento: number;
@@ -32,6 +33,7 @@ const Pedidos = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const pedidosFiltrados = pedidosRecentes.filter(pedido =>
     pedido.clientes?.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -210,6 +212,8 @@ const Pedidos = () => {
 
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { color: string; text: string }> = {
+      cotacao: { color: "bg-gray-500/10 text-gray-600 border-gray-500/20", text: "Cotação" },
+      pedido: { color: "bg-blue-500/10 text-blue-600 border-blue-500/20", text: "Pedido" },
       pendente: { color: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20", text: "Pendente" },
       em_producao: { color: "bg-blue-500/10 text-blue-600 border-blue-500/20", text: "Em Produção" },
       enviado: { color: "bg-purple-500/10 text-purple-600 border-purple-500/20", text: "Enviado" },
@@ -440,22 +444,31 @@ const Pedidos = () => {
                              {new Date(pedido.data_pedido).toLocaleDateString('pt-BR')}
                            </p>
                          )}
-                       </div>
-                       <Button
-                         variant="outline"
-                         size="sm"
-                         onClick={() => handleDeletePedido(pedido.id, pedido.status)}
-                         className={pedido.status === 'cancelado' ? 'border-destructive' : ''}
-                       >
-                         <Trash2 className="h-4 w-4 text-destructive" />
-                         {pedido.status === 'cancelado' && (
-                           <span className="ml-1 text-xs">Excluir</span>
-                         )}
-                       </Button>
-                     </div>
-                   </div>
-                 </div>
-               ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/pedidos/${pedido.id}/editar`)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeletePedido(pedido.id, pedido.status)}
+                            className={pedido.status === 'cancelado' ? 'border-destructive' : ''}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                            {pedido.status === 'cancelado' && (
+                              <span className="ml-1 text-xs">Excluir</span>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
              </div>
           )}
         </CardContent>
