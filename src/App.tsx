@@ -11,9 +11,9 @@ const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Clientes = lazy(() => import("./pages/Clientes"));
 const Tarefas = lazy(() => import("./pages/Tarefas"));
-const Gestor = lazy(() => import("./pages/Gestor"));
 const GestorDashboard = lazy(() => import("./pages/GestorDashboard"));
 const ColaboradorPerfil = lazy(() => import("./pages/ColaboradorPerfil"));
+const MeuPerfil = lazy(() => import("./pages/MeuPerfil"));
 const Interacoes = lazy(() => import("./pages/Interacoes"));
 const Colaboradores = lazy(() => import("./pages/Colaboradores"));
 const Produtos = lazy(() => import("./pages/Produtos"));
@@ -158,14 +158,6 @@ const App = () => (
             }
           />
           <Route
-            path="/gestor"
-            element={
-              <AppLayout>
-                <Gestor />
-              </AppLayout>
-            }
-          />
-          <Route
             path="/gestor/dashboard"
             element={
               <AppLayout>
@@ -178,6 +170,14 @@ const App = () => (
             element={
               <AppLayout>
                 <ColaboradorPerfil />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/meu-perfil"
+            element={
+              <AppLayout>
+                <MeuPerfil />
               </AppLayout>
             }
           />

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Calendar, Plus, Trash2, CheckSquare, Clock, TrendingUp } from "lucide-react";
+import { Calendar, Plus, Trash2, CheckSquare, Clock, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useParams } from "react-router-dom";
@@ -25,7 +25,7 @@ const ColaboradorPerfil = () => {
   const [stats, setStats] = useState({
     tarefasConcluidas: 0,
     tarefasPendentes: 0,
-    pedidosFeitos: 0,
+    pedidosLancados: 0,
   });
 
   const [formData, setFormData] = useState({
@@ -84,7 +84,7 @@ const ColaboradorPerfil = () => {
       setStats({
         tarefasConcluidas: concluidas,
         tarefasPendentes: pendentes,
-        pedidosFeitos: pedidosCount || 0,
+        pedidosLancados: pedidosCount || 0,
       });
 
     } catch (error: any) {
@@ -278,72 +278,77 @@ const ColaboradorPerfil = () => {
   }
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8">
+    <div className="flex-1 space-y-6 p-4 md:p-8 bg-gradient-subtle min-h-screen">
       <div className="flex items-center gap-4">
         <SidebarTrigger />
         <div>
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            {colaborador.nome}
+            Perfil - {colaborador?.nome}
           </h1>
           <p className="text-muted-foreground">
-            Área pessoal e organização
+            Gerencie eventos e visualize estatísticas
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
+      {/* Estatísticas */}
+      <div className="grid gap-4 md:grid-cols-3 animate-in fade-in duration-300">
+        <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-all hover-scale overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-1/10 to-transparent" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tarefas Concluídas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-success" />
-              <span className="text-2xl font-bold">{stats.tarefasConcluidas}</span>
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-chart-1 to-chart-1/70 flex items-center justify-center">
+              <CheckSquare className="h-5 w-5 text-white" />
             </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold text-success">{stats.tarefasConcluidas}</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-all hover-scale overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-2/10 to-transparent" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tarefas Pendentes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-warning" />
-              <span className="text-2xl font-bold">{stats.tarefasPendentes}</span>
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-chart-2 to-chart-2/70 flex items-center justify-center">
+              <Clock className="h-5 w-5 text-white" />
             </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold">{stats.tarefasPendentes}</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pedidos Realizados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <span className="text-2xl font-bold">{stats.pedidosFeitos}</span>
+        <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-all hover-scale overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-3/10 to-transparent" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pedidos Lançados</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-chart-3 to-chart-3/70 flex items-center justify-center">
+              <Package className="h-5 w-5 text-white" />
             </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold">{stats.pedidosLancados}</div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
+      {/* Calendário de Eventos */}
+      <Card className="border-primary/20 shadow-elegant">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Minha Agenda
+                <Calendar className="h-5 w-5 text-primary" />
+                Calendário Pessoal
               </CardTitle>
               <CardDescription>
-                Organize seus compromissos e eventos
+                Gerencie seus compromissos e eventos dos próximos 30 dias
               </CardDescription>
             </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm">
+                <Button className="shadow-sm hover-scale">
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Evento
                 </Button>

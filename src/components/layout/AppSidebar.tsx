@@ -27,8 +27,8 @@ import {
   LogOut,
   ShoppingCart,
   Boxes,
-  DollarSign,
   BarChart3,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -53,6 +53,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 const defaultMenuItems = [
   { id: "dashboard", title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { id: "meu-perfil", title: "Meu Perfil", url: "/meu-perfil", icon: User },
   { id: "clientes", title: "Clientes", url: "/clientes", icon: Users },
   { id: "tarefas", title: "Tarefas", url: "/tarefas", icon: CheckSquare },
   { id: "interacoes", title: "Interações", url: "/interacoes", icon: MessageSquare },
@@ -63,7 +64,6 @@ const defaultMenuItems = [
   { id: "pedidos", title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
   { id: "lancar-pedido", title: "Lançar Pedido", url: "/lancar-pedido", icon: Briefcase },
   { id: "estoque", title: "Estoque & Amostras", url: "/estoque-amostras", icon: Boxes },
-  { id: "gestor", title: "Gestor", url: "/gestor", icon: DollarSign, restricted: true },
   { id: "gestor-dashboard", title: "Dashboard Gestor", url: "/gestor/dashboard", icon: BarChart3, restricted: true },
 ];
 

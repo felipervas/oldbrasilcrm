@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, UserCog, Shield } from "lucide-react";
+import { Plus, Trash2, UserPlus, Shield, Users, UserMinus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -23,7 +23,7 @@ interface TeamMember {
 export function GerenciarEquipe() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -125,7 +125,7 @@ export function GerenciarEquipe() {
         title: "Membro adicionado com sucesso!",
       });
 
-      setOpen(false);
+      setIsDialogOpen(false);
       setForm({
         email: "",
         password: "",
@@ -183,22 +183,20 @@ export function GerenciarEquipe() {
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="w-full shadow-elegant border-primary/20">
+      <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <UserCog className="h-5 w-5" />
+            <CardTitle className="text-2xl flex items-center gap-2">
+              <Users className="h-6 w-6 text-primary" />
               Gerenciar Equipe
             </CardTitle>
-            <CardDescription>
-              Adicione ou remova membros da equipe e gerencie suas permissões
-            </CardDescription>
+            <CardDescription>Adicione e gerencie os membros da sua equipe</CardDescription>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button className="shadow-sm hover-scale">
+                <UserPlus className="h-4 w-4 mr-2" />
                 Adicionar Membro
               </Button>
             </DialogTrigger>
@@ -259,59 +257,79 @@ export function GerenciarEquipe() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">Carregando...</div>
+          <div className="text-center py-12">
+            <div className="animate-pulse">Carregando equipe...</div>
+          </div>
         ) : members.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Nenhum membro na equipe
+          <div className="text-center py-12 space-y-2">
+            <Users className="h-12 w-12 mx-auto text-muted-foreground/50" />
+            <p className="text-muted-foreground">
+              Nenhum membro cadastrado ainda.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Clique em "Adicionar Membro" para começar.
+            </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {members.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+              <div 
+                key={member.id} 
+                className="group relative p-5 border rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-200 bg-card"
               >
-                <div className="flex-1">
-                  <div className="font-medium">{member.nome}</div>
-                  <div className="text-sm text-muted-foreground">{member.email}</div>
-                  <div className="flex gap-2 mt-2">
-                    {member.roles.length === 0 ? (
-                      <Badge variant="outline">Sem roles</Badge>
-                    ) : (
-                      member.roles.map((role) => (
-                        <Badge key={role} variant={getRoleBadgeVariant(role)}>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold">
+                        {member.nome.charAt(0).toUpperCase()}
+                      </div>
+                      <p className="font-semibold text-lg">{member.nome}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {member.roles.map((role) => (
+                        <Badge
+                          key={role}
+                          variant={getRoleBadgeVariant(role)}
+                          className="text-xs"
+                        >
+                          {role === 'admin' ? <Shield className="h-3 w-3 mr-1" /> : null}
                           {role}
                         </Badge>
-                      ))
-                    )}
+                      ))}
+                    </div>
                   </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <UserMinus className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remover membro</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja remover <strong>{member.nome}</strong> da equipe? Esta ação removerá todos os acessos do usuário.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => handleDeleteMember(member.id, member.nome)}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          Remover
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="ml-2"
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Remover acesso de {member.nome}?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Isso removerá todas as permissões deste usuário. Ele não poderá mais acessar o sistema.
-                        O usuário não será deletado, apenas perderá o acesso.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDeleteMember(member.id, member.nome)}>
-                        Remover Acesso
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <p className="text-sm text-muted-foreground truncate">
+                  ID: {member.email}
+                </p>
               </div>
             ))}
           </div>

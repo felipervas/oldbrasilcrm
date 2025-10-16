@@ -226,49 +226,61 @@ const GestorDashboard = () => {
       </div>
 
       {/* Cards de resumo */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-primary/20 shadow-elegant">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-in fade-in duration-300">
+        <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-all hover-scale overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-1/10 to-transparent" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-chart-1 to-chart-1/70 flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">{formatCurrency(totalFaturamento)}</div>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold text-success">{formatCurrency(totalFaturamento)}</div>
             <p className="text-xs text-muted-foreground mt-1">Em pedidos não cancelados</p>
           </CardContent>
         </Card>
 
-        <Card className="border-primary/20 shadow-elegant">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-all hover-scale overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-2/10 to-transparent" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Pedidos</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-chart-2 to-chart-2/70 flex items-center justify-center">
+              <Package className="h-5 w-5 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalPedidos}</div>
+          <CardContent className="relative">
+            <div className="text-3xl font-bold">{totalPedidos}</div>
             <p className="text-xs text-muted-foreground mt-1">Pedidos realizados</p>
           </CardContent>
         </Card>
 
-        <Card className="border-primary/20 shadow-elegant">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-all hover-scale overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-3/10 to-transparent" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Saldo Financeiro</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${saldoTotal >= 0 ? 'bg-gradient-to-br from-chart-3 to-chart-3/70' : 'bg-gradient-to-br from-destructive to-destructive/70'}`}>
+              <TrendingUp className="h-5 w-5 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${saldoTotal >= 0 ? 'text-success' : 'text-destructive'}`}>
+          <CardContent className="relative">
+            <div className={`text-3xl font-bold ${saldoTotal >= 0 ? 'text-success' : 'text-destructive'}`}>
               {formatCurrency(saldoTotal)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Receitas - Despesas</p>
           </CardContent>
         </Card>
 
-        <Card className="border-primary/20 shadow-elegant">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-all hover-scale overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-4/10 to-transparent" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-chart-4 to-chart-4/70 flex items-center justify-center">
+              <BarChart3 className="h-5 w-5 text-white" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="relative">
+            <div className="text-3xl font-bold">
               {formatCurrency(totalPedidos > 0 ? totalFaturamento / totalPedidos : 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Por pedido</p>
@@ -277,8 +289,9 @@ const GestorDashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 max-w-4xl">
+        <TabsList className="grid w-full grid-cols-7 max-w-5xl">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="marcas">Marcas</TabsTrigger>
           <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
           <TabsTrigger value="vendedores">Equipe</TabsTrigger>
           <TabsTrigger value="empresas">Empresas</TabsTrigger>
@@ -287,67 +300,150 @@ const GestorDashboard = () => {
         </TabsList>
 
         {/* Visão Geral */}
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-4 animate-in fade-in duration-500">
           <div className="grid gap-4 md:grid-cols-2">
-            <Card className="border-primary/20 shadow-elegant">
-              <CardHeader>
-                <CardTitle>Faturamento por Cliente (Top 10)</CardTitle>
+            <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-chart-1/10 to-transparent">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Faturamento por Cliente (Top 10)
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={faturamentoClientes.slice(0, 10)}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="cliente" angle={-45} textAnchor="end" height={100} />
                     <YAxis />
                     <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                    <Bar dataKey="total" fill="hsl(var(--chart-1))" />
+                    <Bar dataKey="total" fill="hsl(var(--chart-1))" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
 
-            <Card className="border-primary/20 shadow-elegant">
-              <CardTitle>Balanço Mensal</CardTitle>
-              <CardContent>
+            <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-chart-2/10 to-transparent">
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  Balanço Mensal
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={balancoMensal}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="mes" />
                     <YAxis />
                     <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                     <Legend />
-                    <Line type="monotone" dataKey="receitas" stroke="hsl(var(--chart-1))" name="Receitas" strokeWidth={2} />
-                    <Line type="monotone" dataKey="despesas" stroke="hsl(var(--chart-2))" name="Despesas" strokeWidth={2} />
+                    <Line type="monotone" dataKey="receitas" stroke="hsl(var(--chart-1))" name="Receitas" strokeWidth={3} />
+                    <Line type="monotone" dataKey="despesas" stroke="hsl(var(--chart-2))" name="Despesas" strokeWidth={3} />
                   </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Faturamento por Marcas */}
+        <TabsContent value="marcas" className="space-y-4 animate-in fade-in duration-500">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-chart-3/10 to-transparent">
+                <CardTitle className="flex items-center gap-2">
+                  <PieChartIcon className="h-5 w-5 text-primary" />
+                  Distribuição de Faturamento por Marca
+                </CardTitle>
+                <CardDescription>Visualização das marcas mais vendidas</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <ResponsiveContainer width="100%" height={350}>
+                  <PieChart>
+                    <Pie
+                      data={faturamentoMarcas.slice(0, 8)}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={(entry) => `${entry.marca}`}
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="total"
+                    >
+                      {faturamentoMarcas.slice(0, 8).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-chart-4/10 to-transparent">
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Ranking de Marcas
+                </CardTitle>
+                <CardDescription>Faturamento total por marca</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <ResponsiveContainer width="100%" height={350}>
+                  <BarChart data={faturamentoMarcas.slice(0, 10)} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" />
+                    <YAxis dataKey="marca" type="category" width={120} />
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                    <Bar dataKey="total" fill="hsl(var(--chart-3))" radius={[0, 8, 8, 0]} />
+                  </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
 
           <Card className="border-primary/20 shadow-elegant">
-            <CardHeader>
-              <CardTitle>Faturamento por Marca</CardTitle>
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent">
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                Detalhamento por Marca
+              </CardTitle>
+              <CardDescription>Performance detalhada de cada marca</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={faturamentoMarcas.slice(0, 8)}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={(entry) => `${entry.marca}: ${formatCurrency(entry.total)}`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="total"
-                  >
-                    {faturamentoMarcas.slice(0, 8).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                </PieChart>
-              </ResponsiveContainer>
+            <CardContent className="pt-6">
+              <div className="space-y-3">
+                {faturamentoMarcas.map((marca, idx) => {
+                  const percentual = (marca.total / totalFaturamento) * 100;
+                  return (
+                    <div key={idx} className="group p-4 border rounded-lg hover:shadow-md hover:border-primary/50 transition-all">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                          />
+                          <span className="font-semibold text-lg">{marca.marca}</span>
+                        </div>
+                        <span className="text-2xl font-bold text-success">{formatCurrency(marca.total)}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{percentual.toFixed(1)}% do faturamento total</span>
+                        <span>•</span>
+                        <span>{marca.quantidade.toFixed(0)} unidades vendidas</span>
+                      </div>
+                      <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full transition-all duration-500" 
+                          style={{ 
+                            width: `${percentual}%`,
+                            backgroundColor: COLORS[idx % COLORS.length]
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
