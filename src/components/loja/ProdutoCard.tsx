@@ -10,6 +10,7 @@ interface ProdutoCardProps {
   produto: {
     id: string;
     nome: string;
+    nome_loja?: string;
     sku: string;
     preco_por_kg?: number;
     peso_embalagem_kg?: number;
