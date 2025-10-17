@@ -30,9 +30,11 @@ import {
   BarChart3,
   User,
   ShoppingBag,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import oldLogo from "@/assets/old-brasil-logo.png";
 import {
   DndContext,
@@ -110,6 +112,7 @@ export function AppSidebar() {
   const { open } = useSidebar();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { data: isAdmin } = useIsAdmin();
   const [menuItems, setMenuItems] = useState(defaultMenuItems);
   const [canViewFinanceiro, setCanViewFinanceiro] = useState(false);
   const [userRoles, setUserRoles] = useState<string[]>([]);
@@ -222,6 +225,14 @@ export function AppSidebar() {
     !item.restricted || (item.restricted && canViewFinanceiro)
   );
 
+  // Item extra para admins (não faz parte da lista ordenável)
+  const gerenciarLojaItem = {
+    id: 'gerenciar-loja',
+    title: 'Gerenciar Loja',
+    url: '/gerenciar-loja',
+    icon: Store,
+  };
+
   return (
     <Sidebar className={open ? "w-64" : "w-16"} collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
@@ -263,6 +274,25 @@ export function AppSidebar() {
             </DndContext>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Menu Admin - Não ordenável */}
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administração</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to={gerenciarLojaItem.url}>
+                      <gerenciarLojaItem.icon className="h-4 w-4" />
+                      {open && <span>{gerenciarLojaItem.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4">

@@ -8,6 +8,7 @@ import AppLayout from "./components/layout/AppLayout";
 import { LojaHeader } from "./components/loja/LojaHeader";
 import { LojaFooter } from "./components/loja/LojaFooter";
 import { WhatsAppButton } from "./components/loja/WhatsAppButton";
+import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute";
 
 // Lazy load para melhorar performance
 const Login = lazy(() => import("./pages/Login"));
@@ -28,6 +29,7 @@ const LancarPedido = lazy(() => import("./pages/LancarPedido"));
 const EditarPedido = lazy(() => import("./pages/EditarPedido"));
 const MarcaDetalhes = lazy(() => import("./pages/MarcaDetalhes"));
 const EstoqueAmostras = lazy(() => import("./pages/EstoqueAmostras"));
+const GerenciarLoja = lazy(() => import("./pages/GerenciarLoja"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Páginas Públicas da Loja
@@ -254,6 +256,14 @@ const App = () => (
               <AppLayout>
                 <MeuPerfil />
               </AppLayout>
+            }
+          />
+          <Route
+            path="/gerenciar-loja"
+            element={
+              <ProtectedAdminRoute>
+                <GerenciarLoja />
+              </ProtectedAdminRoute>
             }
           />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

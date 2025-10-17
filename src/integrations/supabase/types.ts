@@ -518,6 +518,36 @@ export type Database = {
           },
         ]
       }
+      loja_audit_log: {
+        Row: {
+          acao: string
+          created_at: string | null
+          detalhes: Json | null
+          entidade_id: string | null
+          entidade_tipo: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          detalhes?: Json | null
+          entidade_id?: string | null
+          entidade_tipo: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          detalhes?: Json | null
+          entidade_id?: string | null
+          entidade_tipo?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       marcas: {
         Row: {
           ativa: boolean
