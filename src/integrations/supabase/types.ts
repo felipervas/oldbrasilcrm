@@ -706,15 +706,49 @@ export type Database = {
           },
         ]
       }
+      produto_imagens: {
+        Row: {
+          created_at: string
+          id: string
+          ordem: number | null
+          produto_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ordem?: number | null
+          produto_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ordem?: number | null
+          produto_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produto_imagens_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           ativo: boolean
           created_at: string
           descricao: string | null
+          destaque_loja: boolean | null
           estoque_escritorio: number | null
           id: string
           marca_id: string | null
           nome: string
+          ordem_exibicao: number | null
           peso_embalagem_kg: number | null
           peso_unidade_kg: number | null
           preco_base: number | null
@@ -724,15 +758,18 @@ export type Database = {
           submarca: string | null
           tipo_calculo: string | null
           updated_at: string
+          visivel_loja: boolean | null
         }
         Insert: {
           ativo?: boolean
           created_at?: string
           descricao?: string | null
+          destaque_loja?: boolean | null
           estoque_escritorio?: number | null
           id?: string
           marca_id?: string | null
           nome: string
+          ordem_exibicao?: number | null
           peso_embalagem_kg?: number | null
           peso_unidade_kg?: number | null
           preco_base?: number | null
@@ -742,15 +779,18 @@ export type Database = {
           submarca?: string | null
           tipo_calculo?: string | null
           updated_at?: string
+          visivel_loja?: boolean | null
         }
         Update: {
           ativo?: boolean
           created_at?: string
           descricao?: string | null
+          destaque_loja?: boolean | null
           estoque_escritorio?: number | null
           id?: string
           marca_id?: string | null
           nome?: string
+          ordem_exibicao?: number | null
           peso_embalagem_kg?: number | null
           peso_unidade_kg?: number | null
           preco_base?: number | null
@@ -760,6 +800,7 @@ export type Database = {
           submarca?: string | null
           tipo_calculo?: string | null
           updated_at?: string
+          visivel_loja?: boolean | null
         }
         Relationships: [
           {

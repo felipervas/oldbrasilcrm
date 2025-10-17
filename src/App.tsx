@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import AppLayout from "./components/layout/AppLayout";
+import { LojaHeader } from "./components/loja/LojaHeader";
+import { LojaFooter } from "./components/loja/LojaFooter";
+import { WhatsAppButton } from "./components/loja/WhatsAppButton";
 
 // Lazy load para melhorar performance
 const Login = lazy(() => import("./pages/Login"));
@@ -26,6 +29,11 @@ const EditarPedido = lazy(() => import("./pages/EditarPedido"));
 const MarcaDetalhes = lazy(() => import("./pages/MarcaDetalhes"));
 const EstoqueAmostras = lazy(() => import("./pages/EstoqueAmostras"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Páginas Públicas da Loja
+const LojaHome = lazy(() => import("./pages/loja/LojaHome"));
+const ProdutoDetalhes = lazy(() => import("./pages/loja/ProdutoDetalhes"));
+const LojaMarcas = lazy(() => import("./pages/loja/LojaMarcas"));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-screen">
@@ -53,7 +61,51 @@ const App = () => (
       <BrowserRouter>
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
+            {/* Rota de Login */}
             <Route path="/login" element={<Login />} />
+
+            {/* Rotas Públicas da Loja */}
+            <Route
+              path="/loja"
+              element={
+                <div className="min-h-screen flex flex-col">
+                  <LojaHeader />
+                  <main className="flex-1">
+                    <LojaHome />
+                  </main>
+                  <LojaFooter />
+                  <WhatsAppButton />
+                </div>
+              }
+            />
+            <Route
+              path="/loja/produto/:id"
+              element={
+                <div className="min-h-screen flex flex-col">
+                  <LojaHeader />
+                  <main className="flex-1">
+                    <ProdutoDetalhes />
+                  </main>
+                  <LojaFooter />
+                  <WhatsAppButton />
+                </div>
+              }
+            />
+            <Route
+              path="/loja/marcas"
+              element={
+                <div className="min-h-screen flex flex-col">
+                  <LojaHeader />
+                  <main className="flex-1">
+                    <LojaMarcas />
+                  </main>
+                  <LojaFooter />
+                  <WhatsAppButton />
+                </div>
+              }
+            />
+
+            {/* Rotas Autenticadas */}
           <Route
             path="/"
             element={

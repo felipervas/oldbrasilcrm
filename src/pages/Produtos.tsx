@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, Package, Upload, Edit, ArrowUpCircle, ArrowDownCircle, Trash2 } from "lucide-react";
+import { Plus, Package, Upload, Edit, ArrowUpCircle, ArrowDownCircle, Trash2, Image as ImageIcon, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -30,7 +31,10 @@ const Produtos = () => {
     observacao: "",
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [imagensLoja, setImagensLoja] = useState<any[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagemInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const calcularEExibir = (preco: number, peso: number, rendimento: number) => {
@@ -178,17 +182,82 @@ const Produtos = () => {
     reader.readAsText(file);
   };
 
-  const handleEdit = (produto: any) => {
+  const handleEdit = async (produto: any) => {
     setProdutoSelecionado(produto);
     setEditFormData({
       nome: produto.nome,
       sku: produto.sku || "",
       descricao: produto.descricao || "",
       preco_base: produto.preco_base || "",
+      visivel_loja: produto.visivel_loja ?? true,
+      destaque_loja: produto.destaque_loja ?? false,
+      ordem_exibicao: produto.ordem_exibicao ?? 0,
     });
     setMarcaSelecionada(produto.marca_id || "");
     loadMovimentacoes(produto.id);
+    await loadImagensLoja(produto.id);
     setEditOpen(true);
+  };
+
+  const loadImagensLoja = async (produtoId: string) => {
+    const { data } = await supabase
+      .from("produto_imagens")
+      .select("*")
+      .eq("produto_id", produtoId)
+      .order("ordem", { ascending: true });
+    setImagensLoja(data || []);
+  };
+
+  const handleUploadImagem = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !produtoSelecionado) return;
+
+    setUploadingImage(true);
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${i}.${fileExt}`;
+      const filePath = `${produtoSelecionado.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('produto-imagens')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        toast({ title: "Erro ao fazer upload", description: uploadError.message, variant: "destructive" });
+        continue;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('produto-imagens')
+        .getPublicUrl(filePath);
+
+      await supabase.from("produto_imagens").insert({
+        produto_id: produtoSelecionado.id,
+        url: publicUrl,
+        ordem: imagensLoja.length + i,
+      });
+    }
+
+    setUploadingImage(false);
+    toast({ title: "Imagens carregadas com sucesso!" });
+    await loadImagensLoja(produtoSelecionado.id);
+    
+    if (imagemInputRef.current) {
+      imagemInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteImagem = async (imagemId: string, url: string) => {
+    if (!confirm("Deseja excluir esta imagem?")) return;
+
+    const filePath = url.split('/produto-imagens/')[1];
+    await supabase.storage.from('produto-imagens').remove([filePath]);
+    await supabase.from("produto_imagens").delete().eq("id", imagemId);
+
+    toast({ title: "Imagem excluída com sucesso!" });
+    await loadImagensLoja(produtoSelecionado.id);
   };
 
   const loadMovimentacoes = async (produtoId: string) => {
@@ -240,6 +309,9 @@ const Produtos = () => {
         preco_base: editFormData.preco_base ? parseFloat(editFormData.preco_base) : null,
         peso_unidade_kg: editFormData.peso_unidade_kg ? parseFloat(editFormData.peso_unidade_kg) : null,
         rendimento_dose_gramas: editFormData.rendimento_dose_gramas ? parseInt(editFormData.rendimento_dose_gramas) : null,
+        visivel_loja: editFormData.visivel_loja,
+        destaque_loja: editFormData.destaque_loja,
+        ordem_exibicao: editFormData.ordem_exibicao,
       })
       .eq("id", produtoSelecionado.id);
 
@@ -526,8 +598,9 @@ const Produtos = () => {
             <DialogTitle>Editar Produto</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="info">Informações</TabsTrigger>
+              <TabsTrigger value="imagens">Imagens Loja</TabsTrigger>
               <TabsTrigger value="estoque">Estoque</TabsTrigger>
             </TabsList>
             
@@ -608,6 +681,42 @@ const Produtos = () => {
                 onChange={(e) => setEditFormData({ ...editFormData, descricao: e.target.value })}
               />
             </div>
+
+            <div className="border-t pt-4">
+              <Label className="text-base font-semibold mb-3 block">Configurações da Loja Online</Label>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="visivel_loja"
+                    checked={editFormData.visivel_loja ?? true}
+                    onCheckedChange={(checked) => setEditFormData({ ...editFormData, visivel_loja: checked })}
+                  />
+                  <Label htmlFor="visivel_loja" className="cursor-pointer">
+                    Visível na loja online
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="destaque_loja"
+                    checked={editFormData.destaque_loja ?? false}
+                    onCheckedChange={(checked) => setEditFormData({ ...editFormData, destaque_loja: checked })}
+                  />
+                  <Label htmlFor="destaque_loja" className="cursor-pointer">
+                    Produto em destaque
+                  </Label>
+                </div>
+                <div>
+                  <Label htmlFor="ordem_exibicao">Ordem de exibição (menor = primeiro)</Label>
+                  <Input
+                    id="ordem_exibicao"
+                    type="number"
+                    value={editFormData.ordem_exibicao ?? 0}
+                    onChange={(e) => setEditFormData({ ...editFormData, ordem_exibicao: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+            </div>
+
                 <div className="flex gap-2 justify-end">
                   <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
                     Cancelar
@@ -617,6 +726,64 @@ const Produtos = () => {
                   </Button>
                 </div>
               </form>
+            </TabsContent>
+
+            <TabsContent value="imagens" className="space-y-4">
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <h3 className="text-lg font-semibold mb-2">Imagens do Produto na Loja</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Adicione até 5 imagens do produto. A primeira imagem será usada como capa.
+                </p>
+                
+                <div className="mb-4">
+                  <Input
+                    ref={imagemInputRef}
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    multiple
+                    onChange={handleUploadImagem}
+                    disabled={uploadingImage || imagensLoja.length >= 5}
+                  />
+                  {uploadingImage && (
+                    <p className="text-sm text-muted-foreground mt-2">Carregando imagens...</p>
+                  )}
+                </div>
+
+                {imagensLoja.length === 0 ? (
+                  <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                    <ImageIcon className="h-12 w-12 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground">Nenhuma imagem adicionada</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    {imagensLoja.map((imagem, index) => (
+                      <div key={imagem.id} className="relative group">
+                        <img
+                          src={imagem.url}
+                          alt={`Produto ${index + 1}`}
+                          className="w-full aspect-square object-cover rounded-lg border"
+                        />
+                        {index === 0 && (
+                          <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                            Capa
+                          </div>
+                        )}
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleDeleteImagem(imagem.id, imagem.url)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                        <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                          Ordem: {index + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="estoque" className="space-y-4">
