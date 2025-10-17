@@ -53,10 +53,19 @@ export const LojaFooter = () => {
         </div>
 
         {/* Copyright */}
-        <div className="mt-8 pt-8 border-t text-center">
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} OLD BRASIL. Todos os direitos reservados.
-          </p>
+        <div className="mt-8 pt-8 border-t">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} OLD BRASIL. Todos os direitos reservados.
+            </p>
+            {/* Link discreto para CRM */}
+            <Link 
+              to="/login" 
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+            >
+              <span className="opacity-50">🔒</span> Acesso CRM
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

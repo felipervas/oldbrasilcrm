@@ -22,6 +22,7 @@ const Colaboradores = lazy(() => import("./pages/Colaboradores"));
 const Produtos = lazy(() => import("./pages/Produtos"));
 const Marcas = lazy(() => import("./pages/Marcas"));
 const Catalogos = lazy(() => import("./pages/Catalogos"));
+const TabelasPrecos = lazy(() => import("./pages/TabelasPrecos"));
 const Receitas = lazy(() => import("./pages/Receitas"));
 const Pedidos = lazy(() => import("./pages/Pedidos"));
 const LancarPedido = lazy(() => import("./pages/LancarPedido"));
@@ -29,6 +30,7 @@ const EditarPedido = lazy(() => import("./pages/EditarPedido"));
 const MarcaDetalhes = lazy(() => import("./pages/MarcaDetalhes"));
 const EstoqueAmostras = lazy(() => import("./pages/EstoqueAmostras"));
 const GerenciarLoja = lazy(() => import("./pages/GerenciarLoja"));
+const GerenciarEquipe = lazy(() => import("./pages/GerenciarEquipe"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Páginas Públicas da Loja
@@ -181,6 +183,14 @@ const App = () => (
             }
           />
           <Route
+            path="/tabelas-precos"
+            element={
+              <AppLayout>
+                <TabelasPrecos />
+              </AppLayout>
+            }
+          />
+          <Route
             path="/receitas"
             element={
               <AppLayout>
@@ -249,6 +259,14 @@ const App = () => (
             element={
               <ProtectedAdminRoute>
                 <GerenciarLoja />
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/gerenciar-equipe"
+            element={
+              <ProtectedAdminRoute>
+                <GerenciarEquipe />
               </ProtectedAdminRoute>
             }
           />

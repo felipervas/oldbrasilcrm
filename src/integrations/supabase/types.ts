@@ -788,6 +788,7 @@ export type Database = {
           id: string
           marca_id: string | null
           nome: string
+          nome_loja: string | null
           ordem_exibicao: number | null
           peso_embalagem_kg: number | null
           peso_unidade_kg: number | null
@@ -814,6 +815,7 @@ export type Database = {
           id?: string
           marca_id?: string | null
           nome: string
+          nome_loja?: string | null
           ordem_exibicao?: number | null
           peso_embalagem_kg?: number | null
           peso_unidade_kg?: number | null
@@ -840,6 +842,7 @@ export type Database = {
           id?: string
           marca_id?: string | null
           nome?: string
+          nome_loja?: string | null
           ordem_exibicao?: number | null
           peso_embalagem_kg?: number | null
           peso_unidade_kg?: number | null

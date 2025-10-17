@@ -17,8 +17,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 const categorias = [
   { value: 'todos', label: 'Todas' },
   { value: 'sorvetes', label: 'Sorvetes', color: 'bg-blue-500' },
+  { value: 'gelato', label: 'Gelato', color: 'bg-purple-500' },
   { value: 'bolos', label: 'Bolos', color: 'bg-yellow-500' },
   { value: 'tortas', label: 'Tortas', color: 'bg-pink-500' },
+  { value: 'receitas_clientes', label: 'Receitas de Clientes', color: 'bg-green-500' },
   { value: 'outros', label: 'Outros', color: 'bg-gray-500' },
 ];
 

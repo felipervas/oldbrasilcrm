@@ -26,6 +26,7 @@ interface ProdutoItem {
 const LancarPedido = () => {
   const [clientes, setClientes] = useState<any[]>([]);
   const [produtos, setProdutos] = useState<any[]>([]);
+  const [colaboradores, setColaboradores] = useState<any[]>([]);
   const [produtosEscolhidos, setProdutosEscolhidos] = useState<ProdutoItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -36,21 +37,41 @@ const LancarPedido = () => {
   const [observacoesProduto, setObservacoesProduto] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [responsavelSelecionado, setResponsavelSelecionado] = useState("");
+  const [responsavelOutro, setResponsavelOutro] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     loadClientes();
     loadProdutos();
+    loadColaboradores();
   }, []);
+
+  const loadColaboradores = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, nome")
+      .order("nome");
+    setColaboradores(data || []);
+  };
 
   const loadClientes = async () => {
     const { data } = await supabase
       .from("clientes")
-      .select("id, nome_fantasia")
+      .select("id, nome_fantasia, responsavel_id")
       .eq("ativo", true)
       .order("nome_fantasia");
     setClientes(data || []);
+  };
+
+  const handleClienteChange = async (clienteId: string) => {
+    setSelectedCliente(clienteId);
+    
+    const cliente = clientes.find(c => c.id === clienteId);
+    if (cliente?.responsavel_id) {
+      setResponsavelSelecionado(cliente.responsavel_id);
+    }
   };
 
   const loadProdutos = async () => {
@@ -138,6 +159,11 @@ const LancarPedido = () => {
       `${p.nome} - Qtd: ${p.quantidade} - R$ ${p.preco_unitario.toFixed(2)}`
     ).join('\n');
 
+    // Determinar responsável final
+    const responsavelFinal = responsavelSelecionado === 'outro' 
+      ? responsavelOutro
+      : responsavelSelecionado;
+
     const { error } = await supabase.from("pedidos").insert({
       cliente_id: selectedCliente,
       numero_pedido: formData.get("numero_pedido") as string || null,
@@ -148,6 +174,7 @@ const LancarPedido = () => {
       parcelas: formData.get("parcelas") ? parseInt(formData.get("parcelas") as string) : null,
       dias_pagamento: formData.get("dias_pagamento") as string || null,
       observacoes: `${descricaoProdutos}\n\n${formData.get("observacoes") || ""}`,
+      responsavel_venda_id: responsavelFinal || null,
     });
 
     setLoading(false);
@@ -364,7 +391,7 @@ const LancarPedido = () => {
                     <Combobox
                       options={clientes.map(c => ({ value: c.id, label: c.nome_fantasia }))}
                       value={selectedCliente}
-                      onValueChange={setSelectedCliente}
+                      onValueChange={handleClienteChange}
                       placeholder="Selecione um cliente..."
                       searchPlaceholder="Buscar cliente..."
                       emptyText="Nenhum cliente encontrado."
@@ -372,7 +399,30 @@ const LancarPedido = () => {
                   </div>
                   <div>
                     <Label>Responsável pela Venda</Label>
-                    <Input name="responsavel_venda_id" placeholder="Nome do responsável" />
+                    <Select 
+                      value={responsavelSelecionado} 
+                      onValueChange={setResponsavelSelecionado}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecionar responsável..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {colaboradores.map(c => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nome}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="outro">➕ Outro (escrever)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {responsavelSelecionado === 'outro' && (
+                      <Input 
+                        className="mt-2"
+                        placeholder="Nome do responsável"
+                        value={responsavelOutro}
+                        onChange={(e) => setResponsavelOutro(e.target.value)}
+                      />
+                    )}
                   </div>
                 </div>
 

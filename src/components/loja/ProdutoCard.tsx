@@ -48,7 +48,7 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
             {marca}
           </Badge>
           <h3 className="font-semibold text-base line-clamp-2 min-h-[3rem]">
-            {produto.nome}
+            {produto.nome_loja || produto.nome}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">SKU: {produto.sku}</p>
         </div>

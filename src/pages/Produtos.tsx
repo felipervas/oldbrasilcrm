@@ -126,12 +126,14 @@ const Produtos = () => {
       
       const produtoData = {
         nome: nome.trim(),
+        nome_loja: formData.get("nome_loja") as string || null,
         sku: formData.get("sku") as string || null,
         descricao: formData.get("descricao") as string || null,
         marca_id: marcaSelecionada || null,
         preco_base,
         preco_por_kg,
         peso_embalagem_kg,
+        tipo_embalagem: formData.get("tipo_embalagem") as string || 'caixa',
         tipo_calculo: formData.get("tipo_calculo") as string || 'normal',
         peso_unidade_kg: formData.get("peso_unidade_kg") ? parseFloat(formData.get("peso_unidade_kg") as string) : null,
         rendimento_dose_gramas: formData.get("rendimento_dose_gramas") ? parseInt(formData.get("rendimento_dose_gramas") as string) : null,
@@ -428,12 +430,29 @@ const Produtos = () => {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="nome">Nome *</Label>
-                <Input id="nome" name="nome" required />
+                <Label htmlFor="nome">Nome Interno (CRM) *</Label>
+                <Input id="nome" name="nome" required placeholder="Ex: Manteiga de Cacau 04" />
+              </div>
+              <div>
+                <Label htmlFor="nome_loja">Nome para Loja</Label>
+                <Input id="nome_loja" name="nome_loja" placeholder="Ex: Manteiga de Cacau" />
               </div>
               <div>
                 <Label htmlFor="sku">SKU</Label>
                 <Input id="sku" name="sku" />
+              </div>
+              <div>
+                <Label htmlFor="tipo_embalagem">Tipo de Embalagem</Label>
+                <Select name="tipo_embalagem" defaultValue="caixa">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="caixa">📦 Caixa</SelectItem>
+                    <SelectItem value="saco">🛍️ Saco</SelectItem>
+                    <SelectItem value="balde">🪣 Balde</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="marca">Marca</Label>

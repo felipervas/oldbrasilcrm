@@ -65,6 +65,7 @@ const defaultMenuItems = [
   { id: "produtos", title: "Produtos", url: "/produtos", icon: Package },
   { id: "marcas", title: "Marcas", url: "/marcas", icon: Tag },
   { id: "catalogos", title: "Catálogos", url: "/catalogos", icon: FileText },
+  { id: "tabelas-precos", title: "Tabelas de Preços", url: "/tabelas-precos", icon: FileText },
   { id: "receitas", title: "Receitas", url: "/receitas", icon: FileText },
   { id: "pedidos", title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
   { id: "lancar-pedido", title: "Lançar Pedido", url: "/lancar-pedido", icon: Briefcase },
@@ -286,6 +287,14 @@ export function AppSidebar() {
                     <NavLink to={gerenciarLojaItem.url}>
                       <gerenciarLojaItem.icon className="h-4 w-4" />
                       {open && <span>{gerenciarLojaItem.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/gerenciar-equipe">
+                      <Users className="h-4 w-4" />
+                      {open && <span>Gerenciar Equipe</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
