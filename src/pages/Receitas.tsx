@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,8 +100,7 @@ export default function Receitas() {
   };
 
   return (
-    <AppLayout>
-      <div className="min-h-screen bg-gradient-subtle p-6">
+    <div className="min-h-screen bg-gradient-subtle p-6">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -324,6 +322,5 @@ export default function Receitas() {
           </Dialog>
         </div>
       </div>
-    </AppLayout>
   );
 }
