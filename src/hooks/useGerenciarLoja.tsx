@@ -284,3 +284,75 @@ export const useCreateMarca = () => {
     },
   });
 };
+
+export const useToggleVisibilidadeProduto = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, visivel }: { id: string; visivel: boolean }) => {
+      const { error } = await supabase
+        .from('produtos')
+        .update({ visivel_loja: visivel })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Log de auditoria
+      await supabase.from('loja_audit_log').insert({
+        acao: visivel ? 'mostrar_produto' : 'ocultar_produto',
+        entidade_tipo: 'produto',
+        entidade_id: id,
+      });
+    },
+    onSuccess: (_, { visivel }) => {
+      queryClient.invalidateQueries({ queryKey: ['gerenciar-produtos'] });
+      toast({
+        title: visivel ? "✅ Produto visível na loja" : "❌ Produto oculto",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao atualizar visibilidade",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useToggleDestaqueProduto = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, destaque }: { id: string; destaque: boolean }) => {
+      const { error } = await supabase
+        .from('produtos')
+        .update({ destaque_loja: destaque })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Log de auditoria
+      await supabase.from('loja_audit_log').insert({
+        acao: destaque ? 'adicionar_destaque' : 'remover_destaque',
+        entidade_tipo: 'produto',
+        entidade_id: id,
+      });
+    },
+    onSuccess: (_, { destaque }) => {
+      queryClient.invalidateQueries({ queryKey: ['gerenciar-produtos'] });
+      toast({
+        title: destaque ? "⭐ Produto em destaque" : "Destaque removido",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao atualizar destaque",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+};

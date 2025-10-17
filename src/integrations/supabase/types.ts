@@ -792,6 +792,7 @@ export type Database = {
           sku: string | null
           subcategoria: string | null
           submarca: string | null
+          tabela_preco_loja: string | null
           tipo_calculo: string | null
           updated_at: string
           visivel_loja: boolean | null
@@ -816,6 +817,7 @@ export type Database = {
           sku?: string | null
           subcategoria?: string | null
           submarca?: string | null
+          tabela_preco_loja?: string | null
           tipo_calculo?: string | null
           updated_at?: string
           visivel_loja?: boolean | null
@@ -840,6 +842,7 @@ export type Database = {
           sku?: string | null
           subcategoria?: string | null
           submarca?: string | null
+          tabela_preco_loja?: string | null
           tipo_calculo?: string | null
           updated_at?: string
           visivel_loja?: boolean | null

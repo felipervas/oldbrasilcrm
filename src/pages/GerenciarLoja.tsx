@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, Image as ImageIcon, Edit, Eye, EyeOff, Star } from 'lucide-react';
-import { useGerenciarProdutos, useGerenciarMarcas } from '@/hooks/useGerenciarLoja';
+import { useGerenciarProdutos, useGerenciarMarcas, useToggleVisibilidadeProduto, useToggleDestaqueProduto } from '@/hooks/useGerenciarLoja';
 import { ProdutoEditDialog } from '@/components/loja/ProdutoEditDialog';
 import { MarcaEditDialog } from '@/components/loja/MarcaEditDialog';
 import { ListLoadingSkeleton } from '@/components/LoadingSkeleton';
@@ -18,9 +20,59 @@ export default function GerenciarLoja() {
   const [selectedMarca, setSelectedMarca] = useState<any>(null);
   const [showProdutoDialog, setShowProdutoDialog] = useState(false);
   const [showMarcaDialog, setShowMarcaDialog] = useState(false);
+  const [filtros, setFiltros] = useState({
+    marca: '',
+    visibilidade: 'todos',
+    destaque: 'todos',
+  });
 
   const { data: produtos, isLoading: loadingProdutos } = useGerenciarProdutos(searchTerm);
   const { data: marcas, isLoading: loadingMarcas } = useGerenciarMarcas();
+  const toggleVisibilidade = useToggleVisibilidadeProduto();
+  const toggleDestaque = useToggleDestaqueProduto();
+
+  // Filtrar produtos
+  const produtosFiltrados = useMemo(() => {
+    if (!produtos) return [];
+    
+    return produtos.filter((p: any) => {
+      if (filtros.marca && p.marcas?.id !== filtros.marca) return false;
+      if (filtros.visibilidade === 'visiveis' && !p.visivel_loja) return false;
+      if (filtros.visibilidade === 'ocultos' && p.visivel_loja) return false;
+      if (filtros.destaque === 'destaque' && !p.destaque_loja) return false;
+      if (filtros.destaque === 'normal' && p.destaque_loja) return false;
+      return true;
+    });
+  }, [produtos, filtros]);
+
+  // Agrupar produtos Gencau por SKU base
+  const produtosGencauAgrupados = useMemo(() => {
+    if (!produtos) return [];
+    
+    const gencauProdutos = produtos.filter((p: any) => 
+      p.marcas?.nome?.toLowerCase().includes('gencau')
+    );
+
+    const grupos: any = {};
+    
+    gencauProdutos.forEach((p: any) => {
+      const skuBase = p.sku?.split('-')[0] || p.nome;
+      if (!grupos[skuBase]) {
+        grupos[skuBase] = {
+          skuBase,
+          nome: p.nome.replace(/\s*\(.*?\)\s*/g, '').trim(),
+          produtos: [],
+          produtoVisivelId: null,
+        };
+      }
+      grupos[skuBase].produtos.push(p);
+      if (p.visivel_loja && !grupos[skuBase].produtoVisivelId) {
+        grupos[skuBase].produtoVisivelId = p.id;
+      }
+    });
+
+    return Object.values(grupos);
+  }, [produtos]);
 
   const handleEditProduto = (produto: any) => {
     setSelectedProduto(produto);
@@ -37,6 +89,28 @@ export default function GerenciarLoja() {
     setShowMarcaDialog(true);
   };
 
+  const handleToggleVisibilidade = (id: string, visivel: boolean) => {
+    toggleVisibilidade.mutate({ id, visivel });
+  };
+
+  const handleToggleDestaque = (id: string, destaque: boolean) => {
+    toggleDestaque.mutate({ id, destaque });
+  };
+
+  const handleSelecionarProdutoVisivel = async (grupo: any, produtoId: string) => {
+    // Ocultar todos os produtos do grupo
+    for (const produto of grupo.produtos) {
+      if (produto.id !== produtoId && produto.visivel_loja) {
+        await handleToggleVisibilidade(produto.id, false);
+      }
+    }
+    // Mostrar o selecionado
+    const produtoSelecionado = grupo.produtos.find((p: any) => p.id === produtoId);
+    if (produtoSelecionado && !produtoSelecionado.visivel_loja) {
+      await handleToggleVisibilidade(produtoId, true);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="container mx-auto py-6 space-y-6">
@@ -48,32 +122,97 @@ export default function GerenciarLoja() {
         </div>
 
         <Tabs defaultValue="produtos" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+          <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
             <TabsTrigger value="produtos">Produtos</TabsTrigger>
             <TabsTrigger value="marcas">Marcas</TabsTrigger>
+            <TabsTrigger value="gencau">🎯 Curadoria Gencau</TabsTrigger>
           </TabsList>
 
           <TabsContent value="produtos" className="space-y-4">
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar produtos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
+            {/* Filtros */}
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex gap-2 flex-1 flex-wrap">
+                    {/* Busca */}
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar produtos..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+
+                    {/* Filtro por marca */}
+                    <Select 
+                      value={filtros.marca} 
+                      onValueChange={(v) => setFiltros({...filtros, marca: v})}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Todas as marcas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Todas as marcas</SelectItem>
+                        {marcas?.map((m: any) => (
+                          <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Filtro por visibilidade */}
+                    <Select 
+                      value={filtros.visibilidade} 
+                      onValueChange={(v) => setFiltros({...filtros, visibilidade: v})}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos os produtos</SelectItem>
+                        <SelectItem value="visiveis">✅ Visíveis na loja</SelectItem>
+                        <SelectItem value="ocultos">❌ Ocultos</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Filtro por destaque */}
+                    <Select 
+                      value={filtros.destaque} 
+                      onValueChange={(v) => setFiltros({...filtros, destaque: v})}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="destaque">⭐ Em destaque</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="text-sm text-muted-foreground">
+                    {produtosFiltrados?.length || 0} produto(s)
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {loadingProdutos ? (
               <ListLoadingSkeleton />
             ) : (
               <div className="grid gap-4">
-                {produtos?.map((produto: any) => (
+                {produtosFiltrados?.map((produto: any) => (
                   <Card key={produto.id}>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4">
+                        {/* Checkbox para seleção futura */}
+                        <Checkbox 
+                          id={`produto-${produto.id}`}
+                          className="flex-shrink-0"
+                        />
+
                         {/* Imagem preview */}
                         <div className="w-20 h-20 bg-muted rounded flex items-center justify-center flex-shrink-0">
                           {produto.produto_imagens?.[0]?.url ? (
@@ -116,25 +255,6 @@ export default function GerenciarLoja() {
                               </Badge>
                             )}
                             
-                            {produto.visivel_loja ? (
-                              <Badge variant="default" className="gap-1">
-                                <Eye className="h-3 w-3" />
-                                Visível
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="gap-1">
-                                <EyeOff className="h-3 w-3" />
-                                Oculto
-                              </Badge>
-                            )}
-
-                            {produto.destaque_loja && (
-                              <Badge variant="default" className="gap-1 bg-yellow-500">
-                                <Star className="h-3 w-3" />
-                                Destaque
-                              </Badge>
-                            )}
-
                             <Badge variant="outline">
                               <ImageIcon className="h-3 w-3 mr-1" />
                               {produto.produto_imagens?.length || 0} imagens
@@ -152,21 +272,119 @@ export default function GerenciarLoja() {
                               </Badge>
                             )}
                           </div>
+
+                          {/* Ações rápidas */}
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              size="sm"
+                              variant={produto.visivel_loja ? "default" : "outline"}
+                              onClick={() => handleToggleVisibilidade(produto.id, !produto.visivel_loja)}
+                            >
+                              {produto.visivel_loja ? (
+                                <><Eye className="h-3 w-3 mr-1" /> Visível</>
+                              ) : (
+                                <><EyeOff className="h-3 w-3 mr-1" /> Oculto</>
+                              )}
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant={produto.destaque_loja ? "default" : "outline"}
+                              onClick={() => handleToggleDestaque(produto.id, !produto.destaque_loja)}
+                            >
+                              <Star className="h-3 w-3 mr-1" />
+                              {produto.destaque_loja ? 'Destaque' : 'Normal'}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
 
-                {produtos?.length === 0 && (
+                {produtosFiltrados?.length === 0 && (
                   <Card>
                     <CardContent className="p-8 text-center text-muted-foreground">
-                      Nenhum produto encontrado
+                      Nenhum produto encontrado com os filtros selecionados
                     </CardContent>
                   </Card>
                 )}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="gencau" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>🎯 Curadoria Gencau</CardTitle>
+                <CardDescription>
+                  Selecione qual variação de cada produto Gencau deve aparecer na loja.
+                  Produtos com diferentes tabelas de comissão são agrupados automaticamente.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {produtosGencauAgrupados.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum produto Gencau encontrado
+                  </p>
+                ) : (
+                  produtosGencauAgrupados.map((grupo: any) => (
+                    <Card key={grupo.skuBase} className="border-2">
+                      <CardHeader>
+                        <CardTitle className="text-lg">{grupo.nome}</CardTitle>
+                        <CardDescription>
+                          {grupo.produtos.length} variação(ões) encontrada(s)
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {grupo.produtos.map((p: any) => (
+                          <div 
+                            key={p.id}
+                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                              p.visivel_loja ? 'bg-primary/5 border-primary' : 'bg-muted'
+                            }`}
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{p.nome}</span>
+                                {p.visivel_loja && (
+                                  <Badge variant="default" className="gap-1">
+                                    <Eye className="h-3 w-3" />
+                                    Visível
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                                <span>SKU: {p.sku}</span>
+                                <span>•</span>
+                                <span className="font-semibold text-foreground">
+                                  R$ {p.preco_por_kg?.toFixed(2)}/kg
+                                </span>
+                                {p.tabela_preco_loja && (
+                                  <>
+                                    <span>•</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {p.tabela_preco_loja}
+                                    </Badge>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={p.visivel_loja ? "secondary" : "default"}
+                              onClick={() => handleSelecionarProdutoVisivel(grupo, p.id)}
+                            >
+                              {p.visivel_loja ? 'Selecionado' : 'Selecionar'}
+                            </Button>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="marcas" className="space-y-4">

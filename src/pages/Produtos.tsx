@@ -106,32 +106,67 @@ const Produtos = () => {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const preco_base = formData.get("preco_base") ? parseFloat(formData.get("preco_base") as string) : null;
-    const preco_por_kg = formData.get("preco_por_kg") ? parseFloat(formData.get("preco_por_kg") as string) : null;
-    const peso_embalagem_kg = formData.get("peso_embalagem_kg") ? parseFloat(formData.get("peso_embalagem_kg") as string) : 25;
     
-    const { error } = await supabase.from("produtos").insert({
-      nome: formData.get("nome") as string,
-      sku: formData.get("sku") as string,
-      descricao: formData.get("descricao") as string,
-      marca_id: marcaSelecionada || null,
-      preco_base,
-      preco_por_kg,
-      peso_embalagem_kg,
-      tipo_calculo: formData.get("tipo_calculo") as string || 'normal',
-      peso_unidade_kg: formData.get("peso_unidade_kg") ? parseFloat(formData.get("peso_unidade_kg") as string) : null,
-      rendimento_dose_gramas: formData.get("rendimento_dose_gramas") ? parseInt(formData.get("rendimento_dose_gramas") as string) : null,
-    });
+    // Validação explícita
+    const nome = formData.get("nome") as string;
+    if (!nome || nome.trim() === '') {
+      toast({ 
+        title: "❌ Campo obrigatório", 
+        description: "O campo 'Nome' é obrigatório",
+        variant: "destructive" 
+      });
+      setLoading(false);
+      return;
+    }
 
-    setLoading(false);
+    try {
+      const preco_base = formData.get("preco_base") ? parseFloat(formData.get("preco_base") as string) : null;
+      const preco_por_kg = formData.get("preco_por_kg") ? parseFloat(formData.get("preco_por_kg") as string) : null;
+      const peso_embalagem_kg = formData.get("peso_embalagem_kg") ? parseFloat(formData.get("peso_embalagem_kg") as string) : 25;
+      
+      const produtoData = {
+        nome: nome.trim(),
+        sku: formData.get("sku") as string || null,
+        descricao: formData.get("descricao") as string || null,
+        marca_id: marcaSelecionada || null,
+        preco_base,
+        preco_por_kg,
+        peso_embalagem_kg,
+        tipo_calculo: formData.get("tipo_calculo") as string || 'normal',
+        peso_unidade_kg: formData.get("peso_unidade_kg") ? parseFloat(formData.get("peso_unidade_kg") as string) : null,
+        rendimento_dose_gramas: formData.get("rendimento_dose_gramas") ? parseInt(formData.get("rendimento_dose_gramas") as string) : null,
+        visivel_loja: true,
+        destaque_loja: false,
+        ativo: true,
+      };
 
-    if (error) {
-      toast({ title: "Erro ao adicionar produto", variant: "destructive" });
-    } else {
-      toast({ title: "Produto adicionado com sucesso!" });
+      console.log('📦 Inserindo produto:', produtoData);
+
+      const { error, data } = await supabase
+        .from("produtos")
+        .insert(produtoData)
+        .select();
+
+      if (error) {
+        console.error('❌ Erro detalhado:', error);
+        throw error;
+      }
+
+      console.log('✅ Produto criado:', data);
+      toast({ title: "✅ Produto adicionado com sucesso!" });
       setOpen(false);
       setMarcaSelecionada("");
       loadProdutos();
+      
+    } catch (error: any) {
+      console.error('❌ Erro ao adicionar produto:', error);
+      toast({ 
+        title: "❌ Erro ao adicionar produto", 
+        description: error.message || 'Erro desconhecido',
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
