@@ -21,7 +21,7 @@ export default function GerenciarLoja() {
   const [showProdutoDialog, setShowProdutoDialog] = useState(false);
   const [showMarcaDialog, setShowMarcaDialog] = useState(false);
   const [filtros, setFiltros] = useState({
-    marca: '',
+    marca: 'all',
     visibilidade: 'todos',
     destaque: 'todos',
   });
@@ -36,7 +36,7 @@ export default function GerenciarLoja() {
     if (!produtos) return [];
     
     return produtos.filter((p: any) => {
-      if (filtros.marca && p.marcas?.id !== filtros.marca) return false;
+      if (filtros.marca !== 'all' && p.marcas?.id !== filtros.marca) return false;
       if (filtros.visibilidade === 'visiveis' && !p.visivel_loja) return false;
       if (filtros.visibilidade === 'ocultos' && p.visivel_loja) return false;
       if (filtros.destaque === 'destaque' && !p.destaque_loja) return false;
@@ -154,7 +154,7 @@ export default function GerenciarLoja() {
                         <SelectValue placeholder="Todas as marcas" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todas as marcas</SelectItem>
+                        <SelectItem value="all">Todas as marcas</SelectItem>
                         {marcas?.map((m: any) => (
                           <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
                         ))}
