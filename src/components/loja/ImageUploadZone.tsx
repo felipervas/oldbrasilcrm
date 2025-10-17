@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import imageCompression from 'browser-image-compression';
 
 interface ImageUploadZoneProps {
   images: Array<{ url: string; ordem: number; id?: string }>;
@@ -19,8 +20,27 @@ export const ImageUploadZone = ({
   maxImages = 5 
 }: ImageUploadZoneProps) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const compressImages = async (files: File[]): Promise<File[]> => {
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1200,
+      useWebWorker: true,
+    };
+
+    try {
+      const compressedFiles = await Promise.all(
+        files.map(file => imageCompression(file, options))
+      );
+      return compressedFiles;
+    } catch (error) {
+      console.error('Erro ao comprimir imagens:', error);
+      return files; // Retorna arquivos originais se falhar
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     
@@ -29,14 +49,20 @@ export const ImageUploadZone = ({
     );
     
     if (files.length > 0) {
-      onUpload(files);
+      setIsCompressing(true);
+      const compressedFiles = await compressImages(files);
+      onUpload(compressedFiles);
+      setIsCompressing(false);
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
-      onUpload(files);
+      setIsCompressing(true);
+      const compressedFiles = await compressImages(files);
+      onUpload(compressedFiles);
+      setIsCompressing(false);
     }
   };
 
@@ -91,19 +117,28 @@ export const ImageUploadZone = ({
             className="hidden"
           />
           <div className="flex flex-col items-center gap-2">
-            {isDragging ? (
+            {isCompressing ? (
+              <>
+                <Upload className="h-12 w-12 text-primary animate-pulse" />
+                <p className="font-medium text-primary">
+                  Comprimindo imagens...
+                </p>
+              </>
+            ) : isDragging ? (
               <Upload className="h-12 w-12 text-primary animate-bounce" />
             ) : (
               <ImageIcon className="h-12 w-12 text-muted-foreground" />
             )}
-            <div>
-              <p className="font-medium">
-                Arraste imagens aqui
-              </p>
-              <p className="text-sm text-muted-foreground">
-                ou clique para selecionar
-              </p>
-            </div>
+            {!isCompressing && (
+              <div>
+                <p className="font-medium">
+                  Arraste imagens aqui
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  ou clique para selecionar
+                </p>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
               {images.length}/{maxImages} imagens
             </p>

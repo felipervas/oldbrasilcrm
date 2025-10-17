@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +21,7 @@ interface ProdutoCardProps {
   };
 }
 
-export const ProdutoCard = ({ produto }: ProdutoCardProps) => {
+export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
   const imagemPrincipal = produto.produto_imagens?.[0]?.url || "/placeholder.svg";
   const marca = produto.marcas?.nome || "Sem marca";
   const corMarca = getCorMarca(marca);
@@ -33,6 +34,7 @@ export const ProdutoCard = ({ produto }: ProdutoCardProps) => {
           alt={produto.nome}
           className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
           loading="lazy"
+          decoding="async"
         />
         {produto.destaque_loja && (
           <Badge className="absolute top-2 right-2 bg-accent text-accent-foreground">
@@ -69,4 +71,4 @@ export const ProdutoCard = ({ produto }: ProdutoCardProps) => {
       </CardContent>
     </Card>
   );
-};
+});

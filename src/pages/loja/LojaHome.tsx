@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, Package, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -27,9 +27,14 @@ export default function LojaHome() {
     ordenacao,
   });
 
-  const { data: produtosDestaque } = useProdutosLoja({ destaque: true });
   const { data: marcas } = useMarcasLoja();
   const { data: categorias } = useCategoriasLoja();
+
+  // Extrair produtos em destaque da query principal (evita query duplicada)
+  const produtosDestaque = useMemo(() => 
+    produtos?.filter(p => p.destaque_loja).slice(0, 8) || [],
+    [produtos]
+  );
 
   const handleMarcaChange = (marcaId: string) => {
     setFiltrosMarcas(prev =>
@@ -90,7 +95,7 @@ export default function LojaHome() {
               <h2 className="text-2xl font-bold">Produtos em Destaque</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {produtosDestaque.slice(0, 8).map((produto: any) => (
+              {produtosDestaque.map((produto: any) => (
                 <ProdutoCard key={produto.id} produto={produto} />
               ))}
             </div>

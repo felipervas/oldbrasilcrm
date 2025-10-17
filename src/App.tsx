@@ -1,7 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import AppLayout from "./components/layout/AppLayout";
@@ -44,26 +43,13 @@ const LoadingFallback = () => (
   </div>
 );
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 10 * 60 * 1000, // 10 minutos - cache agressivo
-      gcTime: 30 * 60 * 1000, // 30 minutos
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      retry: 1,
-    },
-  },
-});
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
+  <TooltipProvider>
+    <Toaster />
+    <Sonner />
+    <BrowserRouter>
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
             {/* Rota de Login */}
             <Route path="/login" element={<Login />} />
 
@@ -272,7 +258,6 @@ const App = () => (
         </Suspense>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
 );
 
 export default App;
