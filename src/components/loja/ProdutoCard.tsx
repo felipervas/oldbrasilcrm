@@ -54,13 +54,7 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
         </div>
         
         <div className="pt-2 border-t">
-          <PrecoCard
-            marca={marca}
-            precoKg={produto.preco_por_kg}
-            pesoEmbalagem={produto.peso_embalagem_kg}
-            rendimentoDose={produto.rendimento_dose_gramas}
-            compact
-          />
+          <PrecoCard produto={produto} compact />
         </div>
 
         <Link to={`/loja/produto/${produto.id}`} className="block">

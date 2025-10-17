@@ -128,12 +128,7 @@ export default function ProdutoDetalhes() {
               <AvisoVolatilidade dataAtualizacao={produto.preco_atualizado_em} />
             )}
 
-            <PrecoCard
-              marca={marca}
-              precoKg={produto.preco_por_kg}
-              pesoEmbalagem={produto.peso_embalagem_kg}
-              rendimentoDose={produto.rendimento_dose_gramas}
-            />
+            <PrecoCard produto={produto} />
 
             {produto.descricao && (
               <div>

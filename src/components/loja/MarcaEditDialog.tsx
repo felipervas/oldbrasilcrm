@@ -20,6 +20,7 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
     descricao: '',
     site: '',
     ativa: true,
+    imagem_banner: '',
   });
 
   const updateMarca = useUpdateMarca();
@@ -33,6 +34,7 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         descricao: marca.descricao || '',
         site: marca.site || '',
         ativa: marca.ativa ?? true,
+        imagem_banner: marca.imagem_banner || '',
       });
     } else {
       setFormData({
@@ -41,6 +43,7 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         descricao: '',
         site: '',
         ativa: true,
+        imagem_banner: '',
       });
     }
   }, [marca]);
@@ -123,6 +126,19 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
               onChange={(e) => setFormData({ ...formData, site: e.target.value })}
               placeholder="https://..."
             />
+          </div>
+
+          <div>
+            <Label>URL do Banner (opcional)</Label>
+            <Input
+              type="url"
+              value={formData.imagem_banner}
+              onChange={(e) => setFormData({ ...formData, imagem_banner: e.target.value })}
+              placeholder="https://..."
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              Banner exibido na página da loja (recomendado: 1200x400px)
+            </p>
           </div>
 
           <div className="flex items-center space-x-2">

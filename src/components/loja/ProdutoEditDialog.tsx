@@ -22,6 +22,14 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   const uploadImagem = useUploadImagemProduto();
   const removeImagem = useRemoveImagemProduto();
 
+  // FASE 1: Função helper para tratar valores numéricos
+  const parseNumericValue = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === '') return null;
+    const parsed = parseFloat(trimmed);
+    return isNaN(parsed) ? null : parsed;
+  };
+
   useEffect(() => {
     if (produto) {
       setFormData({
@@ -138,8 +146,8 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                 <Input
                   type="number"
                   step="0.01"
-                  value={formData.preco_por_kg}
-                  onChange={(e) => setFormData({ ...formData, preco_por_kg: parseFloat(e.target.value) })}
+                  value={formData.preco_por_kg ?? ''}
+                  onChange={(e) => setFormData({ ...formData, preco_por_kg: parseNumericValue(e.target.value) })}
                 />
               </div>
               <div>
@@ -147,19 +155,19 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                 <Input
                   type="number"
                   step="0.01"
-                  value={formData.peso_embalagem_kg}
-                  onChange={(e) => setFormData({ ...formData, peso_embalagem_kg: parseFloat(e.target.value) })}
+                  value={formData.peso_embalagem_kg ?? ''}
+                  onChange={(e) => setFormData({ ...formData, peso_embalagem_kg: parseNumericValue(e.target.value) })}
                 />
               </div>
             </div>
 
-            {produto?.marcas?.nome?.toUpperCase() === 'UNIKA' && (
+            {produto?.marcas?.nome?.toUpperCase().includes('UNIKA') && (
               <div>
                 <Label>Rendimento por Dose (gramas)</Label>
                 <Input
                   type="number"
-                  value={formData.rendimento_dose_gramas}
-                  onChange={(e) => setFormData({ ...formData, rendimento_dose_gramas: parseInt(e.target.value) })}
+                  value={formData.rendimento_dose_gramas ?? ''}
+                  onChange={(e) => setFormData({ ...formData, rendimento_dose_gramas: parseNumericValue(e.target.value) })}
                 />
                 <p className="text-sm text-muted-foreground mt-1">
                   Ex: 150g por dose de sorvete

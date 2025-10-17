@@ -554,6 +554,7 @@ export type Database = {
           created_at: string
           descricao: string | null
           id: string
+          imagem_banner: string | null
           nome: string
           site: string | null
           slug: string | null
@@ -564,6 +565,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          imagem_banner?: string | null
           nome: string
           site?: string | null
           slug?: string | null
@@ -574,6 +576,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          imagem_banner?: string | null
           nome?: string
           site?: string | null
           slug?: string | null
