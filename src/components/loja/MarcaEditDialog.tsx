@@ -6,6 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useUpdateMarca, useCreateMarca } from '@/hooks/useGerenciarLoja';
+import { supabase } from '@/integrations/supabase/client';
+import { Upload, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MarcaEditDialogProps {
   marca?: any;
@@ -21,7 +24,9 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
     site: '',
     ativa: true,
     imagem_banner: '',
+    mostrar_texto_banner: true,
   });
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   const updateMarca = useUpdateMarca();
   const createMarca = useCreateMarca();
@@ -35,6 +40,7 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         site: marca.site || '',
         ativa: marca.ativa ?? true,
         imagem_banner: marca.imagem_banner || '',
+        mostrar_texto_banner: marca.mostrar_texto_banner ?? true,
       });
     } else {
       setFormData({
@@ -44,6 +50,7 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         site: '',
         ativa: true,
         imagem_banner: '',
+        mostrar_texto_banner: true,
       });
     }
   }, [marca]);
@@ -70,6 +77,56 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+  };
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione uma imagem válida');
+      return;
+    }
+
+    // Validar tamanho (máx 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    try {
+      setUploadingBanner(true);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${formData.slug || 'temp'}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('marca-banners')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('marca-banners')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, imagem_banner: publicUrl });
+      toast.success('Banner enviado com sucesso!');
+    } catch (error: any) {
+      console.error('Erro ao fazer upload:', error);
+      toast.error('Erro ao enviar banner: ' + error.message);
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
+  const handleRemoveBanner = () => {
+    setFormData({ ...formData, imagem_banner: '' });
   };
 
   return (
@@ -129,16 +186,52 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
           </div>
 
           <div>
-            <Label>URL do Banner (opcional)</Label>
-            <Input
-              type="url"
-              value={formData.imagem_banner}
-              onChange={(e) => setFormData({ ...formData, imagem_banner: e.target.value })}
-              placeholder="https://..."
+            <Label>Banner da Marca</Label>
+            {formData.imagem_banner ? (
+              <div className="space-y-2">
+                <div className="relative w-full h-32 rounded-lg overflow-hidden border">
+                  <img 
+                    src={formData.imagem_banner} 
+                    alt="Banner preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={handleRemoveBanner}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-2">
+                  Clique para fazer upload do banner
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Recomendado: 1200x400px (máx 5MB)
+                </p>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBannerUpload}
+                  disabled={uploadingBanner}
+                  className="cursor-pointer"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={formData.mostrar_texto_banner}
+              onCheckedChange={(checked) => setFormData({ ...formData, mostrar_texto_banner: checked })}
             />
-            <p className="text-sm text-muted-foreground mt-1">
-              Banner exibido na página da loja (recomendado: 1200x400px)
-            </p>
+            <Label>Mostrar nome da marca sobre o banner</Label>
           </div>
 
           <div className="flex items-center space-x-2">

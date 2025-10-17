@@ -25,9 +25,9 @@ export default function LojaHome() {
           </a>
         </div>
       </section>
-
+      
       {/* Marcas e Produtos */}
-      <div className="container mx-auto px-4 py-12">
+      <div id="produtos" className="container mx-auto px-4 py-16">
         {isLoading ? (
           <div className="space-y-16">
             {[...Array(3)].map((_, i) => (

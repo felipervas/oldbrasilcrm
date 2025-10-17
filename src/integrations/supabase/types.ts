@@ -555,6 +555,7 @@ export type Database = {
           descricao: string | null
           id: string
           imagem_banner: string | null
+          mostrar_texto_banner: boolean | null
           nome: string
           site: string | null
           slug: string | null
@@ -566,6 +567,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           imagem_banner?: string | null
+          mostrar_texto_banner?: boolean | null
           nome: string
           site?: string | null
           slug?: string | null
@@ -577,6 +579,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           imagem_banner?: string | null
+          mostrar_texto_banner?: boolean | null
           nome?: string
           site?: string | null
           slug?: string | null
@@ -797,6 +800,7 @@ export type Database = {
           submarca: string | null
           tabela_preco_loja: string | null
           tipo_calculo: string | null
+          tipo_embalagem: string | null
           updated_at: string
           visivel_loja: boolean | null
         }
@@ -822,6 +826,7 @@ export type Database = {
           submarca?: string | null
           tabela_preco_loja?: string | null
           tipo_calculo?: string | null
+          tipo_embalagem?: string | null
           updated_at?: string
           visivel_loja?: boolean | null
         }
@@ -847,6 +852,7 @@ export type Database = {
           submarca?: string | null
           tabela_preco_loja?: string | null
           tipo_calculo?: string | null
+          tipo_embalagem?: string | null
           updated_at?: string
           visivel_loja?: boolean | null
         }

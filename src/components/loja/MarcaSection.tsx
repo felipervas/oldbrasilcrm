@@ -9,23 +9,32 @@ interface MarcaSectionProps {
 }
 
 export const MarcaSection = ({ marca }: MarcaSectionProps) => {
-  const { nome, slug, linhas, primeiros5, produtos, imagem_banner } = marca;
+  const { nome, slug, linhas, primeiros5, produtos, imagem_banner, mostrar_texto_banner } = marca;
   
   return (
     <section className="mb-16">
       {/* Banner da Marca */}
-      <div className="relative h-48 bg-gradient-to-r from-primary to-primary/80 rounded-lg mb-8 overflow-hidden">
-        {/* Imagem de fundo se tiver */}
-        {imagem_banner && (
+      <div className="relative h-64 bg-gradient-to-r from-primary to-primary/80 rounded-xl mb-8 overflow-hidden shadow-lg">
+        {/* Imagem de fundo */}
+        {imagem_banner ? (
           <img 
             src={imagem_banner} 
-            className="absolute inset-0 w-full h-full object-cover opacity-30"
+            className="absolute inset-0 w-full h-full object-cover"
             alt={nome}
           />
+        ) : null}
+        
+        {/* Overlay escuro se tiver imagem e mostrar texto */}
+        {imagem_banner && mostrar_texto_banner && (
+          <div className="absolute inset-0 bg-black/40" />
         )}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h2 className="text-4xl font-bold text-white drop-shadow-lg">{nome}</h2>
-        </div>
+        
+        {/* Texto do nome da marca */}
+        {mostrar_texto_banner && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <h2 className="text-5xl font-bold text-white drop-shadow-2xl">{nome}</h2>
+          </div>
+        )}
       </div>
       
       {/* Grid de Linhas/Produtos */}

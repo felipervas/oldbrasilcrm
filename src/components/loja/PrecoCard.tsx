@@ -7,11 +7,23 @@ interface PrecoCardProps {
   compact?: boolean;
 }
 
+const getEmbalagemIcon = (tipo: string) => {
+  const icons: Record<string, string> = {
+    'caixa': '📦',
+    'saco': '🛍️',
+    'balde': '🪣'
+  };
+  return icons[tipo] || '📦';
+};
+
 export const PrecoCard = ({
   produto,
   compact = false,
 }: PrecoCardProps) => {
   const infoPreco = formatarInfoPreco(produto);
+  const tipoEmb = produto.tipo_embalagem || 'caixa';
+  const iconEmb = getEmbalagemIcon(tipoEmb);
+  const nomeEmb = tipoEmb.charAt(0).toUpperCase() + tipoEmb.slice(1);
   
   if (!infoPreco) {
     if (compact) {
@@ -47,19 +59,19 @@ export const PrecoCard = ({
 
     return (
       <div className="space-y-2">
-        <div className="flex justify-between p-2 bg-blue-50 dark:bg-blue-950 rounded">
-          <span className="text-sm">💰 Preço/kg:</span>
-          <span className="font-bold">{formatarPreco(infoPreco.precoKg)}</span>
+        <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg">
+          <span className="text-sm">💰 Preço/kg</span>
+          <span className="font-bold text-lg">{formatarPreco(infoPreco.precoKg)}</span>
         </div>
-        <div className="flex justify-between p-2 bg-green-50 dark:bg-green-950 rounded">
-          <span className="text-sm">🥄 Dose ({infoPreco.rendimentoDose}g):</span>
-          <span className="font-bold text-green-700 dark:text-green-400">
+        <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+          <span className="text-sm">🥄 Dose ({infoPreco.rendimentoDose}g)</span>
+          <span className="font-bold text-lg text-green-700 dark:text-green-400">
             {formatarPreco(infoPreco.precoDose)}
           </span>
         </div>
-        <div className="flex justify-between p-2 bg-purple-50 dark:bg-purple-950 rounded">
-          <span className="text-sm">📦 Embalagem ({infoPreco.pesoEmbalagem}kg):</span>
-          <span className="font-bold text-purple-700 dark:text-purple-400">
+        <div className="flex justify-between items-center p-3 bg-accent/10 rounded-lg">
+          <span className="text-sm">{iconEmb} {nomeEmb} ({infoPreco.pesoEmbalagem}kg)</span>
+          <span className="font-bold text-lg text-accent-foreground">
             {formatarPreco(infoPreco.precoEmbalagem)}
           </span>
         </div>
@@ -85,15 +97,17 @@ export const PrecoCard = ({
 
     return (
       <div className="space-y-2">
-        <div className="flex justify-between p-2 bg-orange-50 dark:bg-orange-950 rounded">
-          <span className="text-sm">💰 Preço/kg (ref):</span>
-          <span className="font-bold">{formatarPreco(infoPreco.precoKg)}</span>
+        <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
+          <span className="text-sm">💰 Preço/kg (ref)</span>
+          <span className="font-bold text-lg">{formatarPreco(infoPreco.precoKg)}</span>
         </div>
-        <div className="flex justify-between p-2 bg-muted rounded">
-          <span className="text-sm">📦 Caixa {infoPreco.pesoEmbalagem}kg:</span>
-          <span className="font-bold">{formatarPreco(infoPreco.precoEmbalagem)}</span>
+        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+          <span className="text-sm">{iconEmb} {nomeEmb} {infoPreco.pesoEmbalagem}kg</span>
+          <span className="font-bold text-lg">{formatarPreco(infoPreco.precoEmbalagem)}</span>
         </div>
-        <p className="text-xs text-orange-600">⚠️ Preço sujeito a variação</p>
+        <p className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
+          ⚠️ Preço sujeito a variação
+        </p>
       </div>
     );
   }
@@ -114,13 +128,13 @@ export const PrecoCard = ({
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-between p-2 bg-muted rounded">
-        <span className="text-sm">💰 Preço/kg:</span>
-        <span className="font-bold">{formatarPreco(infoPreco.precoKg)}</span>
+      <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg">
+        <span className="text-sm">💰 Preço/kg</span>
+        <span className="font-bold text-lg">{formatarPreco(infoPreco.precoKg)}</span>
       </div>
-      <div className="flex justify-between p-2 bg-muted rounded">
-        <span className="text-sm">📦 Embalagem {infoPreco.pesoEmbalagem}kg:</span>
-        <span className="font-bold">{formatarPreco(infoPreco.precoEmbalagem)}</span>
+      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+        <span className="text-sm">{iconEmb} {nomeEmb} {infoPreco.pesoEmbalagem}kg</span>
+        <span className="font-bold text-lg">{formatarPreco(infoPreco.precoEmbalagem)}</span>
       </div>
     </div>
   );

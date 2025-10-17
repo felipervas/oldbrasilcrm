@@ -45,6 +45,7 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
         destaque_loja: produto.destaque_loja ?? false,
         ordem_exibicao: produto.ordem_exibicao || 0,
         ativo: produto.ativo ?? true,
+        tipo_embalagem: produto.tipo_embalagem || 'caixa',
       });
     }
   }, [produto]);
@@ -140,7 +141,7 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
           </TabsContent>
 
           <TabsContent value="precos" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label>Preço por Kg (R$)</Label>
                 <Input
@@ -158,6 +159,22 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                   value={formData.peso_embalagem_kg ?? ''}
                   onChange={(e) => setFormData({ ...formData, peso_embalagem_kg: parseNumericValue(e.target.value) })}
                 />
+              </div>
+              <div>
+                <Label>Tipo de Embalagem</Label>
+                <Select
+                  value={formData.tipo_embalagem}
+                  onValueChange={(value) => setFormData({ ...formData, tipo_embalagem: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="caixa">Caixa</SelectItem>
+                    <SelectItem value="saco">Saco</SelectItem>
+                    <SelectItem value="balde">Balde</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
