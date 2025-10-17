@@ -526,6 +526,7 @@ export type Database = {
           id: string
           nome: string
           site: string | null
+          slug: string | null
           updated_at: string
         }
         Insert: {
@@ -535,6 +536,7 @@ export type Database = {
           id?: string
           nome: string
           site?: string | null
+          slug?: string | null
           updated_at?: string
         }
         Update: {
@@ -544,6 +546,7 @@ export type Database = {
           id?: string
           nome?: string
           site?: string | null
+          slug?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -741,6 +744,7 @@ export type Database = {
       produtos: {
         Row: {
           ativo: boolean
+          categoria: string | null
           created_at: string
           descricao: string | null
           destaque_loja: boolean | null
@@ -751,10 +755,12 @@ export type Database = {
           ordem_exibicao: number | null
           peso_embalagem_kg: number | null
           peso_unidade_kg: number | null
+          preco_atualizado_em: string | null
           preco_base: number | null
           preco_por_kg: number | null
           rendimento_dose_gramas: number | null
           sku: string | null
+          subcategoria: string | null
           submarca: string | null
           tipo_calculo: string | null
           updated_at: string
@@ -762,6 +768,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          categoria?: string | null
           created_at?: string
           descricao?: string | null
           destaque_loja?: boolean | null
@@ -772,10 +779,12 @@ export type Database = {
           ordem_exibicao?: number | null
           peso_embalagem_kg?: number | null
           peso_unidade_kg?: number | null
+          preco_atualizado_em?: string | null
           preco_base?: number | null
           preco_por_kg?: number | null
           rendimento_dose_gramas?: number | null
           sku?: string | null
+          subcategoria?: string | null
           submarca?: string | null
           tipo_calculo?: string | null
           updated_at?: string
@@ -783,6 +792,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          categoria?: string | null
           created_at?: string
           descricao?: string | null
           destaque_loja?: boolean | null
@@ -793,10 +803,12 @@ export type Database = {
           ordem_exibicao?: number | null
           peso_embalagem_kg?: number | null
           peso_unidade_kg?: number | null
+          preco_atualizado_em?: string | null
           preco_base?: number | null
           preco_por_kg?: number | null
           rendimento_dose_gramas?: number | null
           sku?: string | null
+          subcategoria?: string | null
           submarca?: string | null
           tipo_calculo?: string | null
           updated_at?: string

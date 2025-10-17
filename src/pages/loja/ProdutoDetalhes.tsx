@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProdutoCard } from "@/components/loja/ProdutoCard";
+import { PrecoCard } from "@/components/loja/PrecoCard";
+import { AvisoVolatilidade } from "@/components/loja/AvisoVolatilidade";
 import { useProdutoDetalhes, useProdutosRelacionados } from "@/hooks/useLojaPublic";
 import { gerarLinkWhatsApp } from "@/lib/whatsapp";
+import { isMarcaVolatil, getCorMarca } from "@/lib/precosLoja";
 
 export default function ProdutoDetalhes() {
   const { id } = useParams<{ id: string }>();
@@ -48,29 +51,9 @@ export default function ProdutoDetalhes() {
   const imagens = produto.produto_imagens || [];
   const imagemPrincipal = imagens[imagemAtual]?.url || "/placeholder.svg";
   const marca = produto.marcas?.nome || "Sem marca";
+  const corMarca = getCorMarca(marca);
+  const marcaVolatil = isMarcaVolatil(marca);
 
-  const calcularPreco = () => {
-    if (produto.tipo_calculo === "por_kg" && produto.preco_por_kg && produto.peso_embalagem_kg) {
-      const precoCaixa = produto.preco_por_kg * produto.peso_embalagem_kg;
-      return (
-        <div className="space-y-2 p-4 bg-muted rounded-lg">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Preço por kg:</span>
-            <span className="font-semibold">R$ {produto.preco_por_kg.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-lg">
-            <span className="font-medium">Caixa ({produto.peso_embalagem_kg}kg):</span>
-            <span className="font-bold text-primary">R$ {precoCaixa.toFixed(2)}</span>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <Badge variant="secondary" className="text-base py-2 px-4">
-        Preço sob consulta
-      </Badge>
-    );
-  };
 
   const linkWhatsApp = gerarLinkWhatsApp({
     nome: produto.nome,
@@ -131,12 +114,26 @@ export default function ProdutoDetalhes() {
           {/* Informações do Produto */}
           <div className="space-y-6">
             <div>
-              <Badge className="mb-3">{marca}</Badge>
+              <Badge className={`${corMarca} text-white mb-3`}>{marca}</Badge>
               <h1 className="text-3xl font-bold mb-2">{produto.nome}</h1>
               <p className="text-muted-foreground">SKU: {produto.sku}</p>
+              {produto.categoria && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Categoria: {produto.categoria}
+                </p>
+              )}
             </div>
 
-            {calcularPreco()}
+            {marcaVolatil && produto.preco_atualizado_em && (
+              <AvisoVolatilidade dataAtualizacao={produto.preco_atualizado_em} />
+            )}
+
+            <PrecoCard
+              marca={marca}
+              precoKg={produto.preco_por_kg}
+              pesoEmbalagem={produto.peso_embalagem_kg}
+              rendimentoDose={produto.rendimento_dose_gramas}
+            />
 
             {produto.descricao && (
               <div>

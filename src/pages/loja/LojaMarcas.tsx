@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
-import { ExternalLink, Package } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Package, ExternalLink } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMarcasLoja } from "@/hooks/useLojaPublic";
+import { getCorMarca } from "@/lib/precosLoja";
 
 export default function LojaMarcas() {
   const { data: marcas, isLoading } = useMarcasLoja();
@@ -37,49 +38,52 @@ export default function LojaMarcas() {
           </div>
         ) : marcas && marcas.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {marcas.map((marca: any) => (
-              <Card
-                key={marca.id}
-                className="hover:shadow-lg transition-shadow duration-300"
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-2xl mb-2">{marca.nome}</CardTitle>
-                      <Badge variant="secondary">
-                        <Package className="h-3 w-3 mr-1" />
-                        {marca.produtos_count} {marca.produtos_count === 1 ? "produto" : "produtos"}
+            {marcas.map((marca: any) => {
+              const corMarca = getCorMarca(marca.nome);
+              return (
+                <Card key={marca.id} className="group hover:shadow-lg transition-all hover:-translate-y-1">
+                  <div className={`h-2 ${corMarca}`} />
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-2xl">{marca.nome}</CardTitle>
+                        {marca.descricao && (
+                          <CardDescription className="text-base mt-2">{marca.descricao}</CardDescription>
+                        )}
+                      </div>
+                      <Badge className={`${corMarca} text-white`}>
+                        {marca.produtos_count}
                       </Badge>
                     </div>
-                  </div>
-                  {marca.descricao && (
-                    <CardDescription className="mt-3 line-clamp-3">
-                      {marca.descricao}
-                    </CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Link to={`/loja?marca=${marca.id}`}>
-                    <Button className="w-full" variant="default">
-                      Ver Produtos
-                    </Button>
-                  </Link>
-                  {marca.site && (
-                    <a
-                      href={marca.site}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block"
-                    >
-                      <Button className="w-full" variant="outline">
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Visitar Site
-                      </Button>
-                    </a>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Package className="h-4 w-4" />
+                      <span className="text-sm">
+                        {marca.produtos_count} {marca.produtos_count === 1 ? 'produto disponível' : 'produtos disponíveis'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-col gap-2">
+                      <Link to={`/loja/marca/${marca.slug}`} className="block">
+                        <Button className="w-full">
+                          Ver Produtos da Marca
+                        </Button>
+                      </Link>
+                      
+                      {marca.site && (
+                        <a href={marca.site} target="_blank" rel="noopener noreferrer" className="block">
+                          <Button variant="outline" className="w-full">
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Site da Marca
+                          </Button>
+                        </a>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-12">
