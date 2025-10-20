@@ -226,6 +226,10 @@ const Produtos = () => {
       sku: produto.sku || "",
       descricao: produto.descricao || "",
       preco_base: produto.preco_base || "",
+      preco_por_kg: produto.preco_por_kg || "",
+      peso_embalagem_kg: produto.peso_embalagem_kg || 25,
+      peso_unidade_kg: produto.peso_unidade_kg || "",
+      rendimento_dose_gramas: produto.rendimento_dose_gramas || "",
       visivel_loja: produto.visivel_loja ?? true,
       destaque_loja: produto.destaque_loja ?? false,
       ordem_exibicao: produto.ordem_exibicao ?? 0,
@@ -344,6 +348,8 @@ const Produtos = () => {
         descricao: editFormData.descricao,
         marca_id: marcaSelecionada || null,
         preco_base: editFormData.preco_base ? parseFloat(editFormData.preco_base) : null,
+        preco_por_kg: editFormData.preco_por_kg ? parseFloat(editFormData.preco_por_kg) : null,
+        peso_embalagem_kg: editFormData.peso_embalagem_kg ? parseFloat(editFormData.peso_embalagem_kg) : 25,
         peso_unidade_kg: editFormData.peso_unidade_kg ? parseFloat(editFormData.peso_unidade_kg) : null,
         rendimento_dose_gramas: editFormData.rendimento_dose_gramas ? parseInt(editFormData.rendimento_dose_gramas) : null,
         visivel_loja: editFormData.visivel_loja,
@@ -734,6 +740,90 @@ const Produtos = () => {
                 value={editFormData.descricao || ""}
                 onChange={(e) => setEditFormData({ ...editFormData, descricao: e.target.value })}
               />
+            </div>
+
+            <div className="border-t pt-4">
+              <h4 className="font-semibold mb-3 text-sm">💰 Cálculos de Preço</h4>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Peso da Embalagem (kg)</Label>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    value={editFormData.peso_embalagem_kg || 25}
+                    onChange={(e) => {
+                      const peso = parseFloat(e.target.value) || 0;
+                      const precoKg = editFormData.preco_por_kg ? parseFloat(editFormData.preco_por_kg) : 0;
+                      
+                      setEditFormData({
+                        ...editFormData,
+                        peso_embalagem_kg: peso,
+                        preco_base: peso > 0 && precoKg > 0 
+                          ? (precoKg * peso).toFixed(2)
+                          : editFormData.preco_base
+                      });
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <Label>Preço por Kg (R$)</Label>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    value={editFormData.preco_por_kg || ""}
+                    onChange={(e) => {
+                      const precoKg = parseFloat(e.target.value) || 0;
+                      const peso = editFormData.peso_embalagem_kg || 25;
+                      
+                      setEditFormData({
+                        ...editFormData,
+                        preco_por_kg: precoKg,
+                        preco_base: precoKg > 0 && peso > 0 
+                          ? (precoKg * peso).toFixed(2)
+                          : editFormData.preco_base
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <Label>Rendimento por Dose (gramas)</Label>
+                <Input 
+                  type="number"
+                  value={editFormData.rendimento_dose_gramas || ""}
+                  onChange={(e) => setEditFormData({
+                    ...editFormData,
+                    rendimento_dose_gramas: parseInt(e.target.value) || ""
+                  })}
+                  placeholder="Ex: 30 (gramas por uso)"
+                />
+              </div>
+
+              {editFormData.preco_por_kg && editFormData.peso_embalagem_kg && (
+                <div className="bg-muted p-4 rounded-lg space-y-2 text-sm mt-4">
+                  <p className="font-semibold">📊 Resumo de Preços:</p>
+                  <p>
+                    <strong>Preço Total da Embalagem:</strong>{' '}
+                    R$ {(parseFloat(editFormData.preco_por_kg) * parseFloat(editFormData.peso_embalagem_kg)).toFixed(2)}
+                  </p>
+                  
+                  {editFormData.rendimento_dose_gramas && (
+                    <>
+                      <p>
+                        <strong>Doses por kg:</strong>{' '}
+                        {(1000 / parseInt(editFormData.rendimento_dose_gramas)).toFixed(1)} doses
+                      </p>
+                      <p>
+                        <strong>Custo por dose ({editFormData.rendimento_dose_gramas}g):</strong>{' '}
+                        R$ {((parseFloat(editFormData.preco_por_kg) * parseInt(editFormData.rendimento_dose_gramas)) / 1000).toFixed(2)}
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="border-t pt-4">

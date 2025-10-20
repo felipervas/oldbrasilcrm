@@ -426,7 +426,7 @@ const LancarPedido = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Número do Pedido</Label>
                     <Input name="numero_pedido" placeholder="Ex: 001/2025" />
@@ -434,19 +434,6 @@ const LancarPedido = () => {
                   <div>
                     <Label>Data do Pedido</Label>
                     <Input type="date" name="data_pedido" defaultValue={new Date().toISOString().split('T')[0]} />
-                  </div>
-                  <div>
-                    <Label>Status</Label>
-                    <Select name="status" defaultValue="pendente">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                        <SelectItem value="confirmado">Confirmado</SelectItem>
-                        <SelectItem value="entregue">Entregue</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
 

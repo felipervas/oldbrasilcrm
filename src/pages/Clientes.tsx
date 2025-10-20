@@ -956,14 +956,37 @@ const Clientes = () => {
                 </Button>
                 <div className="space-y-3">
                   {contatos.map((contato) => (
-                    <div key={contato.id} className="border rounded p-3">
-                      <p className="font-semibold">{contato.nome}</p>
-                      {contato.cargo && <p className="text-sm text-muted-foreground">{contato.cargo}</p>}
-                      {contato.email && <p className="text-sm">📧 {contato.email}</p>}
-                      {contato.telefone && <p className="text-sm">📱 {contato.telefone}</p>}
-                      {contato.aniversario && (
-                        <p className="text-sm">🎂 {new Date(contato.aniversario).toLocaleDateString('pt-BR')}</p>
-                      )}
+                    <div key={contato.id} className="border rounded p-3 flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold">{contato.nome}</p>
+                        {contato.cargo && <p className="text-sm text-muted-foreground">{contato.cargo}</p>}
+                        {contato.email && <p className="text-sm">📧 {contato.email}</p>}
+                        {contato.telefone && <p className="text-sm">📱 {contato.telefone}</p>}
+                        {contato.aniversario && (
+                          <p className="text-sm">🎂 {new Date(contato.aniversario).toLocaleDateString('pt-BR')}</p>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          if (!confirm("Deseja excluir este contato?")) return;
+                          
+                          const { error } = await supabase
+                            .from('contatos_clientes')
+                            .delete()
+                            .eq('id', contato.id);
+                          
+                          if (error) {
+                            toast({ title: "Erro ao excluir contato", variant: "destructive" });
+                          } else {
+                            toast({ title: "Contato excluído com sucesso!" });
+                            loadContatos(clienteSelecionado.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
                   ))}
                 </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Calendar, Plus, Trash2, CheckSquare, Clock, Package } from "lucide-react";
+import { Calendar, Plus, Trash2, CheckSquare, Clock, Package, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useParams } from "react-router-dom";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 
 const ColaboradorPerfil = () => {
@@ -22,6 +23,8 @@ const ColaboradorPerfil = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvento, setEditingEvento] = useState<any>(null);
+  const [tarefaDialogOpen, setTarefaDialogOpen] = useState(false);
+  const [editingTarefa, setEditingTarefa] = useState<any>(null);
   const [stats, setStats] = useState({
     tarefasConcluidas: 0,
     tarefasPendentes: 0,
@@ -191,6 +194,72 @@ const ColaboradorPerfil = () => {
     setDialogOpen(true);
   };
 
+  const loadTarefas = async () => {
+    if (!id) return;
+    
+    const { data: tarefasData, error: tarefasError } = await supabase
+      .from("tarefas")
+      .select("*, clientes(nome_fantasia)")
+      .eq("responsavel_id", id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (tarefasError) {
+      console.error("Erro ao carregar tarefas:", tarefasError);
+    } else {
+      setTarefas(tarefasData || []);
+    }
+  };
+
+  const handleEditTarefa = (tarefa: any) => {
+    setEditingTarefa(tarefa);
+    setTarefaDialogOpen(true);
+  };
+
+  const handleDeleteTarefa = async (tarefaId: string) => {
+    if (!confirm("Deseja excluir esta tarefa?")) return;
+    
+    const { error } = await supabase
+      .from('tarefas')
+      .delete()
+      .eq('id', tarefaId);
+    
+    if (error) {
+      toast({ title: "Erro ao excluir tarefa", variant: "destructive" });
+    } else {
+      toast({ title: "Tarefa excluída com sucesso!" });
+      loadColaboradorData();
+    }
+  };
+
+  const handleUpdateTarefa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTarefa) return;
+    
+    const formData = new FormData(e.target as HTMLFormElement);
+    
+    const { error } = await supabase
+      .from('tarefas')
+      .update({
+        titulo: formData.get('titulo') as string,
+        descricao: formData.get('descricao') as string,
+        data_prevista: formData.get('data_prevista') as string,
+        horario: formData.get('horario') as string,
+        status: formData.get('status') as 'pendente' | 'em_andamento' | 'concluida' | 'cancelada',
+        prioridade: formData.get('prioridade') as 'baixa' | 'media' | 'alta',
+      })
+      .eq('id', editingTarefa.id);
+    
+    if (error) {
+      toast({ title: "Erro ao atualizar tarefa", variant: "destructive" });
+    } else {
+      toast({ title: "Tarefa atualizada com sucesso!" });
+      setTarefaDialogOpen(false);
+      setEditingTarefa(null);
+      loadColaboradorData();
+    }
+  };
+
   const renderEventos = () => {
     const hoje = new Date();
     const proximosEventos = eventos
@@ -355,15 +424,32 @@ const ColaboradorPerfil = () => {
                 Gerencie seus compromissos e eventos dos próximos 30 dias
               </CardDescription>
             </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <Button 
-            onClick={() => setDialogOpen(true)}
-            className="shadow-sm hover-scale"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Evento
-          </Button>
-              <DialogContent>
+            <Button 
+              onClick={() => {
+                setEditingEvento(null);
+                setFormData({
+                  titulo: '',
+                  descricao: '',
+                  data: new Date().toISOString().split('T')[0],
+                  horario: '',
+                  tipo: 'evento'
+                });
+                setDialogOpen(true);
+              }}
+              className="shadow-sm hover-scale"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Evento
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {renderEventos()}
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{editingEvento ? "Editar Evento" : "Novo Evento"}</DialogTitle>
                 </DialogHeader>
@@ -419,14 +505,8 @@ const ColaboradorPerfil = () => {
                     <Button type="submit">Salvar</Button>
                   </div>
                 </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {renderEventos()}
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
@@ -439,15 +519,40 @@ const ColaboradorPerfil = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-medium">{tarefa.titulo}</h4>
+                    {tarefa.descricao && (
+                      <p className="text-sm text-muted-foreground mt-1">{tarefa.descricao}</p>
+                    )}
                     {tarefa.clientes && (
                       <p className="text-sm text-muted-foreground">
                         Cliente: {tarefa.clientes.nome_fantasia}
                       </p>
                     )}
+                    {tarefa.data_prevista && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        📅 {new Date(tarefa.data_prevista).toLocaleDateString('pt-BR')}
+                        {tarefa.horario && ` • ${tarefa.horario}`}
+                      </p>
+                    )}
                   </div>
-                  <Badge variant={tarefa.status === "concluida" ? "default" : "secondary"}>
-                    {tarefa.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={tarefa.status === "concluida" ? "default" : "secondary"}>
+                      {tarefa.status}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditTarefa(tarefa)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteTarefa(tarefa.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -457,6 +562,63 @@ const ColaboradorPerfil = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={tarefaDialogOpen} onOpenChange={setTarefaDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Tarefa</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateTarefa} className="space-y-4">
+            <div>
+              <Label>Título</Label>
+              <Input name="titulo" defaultValue={editingTarefa?.titulo} required />
+            </div>
+            <div>
+              <Label>Descrição</Label>
+              <Textarea name="descricao" defaultValue={editingTarefa?.descricao} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Data Prevista</Label>
+                <Input type="date" name="data_prevista" defaultValue={editingTarefa?.data_prevista} />
+              </div>
+              <div>
+                <Label>Horário</Label>
+                <Input type="time" name="horario" defaultValue={editingTarefa?.horario} />
+              </div>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select name="status" defaultValue={editingTarefa?.status}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                  <SelectItem value="concluida">Concluída</SelectItem>
+                  <SelectItem value="cancelada">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Prioridade</Label>
+              <Select name="prioridade" defaultValue={editingTarefa?.prioridade}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="baixa">Baixa</SelectItem>
+                  <SelectItem value="media">Média</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setTarefaDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">Salvar Alterações</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

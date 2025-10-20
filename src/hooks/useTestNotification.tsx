@@ -1,20 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 /**
- * Hook para teste de notificação de tarefas
- * Verifica tarefas criadas recentemente (últimos 5 minutos) e mostra notificação
+ * Hook para notificação de tarefas
+ * Verifica tarefas criadas recentemente (últimos 5 minutos) e mostra notificação ÚNICA
  */
 export const useTestNotification = () => {
   const { toast } = useToast();
+  const tarefasNotificadas = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const checkRecentTasks = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Data de 5 minutos atrás
       const cincMinutosAtras = new Date();
       cincMinutosAtras.setMinutes(cincMinutosAtras.getMinutes() - 5);
 
@@ -25,7 +25,7 @@ export const useTestNotification = () => {
         .eq('status', 'pendente')
         .gte('created_at', cincMinutosAtras.toISOString())
         .order('created_at', { ascending: false })
-        .limit(1);
+        .limit(5);
 
       if (error) {
         console.error('Erro ao verificar tarefas:', error);
@@ -33,25 +33,27 @@ export const useTestNotification = () => {
       }
 
       if (tarefas && tarefas.length > 0) {
-        const tarefa = tarefas[0];
-        const dataHora = tarefa.data_prevista && tarefa.horario 
-          ? `${new Date(tarefa.data_prevista).toLocaleDateString('pt-BR')} às ${tarefa.horario.slice(0, 5)}`
-          : tarefa.data_prevista 
-            ? new Date(tarefa.data_prevista).toLocaleDateString('pt-BR')
-            : 'sem data definida';
+        const novasTarefas = tarefas.filter(t => !tarefasNotificadas.current.has(t.id));
+        
+        novasTarefas.forEach(tarefa => {
+          tarefasNotificadas.current.add(tarefa.id);
+          
+          const dataHora = tarefa.data_prevista && tarefa.horario 
+            ? `${new Date(tarefa.data_prevista).toLocaleDateString('pt-BR')} às ${tarefa.horario.slice(0, 5)}`
+            : tarefa.data_prevista 
+              ? new Date(tarefa.data_prevista).toLocaleDateString('pt-BR')
+              : 'sem data definida';
 
-        toast({
-          title: "🔔 Nova Tarefa Criada!",
-          description: `${tarefa.titulo} - Cliente: ${(tarefa as any).clientes?.nome_fantasia || 'N/A'} - ${dataHora}`,
-          duration: 10000,
+          toast({
+            title: "🔔 Nova Tarefa Criada!",
+            description: `${tarefa.titulo} - Cliente: ${(tarefa as any).clientes?.nome_fantasia || 'N/A'} - ${dataHora}`,
+            duration: 15000,
+          });
         });
       }
     };
 
-    // Verificar ao montar o componente
     checkRecentTasks();
-
-    // Verificar a cada 1 minuto
     const interval = setInterval(checkRecentTasks, 60000);
 
     return () => clearInterval(interval);
