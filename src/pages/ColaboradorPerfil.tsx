@@ -355,13 +355,14 @@ const ColaboradorPerfil = () => {
                 Gerencie seus compromissos e eventos dos próximos 30 dias
               </CardDescription>
             </div>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="shadow-sm hover-scale">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Evento
-                </Button>
-              </DialogTrigger>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Button 
+            onClick={() => setDialogOpen(true)}
+            className="shadow-sm hover-scale"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Evento
+          </Button>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{editingEvento ? "Editar Evento" : "Novo Evento"}</DialogTitle>

@@ -30,6 +30,7 @@ import {
   User,
   ShoppingBag,
   Store,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -60,7 +61,7 @@ const defaultMenuItems = [
   { id: "clientes", title: "Clientes", url: "/clientes", icon: Users },
   { id: "tarefas", title: "Tarefas", url: "/tarefas", icon: CheckSquare },
   
-  { id: "colaboradores", title: "Equipe", url: "/colaboradores", icon: Users },
+  
   { id: "produtos", title: "Produtos", url: "/produtos", icon: Package },
   { id: "marcas", title: "Marcas", url: "/marcas", icon: Tag },
   { id: "catalogos", title: "Catálogos", url: "/catalogos", icon: FileText },
@@ -294,6 +295,14 @@ export function AppSidebar() {
                     <NavLink to="/gerenciar-equipe">
                       <Users className="h-4 w-4" />
                       {open && <span>Gerenciar Equipe</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/administracao">
+                      <Shield className="h-4 w-4" />
+                      {open && <span>Administração</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

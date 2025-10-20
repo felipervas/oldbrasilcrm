@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { Shield } from "lucide-react";
 import oldLogo from "@/assets/old-brasil-logo.png";
 
 const Login = () => {
@@ -84,6 +85,21 @@ const Login = () => {
           <p className="text-muted-foreground">
             Sistema de Gestão de Representação
           </p>
+        </div>
+
+        <div className="mt-4 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+          <div className="flex items-start gap-2">
+            <Shield className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">
+                🔒 Área Restrita - Equipe OLD Brasil
+              </p>
+              <p className="text-xs text-amber-700 mt-1">
+                Este sistema é de uso exclusivo para membros autorizados da equipe OLD Brasil. 
+                Apenas colaboradores cadastrados podem acessar.
+              </p>
+            </div>
+          </div>
         </div>
 
         <Card className="shadow-elevated">

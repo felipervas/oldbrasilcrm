@@ -17,7 +17,7 @@ const Tarefas = lazy(() => import("./pages/Tarefas"));
 const GestorDashboard = lazy(() => import("./pages/GestorDashboard"));
 const ColaboradorPerfil = lazy(() => import("./pages/ColaboradorPerfil"));
 const MeuPerfil = lazy(() => import("./pages/MeuPerfil"));
-const Colaboradores = lazy(() => import("./pages/Colaboradores"));
+const Administracao = lazy(() => import("./pages/Administracao"));
 const Produtos = lazy(() => import("./pages/Produtos"));
 const Marcas = lazy(() => import("./pages/Marcas"));
 const Catalogos = lazy(() => import("./pages/Catalogos"));
@@ -134,11 +134,11 @@ const App = () => (
             }
           />
           <Route
-            path="/colaboradores"
+            path="/administracao"
             element={
-              <AppLayout>
-                <Colaboradores />
-              </AppLayout>
+              <ProtectedAdminRoute>
+                <Administracao />
+              </ProtectedAdminRoute>
             }
           />
           <Route

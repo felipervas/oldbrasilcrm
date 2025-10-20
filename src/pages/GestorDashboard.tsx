@@ -288,8 +288,8 @@ const GestorDashboard = () => {
         </Card>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-7 max-w-5xl">
+        <Tabs defaultValue="overview" className="w-full relative z-10">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-1">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="marcas">Marcas</TabsTrigger>
           <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
