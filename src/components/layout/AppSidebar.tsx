@@ -60,7 +60,7 @@ const defaultMenuItems = [
   { id: "loja-online", title: "Ver Loja Online", url: "/loja", icon: ShoppingBag },
   { id: "clientes", title: "Clientes", url: "/clientes", icon: Users },
   { id: "tarefas", title: "Tarefas", url: "/tarefas", icon: CheckSquare },
-  { id: "interacoes", title: "Interações", url: "/interacoes", icon: MessageSquare },
+  
   { id: "colaboradores", title: "Equipe", url: "/colaboradores", icon: Users },
   { id: "produtos", title: "Produtos", url: "/produtos", icon: Package },
   { id: "marcas", title: "Marcas", url: "/marcas", icon: Tag },

@@ -100,8 +100,18 @@ const ColaboradorPerfil = () => {
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.id !== id) {
-        toast({ title: "Sem permissão", variant: "destructive" });
+      if (!user) {
+        toast({ title: "Não autenticado", variant: "destructive" });
+        return;
+      }
+
+      // Só pode adicionar eventos no próprio calendário
+      if (user.id !== id) {
+        toast({ 
+          title: "Sem permissão", 
+          description: "Você só pode adicionar eventos no seu próprio calendário",
+          variant: "destructive" 
+        });
         return;
       }
 
@@ -280,7 +290,6 @@ const ColaboradorPerfil = () => {
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 bg-gradient-subtle min-h-screen">
       <div className="flex items-center gap-4">
-        <SidebarTrigger />
         <div>
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             Perfil - {colaborador?.nome}

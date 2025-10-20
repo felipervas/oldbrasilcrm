@@ -44,40 +44,32 @@ const GerenciarEquipe = () => {
   const loadMembers = async () => {
     setLoading(true);
     try {
-      // Buscar perfis com seus roles
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("nome");
-
-      if (profilesError) throw profilesError;
-
-      // Para cada perfil, buscar roles e email
-      const membersData: TeamMember[] = [];
-      for (const profile of profiles || []) {
-        // Buscar roles
-        const { data: rolesData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", profile.id);
-
-        // Buscar email do auth.users via RPC ou função
-        const { data: userData } = await supabase.auth.admin.getUserById(profile.id);
-
-        membersData.push({
-          id: profile.id,
-          nome: profile.nome,
-          email: userData?.user?.email || "N/A",
-          telefone: profile.telefone,
-          roles: rolesData?.map(r => r.role as UserRole) || [],
-          ativo: true,
-        });
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/list-users`,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao carregar equipe');
       }
-
-      setMembers(membersData);
+      
+      setMembers(result.members);
     } catch (error: any) {
       console.error(error);
-      toast({ title: "Erro ao carregar equipe", variant: "destructive" });
+      toast({ 
+        title: "Erro ao carregar equipe", 
+        description: error.message, 
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }
@@ -88,33 +80,31 @@ const GerenciarEquipe = () => {
     setLoading(true);
 
     try {
-      // 1. Criar usuário no auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.email,
-        password: formData.senha,
-        email_confirm: true,
-        user_metadata: { nome: formData.nome },
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Usuário não criado");
-
-      // 2. Inserir perfil
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: authData.user.id,
-        nome: formData.nome,
-        telefone: formData.telefone || null,
-      });
-
-      if (profileError) throw profileError;
-
-      // 3. Inserir role
-      const { error: roleError } = await supabase.from("user_roles").insert({
-        user_id: authData.user.id,
-        role: formData.role,
-      });
-
-      if (roleError) throw roleError;
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.senha,
+            nome: formData.nome,
+            telefone: formData.telefone,
+            role: formData.role,
+          }),
+        }
+      );
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao adicionar membro');
+      }
 
       toast({ title: "✅ Membro adicionado com sucesso!" });
       setIsDialogOpen(false);
@@ -134,17 +124,25 @@ const GerenciarEquipe = () => {
 
   const handleDeleteMember = async (memberId: string, memberName: string) => {
     try {
-      // Deletar roles
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", memberId);
-
-      if (roleError) throw roleError;
-
-      // Deletar usuário do auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(memberId);
-      if (authError) throw authError;
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: memberId }),
+        }
+      );
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao remover membro');
+      }
 
       toast({ title: `✅ ${memberName} removido da equipe` });
       loadMembers();
@@ -179,7 +177,6 @@ const GerenciarEquipe = () => {
       <div className="flex-1 space-y-6 p-4 md:p-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <SidebarTrigger />
             <div>
               <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent flex items-center gap-2">
                 <Users className="h-8 w-8 text-primary" />
