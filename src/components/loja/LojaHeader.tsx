@@ -22,6 +22,7 @@ export const LojaHeader = () => {
   const menuItems = [
     { label: "Produtos", href: "/loja" },
     { label: "Marcas", href: "/loja/marcas" },
+    { label: "Acessar CRM", href: "/crm" },
   ];
 
   return (
@@ -31,7 +32,7 @@ export const LojaHeader = () => {
           {/* Logo */}
           <Link to="/loja" className="flex items-center space-x-2">
             <img src={logo} alt="OLD BRASIL" className="h-10 w-auto" />
-            <span className="font-bold text-lg hidden sm:inline">Loja OLD BRASIL</span>
+            <span className="font-bold text-lg hidden sm:inline" translate="no">Loja OLD BRASIL</span>
           </Link>
 
           {/* Desktop Navigation */}
