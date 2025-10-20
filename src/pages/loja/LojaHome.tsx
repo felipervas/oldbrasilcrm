@@ -29,17 +29,8 @@ export default function LojaHome() {
       {/* Marcas e Produtos */}
       <div id="produtos" className="container mx-auto px-4 py-16">
         {isLoading ? (
-          <div className="space-y-16">
-            {[...Array(3)].map((_, i) => (
-              <div key={i}>
-                <Skeleton className="h-48 w-full rounded-lg mb-8" />
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                  {[...Array(5)].map((_, j) => (
-                    <Skeleton key={j} className="h-32 rounded-lg" />
-                  ))}
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center justify-center py-32">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
           </div>
         ) : (
           marcas?.map((marca) => (

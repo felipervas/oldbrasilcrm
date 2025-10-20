@@ -21,6 +21,10 @@ export const MarcaSection = ({ marca }: MarcaSectionProps) => {
             src={imagem_banner} 
             className="absolute inset-0 w-full h-full object-cover"
             alt={nome}
+            loading="lazy"
+            decoding="async"
+            width={1200}
+            height={256}
           />
         ) : null}
         

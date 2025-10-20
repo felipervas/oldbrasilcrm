@@ -1193,6 +1193,39 @@ export type Database = {
           total_comprado: number
         }[]
       }
+      get_loja_home_otimizada: {
+        Args: { limite_produtos_por_marca?: number }
+        Returns: {
+          imagem_ordem: number
+          imagem_url: string
+          marca_ativa: boolean
+          marca_created_at: string
+          marca_descricao: string
+          marca_id: string
+          marca_imagem_banner: string
+          marca_mostrar_texto_banner: boolean
+          marca_nome: string
+          marca_site: string
+          marca_slug: string
+          marca_updated_at: string
+          produto_ativo: boolean
+          produto_categoria: string
+          produto_descricao: string
+          produto_destaque_loja: boolean
+          produto_id: string
+          produto_nome: string
+          produto_nome_loja: string
+          produto_ordem_exibicao: number
+          produto_peso_embalagem_kg: number
+          produto_preco_por_kg: number
+          produto_rank: number
+          produto_rendimento_dose_gramas: number
+          produto_sku: string
+          produto_subcategoria: string
+          produto_tipo_calculo: string
+          produto_visivel_loja: boolean
+        }[]
+      }
       has_any_role: {
         Args: {
           _roles: Database["public"]["Enums"]["user_role"][]

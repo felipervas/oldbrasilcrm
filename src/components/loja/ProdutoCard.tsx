@@ -36,6 +36,8 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
           className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
           loading="lazy"
           decoding="async"
+          width={400}
+          height={400}
         />
         {produto.destaque_loja && (
           <Badge className="absolute top-2 right-2 bg-accent text-accent-foreground">

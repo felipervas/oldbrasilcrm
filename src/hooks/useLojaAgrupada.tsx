@@ -5,68 +5,85 @@ export const useLojaAgrupada = () => {
   return useQuery({
     queryKey: ['loja-agrupada'],
     queryFn: async () => {
-      // Buscar marcas ativas
-      const { data: marcas } = await supabase
-        .from('marcas')
-        .select('*')
-        .eq('ativa', true)
-        .order('nome');
+      // 🚀 QUERY OTIMIZADA: 1 única chamada para buscar tudo
+      // Reduz de ~10-15 queries para apenas 1 query SQL otimizada
+      const { data, error } = await supabase
+        .rpc('get_loja_home_otimizada', { limite_produtos_por_marca: 5 });
       
-      // Para cada marca, buscar produtos e agrupar por linha
-      const marcasComProdutos = await Promise.all(
-        marcas?.map(async (marca) => {
-          const { data: produtos } = await supabase
-            .from('produtos')
-            .select(`
-              *,
-              marcas (
-                id,
-                nome,
-                slug
-              ),
-              produto_imagens (
-                id,
-                url,
-                ordem
-              )
-            `)
-            .eq('marca_id', marca.id)
-            .eq('ativo', true)
-            .eq('visivel_loja', true)
-            .order('ordem_exibicao');
-          
-          // Ordenar imagens
-          const produtosComImagens = produtos?.map(p => ({
-            ...p,
-            produto_imagens: p.produto_imagens?.sort((a: any, b: any) => a.ordem - b.ordem) || []
-          })) || [];
-          
-          // Agrupar por subcategoria (linha)
-          const linhas = produtosComImagens.reduce((acc, prod) => {
-            const linha = prod.subcategoria || 'Geral';
-            if (!acc[linha]) acc[linha] = [];
-            acc[linha].push(prod);
-            return acc;
-          }, {} as Record<string, any[]>);
-          
-          // Se tem mais de uma linha definida, usar linhas
-          // Senão, usar produtos direto
-          const temLinhas = Object.keys(linhas).length > 1;
-          
-          return {
-            ...marca,
-            produtos: produtosComImagens,
-            linhas: temLinhas ? linhas : null,
-            primeiros5: temLinhas 
-              ? Object.keys(linhas).slice(0, 5)
-              : produtosComImagens.slice(0, 5)
+      if (error) {
+        console.error('❌ Erro ao buscar dados da loja:', error);
+        throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        return [];
+      }
+      
+      // Agrupar resultados por marca
+      const marcasMap = new Map();
+      
+      data.forEach((row: any) => {
+        if (!marcasMap.has(row.marca_id)) {
+          marcasMap.set(row.marca_id, {
+            id: row.marca_id,
+            nome: row.marca_nome,
+            slug: row.marca_slug,
+            descricao: row.marca_descricao,
+            site: row.marca_site,
+            imagem_banner: row.marca_imagem_banner,
+            mostrar_texto_banner: row.marca_mostrar_texto_banner,
+            ativa: row.marca_ativa,
+            created_at: row.marca_created_at,
+            updated_at: row.marca_updated_at,
+            produtos: [],
+            primeiros5: []
+          });
+        }
+        
+        const marca = marcasMap.get(row.marca_id);
+        
+        // Adicionar produto com sua imagem principal já incluída
+        if (row.produto_id) {
+          const produto = {
+            id: row.produto_id,
+            nome: row.produto_nome,
+            nome_loja: row.produto_nome_loja,
+            sku: row.produto_sku,
+            descricao: row.produto_descricao,
+            categoria: row.produto_categoria,
+            subcategoria: row.produto_subcategoria,
+            preco_por_kg: row.produto_preco_por_kg,
+            peso_embalagem_kg: row.produto_peso_embalagem_kg,
+            rendimento_dose_gramas: row.produto_rendimento_dose_gramas,
+            tipo_calculo: row.produto_tipo_calculo,
+            destaque_loja: row.produto_destaque_loja,
+            ordem_exibicao: row.produto_ordem_exibicao,
+            ativo: row.produto_ativo,
+            visivel_loja: row.produto_visivel_loja,
+            marcas: {
+              id: row.marca_id,
+              nome: row.marca_nome,
+              slug: row.marca_slug
+            },
+            produto_imagens: [{
+              url: row.imagem_url,
+              ordem: row.imagem_ordem
+            }]
           };
-        }) || []
-      );
+          
+          marca.produtos.push(produto);
+          
+          // Primeiros 5 já limitados pela query SQL
+          if (marca.primeiros5.length < 5) {
+            marca.primeiros5.push(produto);
+          }
+        }
+      });
       
-      return marcasComProdutos;
+      return Array.from(marcasMap.values());
     },
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    // ⚡ CACHE OTIMIZADO: Dados da loja mudam pouco, cache mais longo
+    staleTime: 15 * 60 * 1000, // 15 minutos (produtos mudam raramente)
+    gcTime: 60 * 60 * 1000, // 60 minutos (manter em memória por mais tempo)
   });
 };
