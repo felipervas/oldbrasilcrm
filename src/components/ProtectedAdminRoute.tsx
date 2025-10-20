@@ -14,7 +14,7 @@ export const ProtectedAdminRoute = ({ children }: ProtectedAdminRouteProps) => {
   }
   
   if (!isAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/crm" replace />;
   }
   
   return <>{children}</>;

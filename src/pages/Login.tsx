@@ -32,7 +32,7 @@ const Login = () => {
         variant: "destructive",
       });
     } else {
-      navigate("/");
+      navigate("/dashboard");
     }
 
     setIsLoading(false);
