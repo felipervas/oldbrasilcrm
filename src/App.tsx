@@ -17,7 +17,6 @@ const Tarefas = lazy(() => import("./pages/Tarefas"));
 const GestorDashboard = lazy(() => import("./pages/GestorDashboard"));
 const ColaboradorPerfil = lazy(() => import("./pages/ColaboradorPerfil"));
 const MeuPerfil = lazy(() => import("./pages/MeuPerfil"));
-
 const Colaboradores = lazy(() => import("./pages/Colaboradores"));
 const Produtos = lazy(() => import("./pages/Produtos"));
 const Marcas = lazy(() => import("./pages/Marcas"));

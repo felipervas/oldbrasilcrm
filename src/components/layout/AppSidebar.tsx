@@ -19,7 +19,6 @@ import {
   LayoutDashboard,
   Users,
   CheckSquare,
-  MessageSquare,
   Package,
   Tag,
   FileText,
