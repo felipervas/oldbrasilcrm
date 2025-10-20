@@ -44,8 +44,10 @@ const EstoqueAmostras = () => {
   const debouncedSearch = useDebounce(searchTerm, 300);
   const { toast } = useToast();
 
+  const [responsaveis, setResponsaveis] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     cliente_id: "",
+    responsavel_id: "",
     data_entrega: new Date().toISOString().split('T')[0],
     status: "pendente",
     retorno: "",
@@ -60,7 +62,16 @@ const EstoqueAmostras = () => {
 
   useEffect(() => {
     loadData();
+    loadResponsaveis();
   }, []);
+
+  const loadResponsaveis = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, nome")
+      .order("nome");
+    setResponsaveis(data || []);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -115,6 +126,7 @@ const EstoqueAmostras = () => {
             status: formData.status,
             retorno: formData.retorno,
             observacoes: produtoAtual.observacoes,
+            responsavel_id: formData.responsavel_id || user.id,
             origem_saida: formData.origem_saida,
           })
           .eq("id", editingAmostra.id);
@@ -132,7 +144,7 @@ const EstoqueAmostras = () => {
             status: formData.status,
             retorno: formData.retorno,
             observacoes: p.observacoes,
-            responsavel_id: user.id,
+            responsavel_id: formData.responsavel_id || user.id,
             origem_saida: formData.origem_saida,
           }));
 
@@ -151,6 +163,7 @@ const EstoqueAmostras = () => {
       setEditingAmostra(null);
       setFormData({
         cliente_id: "",
+        responsavel_id: "",
         data_entrega: new Date().toISOString().split('T')[0],
         status: "pendente",
         retorno: "",
@@ -188,6 +201,7 @@ const EstoqueAmostras = () => {
     setEditingAmostra(amostra);
     setFormData({
       cliente_id: amostra.cliente_id,
+      responsavel_id: amostra.responsavel_id || "",
       data_entrega: amostra.data_entrega,
       status: amostra.status,
       retorno: amostra.retorno || "",
@@ -271,6 +285,7 @@ const EstoqueAmostras = () => {
             setEditingAmostra(null);
             setFormData({
               cliente_id: "",
+              responsavel_id: "",
               data_entrega: new Date().toISOString().split('T')[0],
               status: "pendente",
               retorno: "",
@@ -304,6 +319,26 @@ const EstoqueAmostras = () => {
                     {clientes.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.nome_fantasia}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Responsável *</Label>
+                <Select
+                  value={formData.responsavel_id}
+                  onValueChange={(value) => setFormData({ ...formData, responsavel_id: value })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o responsável" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {responsaveis.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.nome}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -117,6 +117,7 @@ export type Database = {
           created_at: string
           descricao: string | null
           id: string
+          marca_id: string | null
           nome: string
           tipo: string
           updated_at: string
@@ -127,6 +128,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          marca_id?: string | null
           nome: string
           tipo: string
           updated_at?: string
@@ -137,11 +139,20 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          marca_id?: string | null
           nome?: string
           tipo?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "catalogos_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "marcas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cliente_historico: {
         Row: {
@@ -391,11 +402,14 @@ export type Database = {
           cliente_id: string
           created_at: string | null
           email: string | null
+          fonte: string | null
           id: string
           nome: string
           observacoes: string | null
           telefone: string | null
+          tipo_contato: string | null
           updated_at: string | null
+          verificado: boolean | null
         }
         Insert: {
           aniversario?: string | null
@@ -403,11 +417,14 @@ export type Database = {
           cliente_id: string
           created_at?: string | null
           email?: string | null
+          fonte?: string | null
           id?: string
           nome: string
           observacoes?: string | null
           telefone?: string | null
+          tipo_contato?: string | null
           updated_at?: string | null
+          verificado?: boolean | null
         }
         Update: {
           aniversario?: string | null
@@ -415,11 +432,14 @@ export type Database = {
           cliente_id?: string
           created_at?: string | null
           email?: string | null
+          fonte?: string | null
           id?: string
           nome?: string
           observacoes?: string | null
           telefone?: string | null
+          tipo_contato?: string | null
           updated_at?: string | null
+          verificado?: boolean | null
         }
         Relationships: [
           {
@@ -491,6 +511,36 @@ export type Database = {
           usuario_id?: string
           valor?: number
           valor_boleto?: number | null
+        }
+        Relationships: []
+      }
+      historico_equipe: {
+        Row: {
+          acao: string
+          created_at: string | null
+          detalhes: Json | null
+          entidade_id: string | null
+          entidade_tipo: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          detalhes?: Json | null
+          entidade_id?: string | null
+          entidade_tipo?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          detalhes?: Json | null
+          entidade_id?: string | null
+          entidade_tipo?: string | null
+          id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -583,6 +633,53 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      marca_contatos: {
+        Row: {
+          cargo: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          marca_id: string | null
+          nome: string
+          observacoes: string | null
+          telefone: string | null
+          tipo: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cargo?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          marca_id?: string | null
+          nome: string
+          observacoes?: string | null
+          telefone?: string | null
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cargo?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          marca_id?: string | null
+          nome?: string
+          observacoes?: string | null
+          telefone?: string | null
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marca_contatos_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "marcas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       marcas: {
         Row: {
@@ -908,29 +1005,35 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          emails: Json | null
           equipe: string | null
           id: string
           nome: string
           perfil: Database["public"]["Enums"]["user_role"]
           telefone: string | null
+          telefones: Json | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          emails?: Json | null
           equipe?: string | null
           id: string
           nome: string
           perfil?: Database["public"]["Enums"]["user_role"]
           telefone?: string | null
+          telefones?: Json | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          emails?: Json | null
           equipe?: string | null
           id?: string
           nome?: string
           perfil?: Database["public"]["Enums"]["user_role"]
           telefone?: string | null
+          telefones?: Json | null
           updated_at?: string
         }
         Relationships: []
@@ -940,6 +1043,7 @@ export type Database = {
           arquivo_nome: string
           arquivo_url: string
           categoria: string | null
+          cliente_id: string | null
           created_at: string
           descricao: string | null
           id: string
@@ -951,6 +1055,7 @@ export type Database = {
           arquivo_nome: string
           arquivo_url: string
           categoria?: string | null
+          cliente_id?: string | null
           created_at?: string
           descricao?: string | null
           id?: string
@@ -962,6 +1067,7 @@ export type Database = {
           arquivo_nome?: string
           arquivo_url?: string
           categoria?: string | null
+          cliente_id?: string | null
           created_at?: string
           descricao?: string | null
           id?: string
@@ -969,7 +1075,15 @@ export type Database = {
           updated_at?: string
           usuario_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "receitas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tarefas: {
         Row: {
@@ -983,11 +1097,13 @@ export type Database = {
           notificacao_enviada: boolean | null
           origem: string | null
           prioridade: Database["public"]["Enums"]["priority_type"]
+          realizada_por_id: string | null
           responsavel_id: string | null
           status: Database["public"]["Enums"]["task_status"]
           tipo: Database["public"]["Enums"]["task_type"] | null
           titulo: string | null
           updated_at: string
+          visibilidade: string | null
         }
         Insert: {
           cliente_id?: string | null
@@ -1000,11 +1116,13 @@ export type Database = {
           notificacao_enviada?: boolean | null
           origem?: string | null
           prioridade?: Database["public"]["Enums"]["priority_type"]
+          realizada_por_id?: string | null
           responsavel_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tipo?: Database["public"]["Enums"]["task_type"] | null
           titulo?: string | null
           updated_at?: string
+          visibilidade?: string | null
         }
         Update: {
           cliente_id?: string | null
@@ -1017,11 +1135,13 @@ export type Database = {
           notificacao_enviada?: boolean | null
           origem?: string | null
           prioridade?: Database["public"]["Enums"]["priority_type"]
+          realizada_por_id?: string | null
           responsavel_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tipo?: Database["public"]["Enums"]["task_type"] | null
           titulo?: string | null
           updated_at?: string
+          visibilidade?: string | null
         }
         Relationships: [
           {

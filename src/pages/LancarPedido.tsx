@@ -475,7 +475,22 @@ const LancarPedido = () => {
 
                 <div className="border-t pt-4">
                   <h3 className="font-semibold mb-3">Informações de Pagamento</h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-4 gap-4">
+                    <div>
+                      <Label>Status</Label>
+                      <Select name="status" defaultValue="pendente">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cotacao">Cotação</SelectItem>
+                          <SelectItem value="pedido">Pedido</SelectItem>
+                          <SelectItem value="pendente">Pendente</SelectItem>
+                          <SelectItem value="confirmado">Confirmado</SelectItem>
+                          <SelectItem value="entregue">Entregue</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div>
                       <Label>Forma de Pagamento</Label>
                       <Select name="forma_pagamento">

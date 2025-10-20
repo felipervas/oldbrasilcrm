@@ -95,16 +95,17 @@ const Tarefas = () => {
       const clienteIdFinal = clienteSelecionado && clienteSelecionado.trim() !== "" ? clienteSelecionado : null;
       const responsavelIdFinal = responsavelId && responsavelId.trim() !== "" ? responsavelId : null;
       
-      const { error } = await supabase.from("tarefas").insert({
+      const { error } = await supabase.from("tarefas").insert([{
         titulo: formTarefa.titulo,
         descricao: formTarefa.descricao || null,
         cliente_id: clienteIdFinal,
-        tipo: tipoTarefa as "visitar" | "ligar",
+        tipo: tipoTarefa as any,
         data_prevista: formTarefa.data_prevista || null,
         horario: formTarefa.horario || null,
         prioridade: formTarefa.prioridade,
         responsavel_id: responsavelIdFinal,
-      });
+        visibilidade: 'individual',
+      }]);
 
       if (error) throw error;
 
@@ -139,6 +140,7 @@ const Tarefas = () => {
 
       const updates: any = {
         status: resultado === "concluida" ? "concluida" : resultado === "nao_concluida" ? "cancelada" : "pendente",
+        realizada_por_id: user.id,
       };
 
       if (resultado === "concluida" || resultado === "nao_concluida") {
@@ -292,6 +294,19 @@ const Tarefas = () => {
                   <SelectContent>
                     <SelectItem value="visitar">Visita</SelectItem>
                     <SelectItem value="ligar">Ligação</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="visibilidade">Visibilidade *</Label>
+                <Select defaultValue="individual" required>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="individual">👤 Individual (só eu vejo)</SelectItem>
+                    <SelectItem value="equipe">👥 Equipe (todos veem)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

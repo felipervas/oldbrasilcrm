@@ -90,8 +90,9 @@ serve(async (req) => {
     
   } catch (error) {
     console.error('Erro geral:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

@@ -13,14 +13,14 @@ serve(async (req) => {
   }
 
   try {
-    const { email, password, nome, telefone, role } = await req.json()
+    const { userId, nome, telefone, emails, telefones, role } = await req.json()
     
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
     
-    // Verificar se usuário logado é admin
+    // Verificar se usuário logado é admin/gestor
     const authHeader = req.headers.get('Authorization')!
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
@@ -33,72 +33,76 @@ serve(async (req) => {
       )
     }
     
-    // Verificar se é admin
+    // Verificar se é admin ou gestor
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single()
+      .in('role', ['admin', 'gestor'])
     
-    if (!roleData) {
-      console.error('Usuário não é admin')
+    if (!roleData || roleData.length === 0) {
+      console.error('Usuário não é admin/gestor')
       return new Response(
-        JSON.stringify({ error: 'Sem permissão de administrador' }), 
+        JSON.stringify({ error: 'Sem permissão de administrador/gestor' }), 
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
     
-    console.log('Criando usuário:', email)
+    console.log('Atualizando usuário:', userId)
     
-    // Criar usuário
-    const { data: authData, error: authError2 } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { nome }
-    })
-    
-    if (authError2) {
-      console.error('Erro ao criar usuário no auth:', authError2)
-      throw authError2
-    }
-    
-    console.log('Usuário criado no auth:', authData.user.id)
-    
-    // Inserir perfil
+    // Atualizar perfil
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({
-        id: authData.user.id,
+      .update({
         nome,
-        telefone: telefone || null
+        telefone: telefone || null,
+        emails: emails || [],
+        telefones: telefones || []
       })
+      .eq('id', userId)
     
     if (profileError) {
-      console.error('Erro ao criar perfil:', profileError)
+      console.error('Erro ao atualizar perfil:', profileError)
       throw profileError
     }
     
-    console.log('Perfil criado')
+    console.log('Perfil atualizado')
     
-    // Inserir role
-    const { error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .insert({
-        user_id: authData.user.id,
-        role
-      })
-    
-    if (roleError) {
-      console.error('Erro ao criar role:', roleError)
-      throw roleError
+    // Atualizar role se fornecida (apenas admin pode fazer isso)
+    if (role) {
+      const isAdmin = roleData.some(r => r.role === 'admin')
+      
+      if (!isAdmin) {
+        return new Response(
+          JSON.stringify({ error: 'Apenas administradores podem alterar cargos' }), 
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      // Deletar roles antigas
+      await supabaseAdmin
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+      
+      // Inserir nova role
+      const { error: roleError } = await supabaseAdmin
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role
+        })
+      
+      if (roleError) {
+        console.error('Erro ao atualizar role:', roleError)
+        throw roleError
+      }
+      
+      console.log('Role atualizada')
     }
     
-    console.log('Role criada')
-    
     return new Response(
-      JSON.stringify({ success: true, user: authData.user }),
+      JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
     
