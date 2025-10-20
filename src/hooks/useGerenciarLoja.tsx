@@ -9,15 +9,7 @@ export const useGerenciarProdutos = (searchTerm: string = '') => {
       let query = supabase
         .from('produtos')
         .select(`
-          id,
-          nome,
-          sku,
-          preco_por_kg,
-          visivel_loja,
-          destaque_loja,
-          categoria,
-          subcategoria,
-          ativo,
+          *,
           marcas(id, nome),
           produto_imagens(id, url, ordem)
         `)
@@ -28,7 +20,11 @@ export const useGerenciarProdutos = (searchTerm: string = '') => {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Erro ao carregar produtos:", error);
+        throw error;
+      }
+      console.log("✅ Produtos carregados:", data?.length || 0);
       return data || [];
     },
   });
@@ -62,18 +58,39 @@ export const useUpdateProduto = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      // Sanitizar dados: converter strings vazias em null para evitar conflitos com UNIQUE constraints
+      console.log("🔵 useUpdateProduto - Dados recebidos:", data);
+
+      // Sanitizar dados: converter strings vazias e NaN em null
       const sanitizedData = Object.entries(data).reduce((acc, [key, value]) => {
-        acc[key] = value === '' ? null : value;
+        if (typeof value === 'string' && value.trim() === '') {
+          acc[key] = null;
+        } else if (typeof value === 'number' && isNaN(value)) {
+          acc[key] = null;
+        } else {
+          acc[key] = value;
+        }
         return acc;
       }, {} as any);
+
+      console.log("🟢 useUpdateProduto - Dados sanitizados:", sanitizedData);
 
       const { error } = await supabase
         .from('produtos')
         .update(sanitizedData)
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("🔴 useUpdateProduto - Erro Supabase:", error);
+        
+        // Tratamento específico para erro de duplicate key
+        if (error.code === '23505' && error.message.includes('produtos_sku_key')) {
+          throw new Error('❌ Este SKU já está em uso. Deixe vazio ou use outro valor.');
+        }
+        
+        throw error;
+      }
+
+      console.log("✅ useUpdateProduto - Produto atualizado com sucesso");
 
       // Log de auditoria
       await supabase.from('loja_audit_log').insert({
@@ -90,10 +107,11 @@ export const useUpdateProduto = () => {
         description: "As alterações já estão visíveis na loja.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("🔴 useUpdateProduto - onError:", error);
       toast({
-        title: "Erro ao atualizar produto",
-        description: error.message,
+        title: "❌ Erro ao atualizar produto",
+        description: error.message || "Verifique os dados e tente novamente.",
         variant: "destructive",
       });
     },

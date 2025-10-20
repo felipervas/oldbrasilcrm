@@ -35,12 +35,17 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
       setFormData({
         nome: produto.nome || '',
         sku: produto.sku || '',
+        submarca: produto.submarca || '',
+        marca_id: produto.marca_id || null,
+        preco_base: produto.preco_base || '',
         preco_por_kg: produto.preco_por_kg || '',
+        peso_unidade_kg: produto.peso_unidade_kg || '',
         peso_embalagem_kg: produto.peso_embalagem_kg || '',
         rendimento_dose_gramas: produto.rendimento_dose_gramas || '',
         descricao: produto.descricao || '',
         categoria: produto.categoria || '',
         subcategoria: produto.subcategoria || '',
+        nome_loja: produto.nome_loja || '',
         visivel_loja: produto.visivel_loja ?? true,
         destaque_loja: produto.destaque_loja ?? false,
         ordem_exibicao: produto.ordem_exibicao || 0,
@@ -51,11 +56,36 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   }, [produto]);
 
   const handleSave = () => {
+    // Validação: não permitir salvar se nome estiver vazio
+    if (!formData.nome || formData.nome.trim() === '') {
+      return;
+    }
+
+    // Sanitizar ANTES de enviar: converter strings vazias e NaN em null
+    const sanitizedData = Object.entries(formData).reduce((acc, [key, value]) => {
+      if (typeof value === 'string' && value.trim() === '') {
+        acc[key] = null;
+      } else if (typeof value === 'number' && isNaN(value)) {
+        acc[key] = null;
+      } else {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
+
+    console.log("📤 ProdutoEditDialog - Enviando dados sanitizados:", sanitizedData);
+
     updateProduto.mutate({
       id: produto.id,
-      data: formData,
+      data: sanitizedData,
     }, {
-      onSuccess: () => onOpenChange(false),
+      onSuccess: () => {
+        console.log("✅ ProdutoEditDialog - Produto atualizado com sucesso");
+        onOpenChange(false);
+      },
+      onError: (error: any) => {
+        console.error("❌ ProdutoEditDialog - Erro ao atualizar:", error);
+      },
     });
   };
 
@@ -107,6 +137,14 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                 <Input
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Submarca</Label>
+                <Input
+                  value={formData.submarca}
+                  onChange={(e) => setFormData({ ...formData, submarca: e.target.value })}
+                  placeholder="Ex: Premium, Light..."
                 />
               </div>
             </div>
