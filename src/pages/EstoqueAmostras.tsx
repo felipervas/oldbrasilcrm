@@ -402,13 +402,16 @@ const EstoqueAmostras = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Origem da Saída</Label>
+                <Label>Origem da Saída *</Label>
                 <Select
                   value={formData.origem_saida}
-                  onValueChange={(value) => setFormData({ ...formData, origem_saida: value })}
+                  onValueChange={(value) => {
+                    console.log('Origem selecionada:', value);
+                    setFormData({ ...formData, origem_saida: value });
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Selecione a origem" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="escritorio">Estoque Escritório</SelectItem>

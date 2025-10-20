@@ -74,6 +74,42 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          acao: string
+          created_at: string | null
+          detalhes: Json | null
+          entidade_id: string | null
+          entidade_tipo: string
+          id: string
+          user_email: string | null
+          user_id: string | null
+          user_nome: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          detalhes?: Json | null
+          entidade_id?: string | null
+          entidade_tipo: string
+          id?: string
+          user_email?: string | null
+          user_id?: string | null
+          user_nome?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          detalhes?: Json | null
+          entidade_id?: string | null
+          entidade_tipo?: string
+          id?: string
+          user_email?: string | null
+          user_id?: string | null
+          user_nome?: string | null
+        }
+        Relationships: []
+      }
       catalogos: {
         Row: {
           arquivo_nome: string

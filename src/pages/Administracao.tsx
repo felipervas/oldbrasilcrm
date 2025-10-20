@@ -27,33 +27,53 @@ const Administracao = () => {
   const loadLogs = async () => {
     setLoading(true);
     
-    let query = (supabase as any)
-      .from('audit_log')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
-    
-    if (filtroUsuario) {
-      query = query.or(`user_nome.ilike.%${filtroUsuario}%,user_email.ilike.%${filtroUsuario}%`);
+    try {
+      let query = (supabase as any)
+        .from('audit_log')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      
+      if (filtroUsuario) {
+        query = query.or(`user_nome.ilike.%${filtroUsuario}%,user_email.ilike.%${filtroUsuario}%`);
+      }
+      
+      if (filtroAcao !== 'all') {
+        query = query.eq('acao', filtroAcao);
+      }
+      
+      if (filtroEntidade !== 'all') {
+        query = query.eq('entidade_tipo', filtroEntidade);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Erro ao carregar audit log:', error);
+        toast({ 
+          title: "Erro ao carregar histórico", 
+          description: error.message || "Verifique se você tem permissão de Gestor ou Admin",
+          variant: "destructive" 
+        });
+      } else {
+        setLogs(data || []);
+        if (!data || data.length === 0) {
+          toast({
+            title: "Nenhum registro encontrado",
+            description: "Ainda não há histórico de ações registradas ou você precisa ser Gestor/Admin para visualizar",
+          });
+        }
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar logs:', err);
+      toast({ 
+        title: "Erro ao carregar dados", 
+        description: "Verifique sua conexão e permissões",
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
     }
-    
-    if (filtroAcao !== 'all') {
-      query = query.eq('acao', filtroAcao);
-    }
-    
-    if (filtroEntidade !== 'all') {
-      query = query.eq('entidade_tipo', filtroEntidade);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) {
-      toast({ title: "Erro ao carregar logs", variant: "destructive" });
-    } else {
-      setLogs(data || []);
-    }
-    
-    setLoading(false);
   };
 
   const exportarCSV = () => {
@@ -168,6 +188,15 @@ const Administracao = () => {
           <CardContent>
             {loading ? (
               <p className="text-center py-8">Carregando...</p>
+            ) : logs.length === 0 ? (
+              <div className="text-center py-12">
+                <Shield className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <p className="text-lg font-medium">Nenhum registro encontrado</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  As ações realizadas no sistema aparecerão aqui.
+                  {'\n'}Você precisa ter perfil de Gestor ou Admin para visualizar o histórico.
+                </p>
+              </div>
             ) : (
               <Table>
                 <TableHeader>
