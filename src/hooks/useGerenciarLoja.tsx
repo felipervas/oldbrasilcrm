@@ -62,9 +62,15 @@ export const useUpdateProduto = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      // Sanitizar dados: converter strings vazias em null para evitar conflitos com UNIQUE constraints
+      const sanitizedData = Object.entries(data).reduce((acc, [key, value]) => {
+        acc[key] = value === '' ? null : value;
+        return acc;
+      }, {} as any);
+
       const { error } = await supabase
         .from('produtos')
-        .update(data)
+        .update(sanitizedData)
         .eq('id', id);
 
       if (error) throw error;
@@ -74,7 +80,7 @@ export const useUpdateProduto = () => {
         acao: 'editar_produto',
         entidade_tipo: 'produto',
         entidade_id: id,
-        detalhes: data,
+        detalhes: sanitizedData,
       });
     },
     onSuccess: () => {
