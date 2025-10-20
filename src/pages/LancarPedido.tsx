@@ -59,7 +59,7 @@ const LancarPedido = () => {
   const loadClientes = async () => {
     const { data } = await supabase
       .from("clientes")
-      .select("id, nome_fantasia, responsavel_id")
+      .select("*, profiles(nome)")
       .eq("ativo", true)
       .order("nome_fantasia");
     setClientes(data || []);
@@ -68,10 +68,21 @@ const LancarPedido = () => {
   const handleClienteChange = async (clienteId: string) => {
     setSelectedCliente(clienteId);
     
-    const cliente = clientes.find(c => c.id === clienteId);
-    if (cliente?.responsavel_id) {
-      setResponsavelSelecionado(cliente.responsavel_id);
+    // Carregar dados completos do cliente com endereço
+    const { data: clienteCompleto } = await supabase
+      .from("clientes")
+      .select("*, profiles(nome)")
+      .eq("id", clienteId)
+      .single();
+    
+    if (clienteCompleto?.responsavel_id) {
+      setResponsavelSelecionado(clienteCompleto.responsavel_id);
     }
+    
+    // Atualizar a lista de clientes com os dados completos
+    setClientes(prev => prev.map(c => 
+      c.id === clienteId ? clienteCompleto : c
+    ));
   };
 
   const loadProdutos = async () => {

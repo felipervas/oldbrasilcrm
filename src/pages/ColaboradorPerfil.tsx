@@ -425,7 +425,10 @@ const ColaboradorPerfil = () => {
               </CardDescription>
             </div>
             <Button 
-              onClick={() => {
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 setEditingEvento(null);
                 setFormData({
                   titulo: '',

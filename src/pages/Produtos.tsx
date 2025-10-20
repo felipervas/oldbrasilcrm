@@ -224,6 +224,7 @@ const Produtos = () => {
     setEditFormData({
       nome: produto.nome,
       sku: produto.sku || "",
+      submarca: produto.submarca || "",
       descricao: produto.descricao || "",
       preco_base: produto.preco_base || "",
       preco_por_kg: produto.preco_por_kg || "",
@@ -345,6 +346,7 @@ const Produtos = () => {
       .update({
         nome: editFormData.nome,
         sku: editFormData.sku,
+        submarca: editFormData.submarca || null,
         descricao: editFormData.descricao,
         marca_id: marcaSelecionada || null,
         preco_base: editFormData.preco_base ? parseFloat(editFormData.preco_base) : null,
@@ -697,6 +699,15 @@ const Produtos = () => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit_submarca">Submarca</Label>
+              <Input 
+                id="edit_submarca"
+                placeholder="Ex: Premium, Lite, etc"
+                value={editFormData.submarca || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, submarca: e.target.value })}
+              />
             </div>
             <div>
               <Label htmlFor="edit_preco_base">Preço Base</Label>
