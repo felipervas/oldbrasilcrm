@@ -629,16 +629,65 @@ const Produtos = () => {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {produtosFiltrados.map((produto) => (
-                <div key={produto.id} className="border rounded-lg p-4">
+                <div key={produto.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h3 className="font-semibold">{produto.nome}</h3>
-                      {produto.sku && <p className="text-xs text-muted-foreground">SKU: {produto.sku}</p>}
-                      {produto.marcas && <p className="text-sm text-muted-foreground mt-1">Marca: {produto.marcas.nome}</p>}
-                      {produto.preco_base && <p className="text-sm font-medium mt-2">R$ {parseFloat(produto.preco_base).toFixed(2)}</p>}
-                      {produto.descricao && <p className="text-sm text-muted-foreground mt-2">{produto.descricao}</p>}
+                      <h3 className="font-semibold text-lg">{produto.nome}</h3>
+                      {produto.sku && (
+                        <p className="text-xs text-muted-foreground">SKU: {produto.sku}</p>
+                      )}
+                      {produto.submarca && (
+                        <p className="text-xs text-muted-foreground">Submarca: {produto.submarca}</p>
+                      )}
+                      {produto.marcas && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          🏷️ Marca: {produto.marcas.nome}
+                        </p>
+                      )}
+                      
+                      {/* 🆕 SEÇÃO DE PREÇOS */}
+                      <div className="mt-3 space-y-1 bg-muted/50 p-3 rounded-lg">
+                        {produto.preco_base && (
+                          <p className="text-sm font-semibold text-primary">
+                            💰 Preço Base: R$ {parseFloat(produto.preco_base).toFixed(2)}
+                          </p>
+                        )}
+                        {produto.preco_por_kg && (
+                          <p className="text-sm">
+                            ⚖️ Preço por Kg: R$ {parseFloat(produto.preco_por_kg).toFixed(2)}
+                          </p>
+                        )}
+                        {produto.peso_embalagem_kg && (
+                          <p className="text-xs text-muted-foreground">
+                            📦 Embalagem: {produto.peso_embalagem_kg}kg
+                          </p>
+                        )}
+                        {produto.rendimento_dose_gramas && produto.preco_por_kg && (
+                          <p className="text-sm">
+                            🥄 Custo por Dose ({produto.rendimento_dose_gramas}g): 
+                            R$ {((parseFloat(produto.preco_por_kg) * produto.rendimento_dose_gramas) / 1000).toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+                      
+                      {produto.descricao && (
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                          {produto.descricao}
+                        </p>
+                      )}
+                      
+                      <div className="mt-2 flex gap-2">
+                        <span className={`text-xs px-2 py-1 rounded ${produto.ativo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {produto.ativo ? '✓ Ativo' : '✗ Inativo'}
+                        </span>
+                        {produto.estoque_escritorio !== undefined && (
+                          <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
+                            📦 Estoque: {produto.estoque_escritorio}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                     <div className="flex gap-2">
+                    <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => handleEdit(produto)}>
                         <Edit className="h-4 w-4" />
                       </Button>

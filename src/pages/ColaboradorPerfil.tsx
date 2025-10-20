@@ -217,6 +217,7 @@ const ColaboradorPerfil = () => {
   };
 
   const handleDeleteTarefa = async (tarefaId: string) => {
+    console.log("🔴 Tentando excluir tarefa:", tarefaId);
     if (!confirm("Deseja excluir esta tarefa?")) return;
     
     const { error } = await supabase
@@ -225,10 +226,12 @@ const ColaboradorPerfil = () => {
       .eq('id', tarefaId);
     
     if (error) {
+      console.error("❌ Erro ao excluir:", error);
       toast({ title: "Erro ao excluir tarefa", variant: "destructive" });
     } else {
+      console.log("✅ Tarefa excluída com sucesso");
       toast({ title: "Tarefa excluída com sucesso!" });
-      loadColaboradorData();
+      await loadTarefas();
     }
   };
 
@@ -542,16 +545,28 @@ const ColaboradorPerfil = () => {
                       {tarefa.status}
                     </Badge>
                     <Button
+                      type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleEditTarefa(tarefa)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("✏️ Editar tarefa:", tarefa.id);
+                        handleEditTarefa(tarefa);
+                      }}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
+                      type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDeleteTarefa(tarefa.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("🗑️ Excluir tarefa:", tarefa.id);
+                        handleDeleteTarefa(tarefa.id);
+                      }}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>

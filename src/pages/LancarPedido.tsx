@@ -88,7 +88,16 @@ const LancarPedido = () => {
   const loadProdutos = async () => {
     const { data } = await supabase
       .from("produtos")
-      .select("id, nome, preco_base")
+      .select(`
+        id, 
+        nome, 
+        sku, 
+        preco_base, 
+        preco_por_kg, 
+        peso_embalagem_kg, 
+        rendimento_dose_gramas,
+        marcas(nome)
+      `)
       .eq("ativo", true)
       .order("nome");
     setProdutos(data || []);
@@ -162,41 +171,97 @@ const LancarPedido = () => {
 
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const valorTotal = calcularTotal();
-    
-    // Criar descrição dos produtos
-    const descricaoProdutos = produtosEscolhidos.map(p => 
-      `${p.nome} - Qtd: ${p.quantidade} - R$ ${p.preco_unitario.toFixed(2)}`
-    ).join('\n');
+    try {
+      const formData = new FormData(e.currentTarget);
+      const valorTotal = calcularTotal();
+      
+      // 🆕 GERAR NÚMERO AUTOMÁTICO DE PEDIDO
+      let numeroPedido = formData.get("numero_pedido") as string;
+      
+      if (!numeroPedido) {
+        const { data: ultimoPedido } = await supabase
+          .from("pedidos")
+          .select("numero_pedido")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+        
+        let proximoNumero = 1;
+        if (ultimoPedido?.numero_pedido) {
+          const match = ultimoPedido.numero_pedido.match(/\d+/);
+          if (match) {
+            proximoNumero = parseInt(match[0]) + 1;
+          }
+        }
+        
+        numeroPedido = `PED-${String(proximoNumero).padStart(4, '0')}`;
+        console.log(`✅ Número gerado automaticamente: ${numeroPedido}`);
+      }
+      
+      // Criar descrição dos produtos
+      const descricaoProdutos = produtosEscolhidos.map(p => 
+        `${p.nome} - Qtd: ${p.quantidade} - R$ ${p.preco_unitario.toFixed(2)}`
+      ).join('\n');
 
-    // Determinar responsável final
-    const responsavelFinal = responsavelSelecionado === 'outro' 
-      ? responsavelOutro
-      : responsavelSelecionado;
+      // Determinar responsável final
+      const responsavelFinal = responsavelSelecionado === 'outro' 
+        ? responsavelOutro
+        : responsavelSelecionado;
 
-    const { error } = await supabase.from("pedidos").insert({
-      cliente_id: selectedCliente,
-      numero_pedido: formData.get("numero_pedido") as string || null,
-      data_pedido: formData.get("data_pedido") as string || new Date().toISOString().split('T')[0],
-      valor_total: valorTotal,
-      status: formData.get("status") as string || "pendente",
-      forma_pagamento: formData.get("forma_pagamento") as string || null,
-      parcelas: formData.get("parcelas") ? parseInt(formData.get("parcelas") as string) : null,
-      dias_pagamento: formData.get("dias_pagamento") as string || null,
-      observacoes: `${descricaoProdutos}\n\n${formData.get("observacoes") || ""}`,
-      responsavel_venda_id: responsavelFinal || null,
-    });
+      // Inserir pedido
+      const { data: pedidoInserido, error: pedidoError } = await supabase
+        .from("pedidos")
+        .insert({
+          cliente_id: selectedCliente,
+          numero_pedido: numeroPedido,
+          data_pedido: formData.get("data_pedido") as string || new Date().toISOString().split('T')[0],
+          valor_total: valorTotal,
+          status: formData.get("status") as string || "pendente",
+          forma_pagamento: formData.get("forma_pagamento") as string || null,
+          parcelas: formData.get("parcelas") ? parseInt(formData.get("parcelas") as string) : null,
+          dias_pagamento: formData.get("dias_pagamento") as string || null,
+          tipo_frete: formData.get("tipo_frete") as string || null,
+          transportadora: formData.get("transportadora") as string || null,
+          observacoes: formData.get("observacoes") as string || null,
+          responsavel_venda_id: responsavelFinal || null,
+        })
+        .select()
+        .single();
 
-    setLoading(false);
+      if (pedidoError) throw pedidoError;
 
-    if (error) {
-      toast({ title: "Erro ao criar pedido", variant: "destructive" });
-    } else {
-      toast({ title: "Pedido criado com sucesso!" });
+      // Inserir produtos do pedido
+      const produtosInsert = produtosEscolhidos.map(p => ({
+        pedido_id: pedidoInserido.id,
+        produto_id: p.produto_id,
+        quantidade: p.quantidade,
+        preco_unitario: p.preco_unitario,
+        observacoes: p.observacoes || null,
+      }));
+
+      const { error: produtosError } = await supabase
+        .from("pedidos_produtos")
+        .insert(produtosInsert);
+
+      if (produtosError) throw produtosError;
+
+      toast({ 
+        title: `Pedido ${numeroPedido} criado com sucesso!`,
+        description: `Total: R$ ${valorTotal.toFixed(2)}`
+      });
+      
       setProdutosEscolhidos([]);
       setSelectedCliente("");
       navigate("/pedidos");
+    } catch (error: any) {
+      console.error("❌ Erro ao criar pedido:", error);
+      toast({ 
+        title: "Erro ao criar pedido", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -437,10 +502,68 @@ const LancarPedido = () => {
                   </div>
                 </div>
 
+                {/* 🆕 PREVIEW DOS DADOS DO CLIENTE */}
+                {selectedCliente && (() => {
+                  const cliente = clientes.find(c => c.id === selectedCliente);
+                  if (!cliente) return null;
+                  
+                  return (
+                    <div className="bg-muted/50 border rounded-lg p-4">
+                      <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        <span>📋</span>
+                        Dados do Cliente (serão incluídos no pedido)
+                      </h3>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Razão Social:</span>
+                          <p className="font-medium">{cliente.razao_social || cliente.nome_fantasia || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">CNPJ/CPF:</span>
+                          <p className="font-medium">{cliente.cnpj_cpf || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Endereço:</span>
+                          <p className="font-medium">
+                            {cliente.logradouro 
+                              ? `${cliente.logradouro}${cliente.numero ? ', ' + cliente.numero : ''}`
+                              : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Cidade/UF:</span>
+                          <p className="font-medium">
+                            {cliente.cidade && cliente.uf ? `${cliente.cidade} - ${cliente.uf}` : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Telefone:</span>
+                          <p className="font-medium">{cliente.telefone || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Email:</span>
+                          <p className="font-medium">{cliente.email || 'N/A'}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Vendedor Responsável:</span>
+                          <p className="font-medium">{(cliente as any).profiles?.nome || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Número do Pedido</Label>
-                    <Input name="numero_pedido" placeholder="Ex: 001/2025" />
+                    <Label htmlFor="numero_pedido">
+                      Número do Pedido 
+                      <span className="text-xs text-muted-foreground ml-2">(Opcional - será gerado automaticamente)</span>
+                    </Label>
+                    <Input 
+                      id="numero_pedido"
+                      name="numero_pedido" 
+                      placeholder="Ex: PED-0042 (deixe vazio para gerar automaticamente)" 
+                    />
                   </div>
                   <div>
                     <Label>Data do Pedido</Label>
@@ -517,45 +640,46 @@ const LancarPedido = () => {
                 <div className="border-t pt-4">
                   <h3 className="font-semibold mb-3">Produtos do Pedido</h3>
                   
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-12 gap-2">
-                      <div className="col-span-5">
-                        <Label className="text-xs">Produto</Label>
-                        <Select value={selectedProduto} onValueChange={(v) => {
-                          setSelectedProduto(v);
-                          const prod = produtos.find(p => p.id === v);
-                          if (prod?.preco_base) {
-                            setPrecoUnitario(parseFloat(prod.preco_base));
-                          }
-                        }}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Escolher produto" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {produtos.map((produto) => (
-                              <SelectItem key={produto.id} value={produto.id}>
-                                {produto.nome}
-                                {produto.peso_unidade_kg && ` (${produto.peso_unidade_kg}kg)`}
-                                {produto.rendimento_dose_gramas && ` (${produto.rendimento_dose_gramas}g/kg)`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {selectedProduto && (() => {
-                          const prod = produtos.find(p => p.id === selectedProduto);
-                          if (!prod) return null;
-                          const precoKilo = calcularPrecoKilo(prod);
-                          if (precoKilo === 0 || precoKilo === parseFloat(prod.preco_base || 0)) return null;
-                          return (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {prod.rendimento_dose_gramas 
-                                ? `Preço por kg (gelato): R$ ${precoKilo.toFixed(2)}`
-                                : `Preço por kg: R$ ${precoKilo.toFixed(2)}`
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-5">
+                          <Label className="text-xs">Produto</Label>
+                          <Combobox
+                            options={produtos.map(p => ({
+                              value: p.id,
+                              label: `${p.nome} ${p.sku ? `(${p.sku})` : ''} ${(p as any).marcas?.nome ? `- ${(p as any).marcas.nome}` : ''}`
+                            }))}
+                            value={selectedProduto}
+                            onValueChange={(v) => {
+                              setSelectedProduto(v);
+                              const prod = produtos.find(p => p.id === v);
+                              if (prod?.preco_base) {
+                                setPrecoUnitario(parseFloat(prod.preco_base));
                               }
-                            </p>
-                          );
-                        })()}
-                      </div>
+                            }}
+                            placeholder="Buscar produto..."
+                            searchPlaceholder="Digite pistache, chocolate..."
+                            emptyText="Nenhum produto encontrado."
+                          />
+                          {selectedProduto && (() => {
+                            const prod = produtos.find(p => p.id === selectedProduto);
+                            if (!prod) return null;
+                            
+                            return (
+                              <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                                {prod.preco_por_kg && (
+                                  <p>💰 Preço/kg: R$ {parseFloat(prod.preco_por_kg).toFixed(2)}</p>
+                                )}
+                                {prod.rendimento_dose_gramas && (
+                                  <p>📊 Rendimento: {prod.rendimento_dose_gramas}g/dose</p>
+                                )}
+                                {prod.peso_embalagem_kg && (
+                                  <p>📦 Embalagem: {prod.peso_embalagem_kg}kg</p>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
                       <div className="col-span-2">
                         <Label className="text-xs">Qtd</Label>
                         <Input 

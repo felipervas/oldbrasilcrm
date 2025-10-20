@@ -88,10 +88,31 @@ const Pedidos = () => {
       inicioMes.setDate(1);
       const inicioMesStr = inicioMes.toISOString().split('T')[0];
 
-      // Otimizado: carregar apenas campos necessários
+      // Otimizado: carregar campos necessários incluindo dados completos do cliente
       const { data: pedidos, error } = await supabase
         .from("pedidos")
-        .select("id, numero_pedido, data_pedido, valor_total, status, observacoes, clientes(nome_fantasia, profiles(nome))")
+        .select(`
+          id, 
+          numero_pedido, 
+          data_pedido, 
+          valor_total, 
+          status, 
+          observacoes, 
+          clientes(
+            nome_fantasia, 
+            razao_social, 
+            cnpj_cpf, 
+            logradouro, 
+            numero, 
+            cidade, 
+            uf, 
+            cep, 
+            telefone, 
+            email, 
+            responsavel_id,
+            profiles(nome)
+          )
+        `)
         .order("data_pedido", { ascending: false })
         .limit(20);
 
