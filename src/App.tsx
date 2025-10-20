@@ -54,6 +54,21 @@ const App = () => (
             {/* Rota de Login */}
             <Route path="/login" element={<Login />} />
 
+            {/* Rota Principal - Loja Pública */}
+            <Route
+              path="/"
+              element={
+                <div className="min-h-screen flex flex-col">
+                  <LojaHeader />
+                  <main className="flex-1">
+                    <LojaHome />
+                  </main>
+                  <LojaFooter />
+                  <WhatsAppButton />
+                </div>
+              }
+            />
+            
             {/* Rotas Públicas da Loja */}
             <Route
               path="/loja"
@@ -108,9 +123,9 @@ const App = () => (
               }
             />
 
-            {/* Rotas Autenticadas */}
+            {/* Rotas Autenticadas - CRM */}
           <Route
-            path="/"
+            path="/crm"
             element={
               <AppLayout>
                 <Dashboard />

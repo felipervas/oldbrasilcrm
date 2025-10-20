@@ -55,9 +55,9 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 const defaultMenuItems = [
-  { id: "dashboard", title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { id: "dashboard", title: "Dashboard", url: "/crm", icon: LayoutDashboard },
   { id: "meu-perfil", title: "Meu Perfil", url: "/meu-perfil", icon: User },
-  { id: "loja-online", title: "Ver Loja Online", url: "/loja", icon: ShoppingBag },
+  { id: "loja-online", title: "Ver Loja Online", url: "/", icon: ShoppingBag },
   { id: "clientes", title: "Clientes", url: "/clientes", icon: Users },
   { id: "tarefas", title: "Tarefas", url: "/tarefas", icon: CheckSquare },
   
