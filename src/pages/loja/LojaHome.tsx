@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { MarcaSection } from "@/components/loja/MarcaSection";
+import { ModalAtendimentoExclusivo } from "@/components/loja/ModalAtendimentoExclusivo";
 import { useLojaAgrupada } from "@/hooks/useLojaAgrupada";
 import { gerarLinkWhatsApp } from "@/lib/whatsapp";
 
@@ -9,6 +9,9 @@ export default function LojaHome() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Modal de Atendimento Exclusivo */}
+      <ModalAtendimentoExclusivo />
+      
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary/10 via-background to-accent/10 py-16 px-4">
         <div className="container mx-auto text-center space-y-6">

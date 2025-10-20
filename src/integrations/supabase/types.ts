@@ -634,6 +634,36 @@ export type Database = {
         }
         Relationships: []
       }
+      loja_leads: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          mensagem: string | null
+          nome: string
+          origem: string | null
+          telefone: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          mensagem?: string | null
+          nome: string
+          origem?: string | null
+          telefone?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          mensagem?: string | null
+          nome?: string
+          origem?: string | null
+          telefone?: string | null
+        }
+        Relationships: []
+      }
       marca_contatos: {
         Row: {
           cargo: string | null
