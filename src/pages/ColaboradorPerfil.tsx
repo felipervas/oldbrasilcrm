@@ -427,26 +427,35 @@ const ColaboradorPerfil = () => {
                 Gerencie seus compromissos e eventos dos próximos 30 dias
               </CardDescription>
             </div>
-            <Button 
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setEditingEvento(null);
-                setFormData({
-                  titulo: '',
-                  descricao: '',
-                  data: new Date().toISOString().split('T')[0],
-                  horario: '',
-                  tipo: 'evento'
-                });
-                setDialogOpen(true);
-              }}
-              className="shadow-sm hover-scale"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Evento
-            </Button>
+            <div style={{ position: 'relative', zIndex: 50 }}>
+              <Button 
+                type="button"
+                style={{ pointerEvents: 'auto' }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log("🟢 EVENTO NOVO - MouseDown capturado");
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log("🟢 EVENTO NOVO - Abrindo dialog");
+                  setEditingEvento(null);
+                  setFormData({
+                    titulo: '',
+                    descricao: '',
+                    data: new Date().toISOString().split('T')[0],
+                    horario: '',
+                    tipo: 'evento'
+                  });
+                  setTimeout(() => setDialogOpen(true), 10);
+                }}
+                className="shadow-sm hover-scale relative"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Evento
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -544,32 +553,46 @@ const ColaboradorPerfil = () => {
                     <Badge variant={tarefa.status === "concluida" ? "default" : "secondary"}>
                       {tarefa.status}
                     </Badge>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log("✏️ Editar tarefa:", tarefa.id);
-                        handleEditTarefa(tarefa);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log("🗑️ Excluir tarefa:", tarefa.id);
-                        handleDeleteTarefa(tarefa.id);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div style={{ position: 'relative', zIndex: 40, display: 'flex', gap: '0.5rem' }}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        style={{ pointerEvents: 'auto' }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log("✏️ EDITAR - MouseDown capturado", tarefa.id);
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log("✏️ EDITAR TAREFA:", tarefa.id);
+                          handleEditTarefa(tarefa);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        style={{ pointerEvents: 'auto' }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log("🗑️ EXCLUIR - MouseDown capturado", tarefa.id);
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log("🗑️ EXCLUIR TAREFA:", tarefa.id);
+                          handleDeleteTarefa(tarefa.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

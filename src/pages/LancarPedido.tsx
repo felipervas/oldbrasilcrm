@@ -208,6 +208,29 @@ const LancarPedido = () => {
         ? responsavelOutro
         : responsavelSelecionado;
 
+      // 🆕 CAPTURAR DADOS CUSTOMIZADOS DO CLIENTE
+      const clienteOverrides = {
+        razao_social: formData.get("cliente_razao_social_override"),
+        cnpj: formData.get("cliente_cnpj_override"),
+        endereco: formData.get("cliente_endereco_override"),
+        cidade_uf: formData.get("cliente_cidade_uf_override"),
+        telefone: formData.get("cliente_telefone_override"),
+        email: formData.get("cliente_email_override"),
+        contato_responsavel: formData.get("cliente_contato_responsavel"),
+      };
+      
+      // Criar string com overrides para adicionar nas observações
+      const overridesText = Object.entries(clienteOverrides)
+        .filter(([_, value]) => value) // Apenas campos preenchidos
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n');
+      
+      const observacoesFinais = [
+        formData.get("observacoes"),
+        overridesText ? `\n--- Dados Customizados do Cliente ---\n${overridesText}` : ''
+      ].filter(Boolean).join('\n');
+
+
       // Inserir pedido
       const { data: pedidoInserido, error: pedidoError } = await supabase
         .from("pedidos")
@@ -222,7 +245,7 @@ const LancarPedido = () => {
           dias_pagamento: formData.get("dias_pagamento") as string || null,
           tipo_frete: formData.get("tipo_frete") as string || null,
           transportadora: formData.get("transportadora") as string || null,
-          observacoes: formData.get("observacoes") as string || null,
+          observacoes: observacoesFinais || null,
           responsavel_venda_id: responsavelFinal || null,
         })
         .select()
@@ -502,53 +525,80 @@ const LancarPedido = () => {
                   </div>
                 </div>
 
-                {/* 🆕 PREVIEW DOS DADOS DO CLIENTE */}
+                {/* Dados do Cliente - Editáveis */}
                 {selectedCliente && (() => {
                   const cliente = clientes.find(c => c.id === selectedCliente);
                   if (!cliente) return null;
                   
                   return (
                     <div className="bg-muted/50 border rounded-lg p-4">
-                      <h3 className="font-semibold mb-2 flex items-center gap-2">
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
                         <span>📋</span>
-                        Dados do Cliente (serão incluídos no pedido)
+                        Dados do Cliente (editáveis para este pedido)
                       </h3>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <span className="text-muted-foreground">Razão Social:</span>
-                          <p className="font-medium">{cliente.razao_social || cliente.nome_fantasia || 'N/A'}</p>
+                          <Label>Razão Social / Nome Fantasia</Label>
+                          <Input 
+                            name="cliente_razao_social_override"
+                            defaultValue={cliente.razao_social || cliente.nome_fantasia || ''}
+                            placeholder="Sobrescrever razão social..."
+                          />
                         </div>
                         <div>
-                          <span className="text-muted-foreground">CNPJ/CPF:</span>
-                          <p className="font-medium">{cliente.cnpj_cpf || 'N/A'}</p>
+                          <Label>CNPJ/CPF</Label>
+                          <Input 
+                            name="cliente_cnpj_override"
+                            defaultValue={cliente.cnpj_cpf || ''}
+                            placeholder="Sobrescrever CNPJ/CPF..."
+                          />
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Endereço:</span>
-                          <p className="font-medium">
-                            {cliente.logradouro 
+                          <Label>Endereço</Label>
+                          <Input 
+                            name="cliente_endereco_override"
+                            defaultValue={cliente.logradouro 
                               ? `${cliente.logradouro}${cliente.numero ? ', ' + cliente.numero : ''}`
-                              : 'N/A'}
-                          </p>
+                              : ''}
+                            placeholder="Sobrescrever endereço..."
+                          />
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Cidade/UF:</span>
-                          <p className="font-medium">
-                            {cliente.cidade && cliente.uf ? `${cliente.cidade} - ${cliente.uf}` : 'N/A'}
-                          </p>
+                          <Label>Cidade / UF</Label>
+                          <Input 
+                            name="cliente_cidade_uf_override"
+                            defaultValue={cliente.cidade && cliente.uf ? `${cliente.cidade} - ${cliente.uf}` : ''}
+                            placeholder="Sobrescrever cidade/UF..."
+                          />
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Telefone:</span>
-                          <p className="font-medium">{cliente.telefone || 'N/A'}</p>
+                          <Label>Telefone</Label>
+                          <Input 
+                            name="cliente_telefone_override"
+                            defaultValue={cliente.telefone || ''}
+                            placeholder="Sobrescrever telefone..."
+                          />
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Email:</span>
-                          <p className="font-medium">{cliente.email || 'N/A'}</p>
+                          <Label>Email</Label>
+                          <Input 
+                            name="cliente_email_override"
+                            defaultValue={cliente.email || ''}
+                            placeholder="Sobrescrever email..."
+                            type="email"
+                          />
                         </div>
                         <div className="col-span-2">
-                          <span className="text-muted-foreground">Vendedor Responsável:</span>
-                          <p className="font-medium">{(cliente as any).profiles?.nome || 'N/A'}</p>
+                          <Label>Contato Responsável pela Compra</Label>
+                          <Input 
+                            name="cliente_contato_responsavel"
+                            placeholder="Nome e telefone do responsável na empresa..."
+                          />
                         </div>
                       </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        💡 Estes campos permitem ajustar informações específicas para este pedido sem alterar o cadastro do cliente.
+                      </p>
                     </div>
                   );
                 })()}
@@ -772,77 +822,6 @@ const LancarPedido = () => {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 border-t pt-4">
-                  <div>
-                    <Label htmlFor="numero_pedido">Número do Pedido</Label>
-                    <Input id="numero_pedido" name="numero_pedido" placeholder="Ex: PED-001" />
-                  </div>
-                  <div>
-                    <Label htmlFor="data_pedido">Data do Pedido</Label>
-                    <Input 
-                      id="data_pedido" 
-                      name="data_pedido" 
-                      type="date" 
-                      defaultValue={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <Select name="status" defaultValue="pendente">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cotacao">Cotação</SelectItem>
-                        <SelectItem value="pedido">Pedido</SelectItem>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                        <SelectItem value="em_producao">Em Produção</SelectItem>
-                        <SelectItem value="enviado">Enviado</SelectItem>
-                        <SelectItem value="entregue">Entregue</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="forma_pagamento">Forma de Pagamento</Label>
-                    <Select name="forma_pagamento">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="faturamento">Faturamento</SelectItem>
-                        <SelectItem value="pix">PIX</SelectItem>
-                        <SelectItem value="boleto">Boleto</SelectItem>
-                        <SelectItem value="cartao">Cartão de Crédito</SelectItem>
-                        <SelectItem value="avista">À Vista</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="parcelas">Parcelas</Label>
-                    <Input 
-                      id="parcelas" 
-                      name="parcelas" 
-                      type="number"
-                      min="1"
-                      placeholder="Ex: 3"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="dias_pagamento">Dias de Pagamento</Label>
-                    <Input 
-                      id="dias_pagamento" 
-                      name="dias_pagamento" 
-                      placeholder="Ex: 30/60/90"
-                    />
-                  </div>
-                </div>
 
                 <div>
                   <Label htmlFor="observacoes">Observações</Label>
