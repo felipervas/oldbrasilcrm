@@ -10,6 +10,7 @@ import { ImageUploadZone } from './ImageUploadZone';
 import { useUpdateProduto, useUploadImagemProduto, useRemoveImagemProduto } from '@/hooks/useGerenciarLoja';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProdutoEditDialogProps {
   produto: any;
@@ -58,38 +59,27 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   }, [produto]);
 
   const handleSave = async () => {
-    console.log("🔵 ProdutoEditDialog - Iniciando handleSave");
-    console.log("🔵 ProdutoEditDialog - formData:", formData);
-    
-    // Validação: não permitir salvar se nome estiver vazio
+    // Validação: nome obrigatório
     if (!formData.nome || formData.nome.trim() === '') {
-      console.log("❌ ProdutoEditDialog - Validação falhou: nome vazio");
       toast({
-        title: "⚠️ Nome do produto é obrigatório",
+        title: "Nome do produto é obrigatório",
         variant: "destructive",
       });
       return;
     }
 
-    // Validação de SKU único (se preenchido)
+    // FASE 4: Validação de SKU único otimizada
     if (formData.sku?.trim()) {
-      console.log('🔍 Verificando SKU único:', formData.sku);
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: existingSKU, error: skuError } = await supabase
+      const { data: existingSKU } = await supabase
         .from('produtos')
         .select('id')
         .eq('sku', formData.sku.trim())
         .neq('id', produto.id)
         .maybeSingle();
       
-      if (skuError) {
-        console.error('❌ Erro ao verificar SKU:', skuError);
-      }
-      
       if (existingSKU) {
-        console.log('❌ SKU já existe:', existingSKU);
         toast({ 
-          title: "⚠️ SKU já está em uso", 
+          title: "SKU já está em uso", 
           description: "Escolha outro SKU ou deixe vazio",
           variant: "destructive" 
         });
@@ -110,32 +100,35 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
       return acc;
     }, {} as any);
 
-    console.log("📤 ProdutoEditDialog - Dados sanitizados:", sanitizedData);
-    console.log("📤 ProdutoEditDialog - Produto ID:", produto.id);
-
     updateProduto.mutate({
       id: produto.id,
       data: sanitizedData,
     }, {
       onSuccess: () => {
-        console.log("✅ ProdutoEditDialog - Produto atualizado com sucesso");
         toast({
-          title: "✅ Produto atualizado!",
+          title: "Produto atualizado!",
           description: "As alterações foram salvas com sucesso.",
         });
         onOpenChange(false);
       },
       onError: (error: any) => {
-        console.error("❌ ProdutoEditDialog - Erro detalhado:", {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-          error: error
-        });
+        // FASE 5: Melhor feedback de erro
+        let errorMessage = "Erro desconhecido ao atualizar produto.";
+        
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (error.code === '23505') {
+          errorMessage = "Já existe um produto com estes dados.";
+        } else if (error.code === '23503') {
+          errorMessage = "Marca inválida. Selecione uma marca existente.";
+        } else if (error.code === '42501') {
+          errorMessage = "Você não tem permissão para atualizar este produto.";
+        }
+        
+        console.error("Erro ao atualizar produto:", error);
         toast({
-          title: "❌ Erro ao atualizar produto",
-          description: error.message || "Erro desconhecido. Verifique os dados.",
+          title: "Erro ao atualizar produto",
+          description: errorMessage,
           variant: "destructive",
         });
       },
