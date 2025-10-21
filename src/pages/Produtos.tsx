@@ -74,7 +74,6 @@ const Produtos = () => {
 
   const produtosFiltrados = produtos.filter(produto =>
     produto.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    produto.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     produto.marcas?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -223,7 +222,6 @@ const Produtos = () => {
     setProdutoSelecionado(produto);
     setEditFormData({
       nome: produto.nome,
-      sku: produto.sku || "",
       submarca: produto.submarca || "",
       descricao: produto.descricao || "",
       preco_base: produto.preco_base || "",
@@ -345,7 +343,6 @@ const Produtos = () => {
       .from("produtos")
       .update({
         nome: editFormData.nome,
-        sku: editFormData.sku,
         submarca: editFormData.submarca || null,
         descricao: editFormData.descricao,
         marca_id: marcaSelecionada || null,
@@ -444,10 +441,6 @@ const Produtos = () => {
               <div>
                 <Label htmlFor="nome_loja">Nome para Loja</Label>
                 <Input id="nome_loja" name="nome_loja" placeholder="Ex: Manteiga de Cacau" />
-              </div>
-              <div>
-                <Label htmlFor="sku">SKU</Label>
-                <Input id="sku" name="sku" />
               </div>
               <div>
                 <Label htmlFor="tipo_embalagem">Tipo de Embalagem</Label>

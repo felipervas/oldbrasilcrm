@@ -56,18 +56,18 @@ export default function GerenciarLoja() {
     const grupos: any = {};
     
     gencauProdutos.forEach((p: any) => {
-      const skuBase = p.sku?.split('-')[0] || p.nome;
-      if (!grupos[skuBase]) {
-        grupos[skuBase] = {
-          skuBase,
-          nome: p.nome.replace(/\s*\(.*?\)\s*/g, '').trim(),
+      const nomeBase = p.nome.replace(/\s*\(.*?\)\s*/g, '').trim();
+      if (!grupos[nomeBase]) {
+        grupos[nomeBase] = {
+          nomeBase,
+          nome: nomeBase,
           produtos: [],
           produtoVisivelId: null,
         };
       }
-      grupos[skuBase].produtos.push(p);
-      if (p.visivel_loja && !grupos[skuBase].produtoVisivelId) {
-        grupos[skuBase].produtoVisivelId = p.id;
+      grupos[nomeBase].produtos.push(p);
+      if (p.visivel_loja && !grupos[nomeBase].produtoVisivelId) {
+        grupos[nomeBase].produtoVisivelId = p.id;
       }
     });
 
@@ -231,9 +231,6 @@ export default function GerenciarLoja() {
                           <div className="flex items-start justify-between gap-2">
                             <div>
                               <h3 className="font-semibold truncate">{produto.nome}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                SKU: {produto.sku || 'N/A'}
-                              </p>
                             </div>
                             <Button
                               size="sm"
@@ -337,7 +334,7 @@ export default function GerenciarLoja() {
                   </p>
                 ) : (
                   produtosGencauAgrupados.map((grupo: any) => (
-                    <Card key={grupo.skuBase} className="border-2">
+                    <Card key={grupo.nomeBase} className="border-2">
                       <CardHeader>
                         <CardTitle className="text-lg">{grupo.nome}</CardTitle>
                         <CardDescription>
@@ -363,8 +360,6 @@ export default function GerenciarLoja() {
                                 )}
                               </div>
                               <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                                <span>SKU: {p.sku}</span>
-                                <span>•</span>
                                 <span className="font-semibold text-foreground">
                                   R$ {p.preco_por_kg?.toFixed(2)}/kg
                                 </span>

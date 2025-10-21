@@ -959,7 +959,6 @@ export type Database = {
           preco_base: number | null
           preco_por_kg: number | null
           rendimento_dose_gramas: number | null
-          sku: string | null
           subcategoria: string | null
           submarca: string | null
           tabela_preco_loja: string | null
@@ -986,7 +985,6 @@ export type Database = {
           preco_base?: number | null
           preco_por_kg?: number | null
           rendimento_dose_gramas?: number | null
-          sku?: string | null
           subcategoria?: string | null
           submarca?: string | null
           tabela_preco_loja?: string | null
@@ -1013,7 +1011,6 @@ export type Database = {
           preco_base?: number | null
           preco_por_kg?: number | null
           rendimento_dose_gramas?: number | null
-          sku?: string | null
           subcategoria?: string | null
           submarca?: string | null
           tabela_preco_loja?: string | null

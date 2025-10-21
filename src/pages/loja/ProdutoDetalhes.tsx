@@ -57,7 +57,6 @@ export default function ProdutoDetalhes() {
 
   const linkWhatsApp = gerarLinkWhatsApp({
     nome: produto.nome,
-    sku: produto.sku,
     marca: marca,
   });
 
@@ -116,7 +115,6 @@ export default function ProdutoDetalhes() {
             <div>
               <Badge className={`${corMarca} text-white mb-3`}>{marca}</Badge>
               <h1 className="text-3xl font-bold mb-2">{produto.nome}</h1>
-              <p className="text-muted-foreground">SKU: {produto.sku}</p>
               {produto.categoria && (
                 <p className="text-sm text-muted-foreground mt-1">
                   Categoria: {produto.categoria}

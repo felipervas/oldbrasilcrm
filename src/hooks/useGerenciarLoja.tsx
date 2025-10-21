@@ -16,7 +16,7 @@ export const useGerenciarProdutos = (searchTerm: string = '') => {
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
-        query = query.or(`nome.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%`);
+        query = query.ilike('nome', `%${searchTerm}%`);
       }
 
       const { data, error } = await query;

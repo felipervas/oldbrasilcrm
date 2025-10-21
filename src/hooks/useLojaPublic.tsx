@@ -15,7 +15,7 @@ export const useProdutosLoja = (filtros?: {
       let query = supabase
         .from('produtos')
         .select(`
-          id, nome, sku, descricao, categoria,
+          id, nome, descricao, categoria,
           preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo,
           visivel_loja, destaque_loja, rendimento_dose_gramas, preco_atualizado_em,
           marcas(id, nome, slug),
@@ -37,7 +37,7 @@ export const useProdutosLoja = (filtros?: {
       }
 
       if (filtros?.busca) {
-        query = query.or(`nome.ilike.%${filtros.busca}%,sku.ilike.%${filtros.busca}%`);
+        query = query.ilike('nome', `%${filtros.busca}%`);
       }
 
       if (filtros?.destaque) {
@@ -88,7 +88,7 @@ export const useProdutoDetalhes = (id: string) => {
       const { data, error } = await supabase
         .from('produtos')
         .select(`
-          id, nome, sku, descricao, categoria,
+          id, nome, descricao, categoria,
           preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo,
           rendimento_dose_gramas, preco_atualizado_em,
           marcas(id, nome, site, slug),
@@ -117,7 +117,7 @@ export const useProdutosRelacionados = (marcaId: string, produtoAtualId: string)
       const { data, error } = await supabase
         .from('produtos')
         .select(`
-          id, nome, sku, preco_por_kg, peso_embalagem_kg, rendimento_dose_gramas,
+          id, nome, preco_por_kg, peso_embalagem_kg, rendimento_dose_gramas,
           marcas(nome, slug),
           produto_imagens(url, ordem)
         `)
