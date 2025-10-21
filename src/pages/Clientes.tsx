@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, MessageCircle, Edit, FileText, UserPlus, Upload, Trash2 } from "lucide-react";
+import { Plus, Users, MessageCircle, Edit, FileText, UserPlus, Upload, Trash2, Mail } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -966,27 +966,53 @@ const Clientes = () => {
                           <p className="text-sm">🎂 {new Date(contato.aniversario).toLocaleDateString('pt-BR')}</p>
                         )}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={async () => {
-                          if (!confirm("Deseja excluir este contato?")) return;
-                          
-                          const { error } = await supabase
-                            .from('contatos_clientes')
-                            .delete()
-                            .eq('id', contato.id);
-                          
-                          if (error) {
-                            toast({ title: "Erro ao excluir contato", variant: "destructive" });
-                          } else {
-                            toast({ title: "Contato excluído com sucesso!" });
-                            loadContatos(clienteSelecionado.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex gap-2">
+                        {contato.telefone && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const telefone = contato.telefone.replace(/\D/g, '');
+                              const mensagem = encodeURIComponent(`Olá ${contato.nome}! Tudo bem?`);
+                              window.open(`https://wa.me/55${telefone}?text=${mensagem}`, '_blank');
+                            }}
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {contato.email && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              window.open(`mailto:${contato.email}`, '_blank');
+                            }}
+                          >
+                            <Mail className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={async () => {
+                            if (!confirm("Deseja excluir este contato?")) return;
+                            
+                            const { error } = await supabase
+                              .from('contatos_clientes')
+                              .delete()
+                              .eq('id', contato.id);
+                            
+                            if (error) {
+                              toast({ title: "Erro ao excluir contato", variant: "destructive" });
+                            } else {
+                              toast({ title: "Contato excluído com sucesso!" });
+                              loadContatos(clienteSelecionado.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -54,16 +54,16 @@ const Pedidos = () => {
 
     const { data, error } = await supabase
       .from('pedidos_produtos')
-      .select('quantidade, preco_unitario, produtos(nome)')
+      .select('quantidade, preco_unitario, produtos(id, nome)')
       .eq('pedido_id', pedidoId);
 
     if (!error && data) {
       setProdutosPorPedido(prev => ({
         ...prev,
-        [pedidoId]: data.map(p => ({
-          nome: (p as any).produtos?.nome || 'N/A',
-          quantidade: p.quantidade,
-          preco_unitario: p.preco_unitario
+        [pedidoId]: data.map((item: any) => ({
+          nome: item.produtos?.nome || 'Produto sem nome',
+          quantidade: item.quantidade,
+          preco_unitario: item.preco_unitario
         }))
       }));
     }
