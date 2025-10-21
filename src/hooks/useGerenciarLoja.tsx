@@ -58,7 +58,9 @@ export const useUpdateProduto = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      console.log("🔵 useUpdateProduto - Dados recebidos:", data);
+      console.log("🔵 useUpdateProduto - INICIANDO mutationFn");
+      console.log("🔵 useUpdateProduto - ID recebido:", id);
+      console.log("🔵 useUpdateProduto - Dados recebidos:", JSON.stringify(data, null, 2));
 
       // Sanitizar dados: converter strings vazias e NaN em null
       const sanitizedData = Object.entries(data).reduce((acc, [key, value]) => {
@@ -72,15 +74,29 @@ export const useUpdateProduto = () => {
         return acc;
       }, {} as any);
 
-      console.log("🟢 useUpdateProduto - Dados sanitizados:", sanitizedData);
+      console.log("🟢 useUpdateProduto - Dados sanitizados:", JSON.stringify(sanitizedData, null, 2));
+      console.log("🟢 useUpdateProduto - Preparando para chamar Supabase...");
 
-      const { error } = await supabase
+      const { data: resultData, error } = await supabase
         .from('produtos')
         .update(sanitizedData)
-        .eq('id', id);
+        .eq('id', id)
+        .select();
+
+      console.log("🟣 useUpdateProduto - Resposta Supabase:", {
+        data: resultData,
+        error: error,
+        hasError: !!error
+      });
 
       if (error) {
-        console.error("🔴 useUpdateProduto - Erro Supabase:", error);
+        console.error("🔴 useUpdateProduto - ERRO SUPABASE DETECTADO:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          fullError: error
+        });
         
         // Tratamento específico para erro de duplicate key
         if (error.code === '23505') {
@@ -93,29 +109,30 @@ export const useUpdateProduto = () => {
         throw error;
       }
 
-      console.log("✅ useUpdateProduto - Produto atualizado com sucesso");
+      console.log("✅ useUpdateProduto - Produto atualizado COM SUCESSO");
 
       // Log de auditoria
-      await supabase.from('loja_audit_log').insert({
-        acao: 'editar_produto',
-        entidade_tipo: 'produto',
-        entidade_id: id,
-        detalhes: sanitizedData,
-      });
+      try {
+        await supabase.from('loja_audit_log').insert({
+          acao: 'editar_produto',
+          entidade_tipo: 'produto',
+          entidade_id: id,
+          detalhes: sanitizedData,
+        });
+        console.log("✅ useUpdateProduto - Log de auditoria criado");
+      } catch (auditError) {
+        console.warn("⚠️ useUpdateProduto - Erro ao criar log de auditoria:", auditError);
+      }
     },
     onSuccess: () => {
+      console.log("✅ useUpdateProduto - onSuccess chamado");
       queryClient.invalidateQueries({ queryKey: ['gerenciar-produtos'] });
-      toast({
-        title: "✅ Produto atualizado",
-        description: "As alterações já estão visíveis na loja.",
-      });
     },
     onError: (error: any) => {
-      console.error("🔴 useUpdateProduto - onError:", error);
-      toast({
-        title: "❌ Erro ao atualizar produto",
-        description: error.message || "Verifique os dados e tente novamente.",
-        variant: "destructive",
+      console.error("🔴 useUpdateProduto - onError chamado:", {
+        message: error.message,
+        stack: error.stack,
+        fullError: error
       });
     },
   });

@@ -58,8 +58,12 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   }, [produto]);
 
   const handleSave = () => {
+    console.log("🔵 ProdutoEditDialog - Iniciando handleSave");
+    console.log("🔵 ProdutoEditDialog - formData:", formData);
+    
     // Validação: não permitir salvar se nome estiver vazio
     if (!formData.nome || formData.nome.trim() === '') {
+      console.log("❌ ProdutoEditDialog - Validação falhou: nome vazio");
       toast({
         title: "⚠️ Nome do produto é obrigatório",
         variant: "destructive",
@@ -80,7 +84,8 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
       return acc;
     }, {} as any);
 
-    console.log("📤 ProdutoEditDialog - Enviando dados sanitizados:", sanitizedData);
+    console.log("📤 ProdutoEditDialog - Dados sanitizados:", sanitizedData);
+    console.log("📤 ProdutoEditDialog - Produto ID:", produto.id);
 
     updateProduto.mutate({
       id: produto.id,
@@ -88,10 +93,25 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
     }, {
       onSuccess: () => {
         console.log("✅ ProdutoEditDialog - Produto atualizado com sucesso");
+        toast({
+          title: "✅ Produto atualizado!",
+          description: "As alterações foram salvas com sucesso.",
+        });
         onOpenChange(false);
       },
       onError: (error: any) => {
-        console.error("❌ ProdutoEditDialog - Erro ao atualizar:", error);
+        console.error("❌ ProdutoEditDialog - Erro detalhado:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          error: error
+        });
+        toast({
+          title: "❌ Erro ao atualizar produto",
+          description: error.message || "Erro desconhecido. Verifique os dados.",
+          variant: "destructive",
+        });
       },
     });
   };
