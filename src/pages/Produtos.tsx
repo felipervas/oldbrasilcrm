@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ProdutoTabelasPreco } from "@/components/ProdutoTabelasPreco";
 
 const Produtos = () => {
   const [open, setOpen] = useState(false);
@@ -869,6 +870,9 @@ const Produtos = () => {
                       </Button>
                     </div>
                   </div>
+                  
+                  {/* 📊 TABELAS DE PREÇO */}
+                  <ProdutoTabelasPreco produtoId={produto.id} />
                 </div>
               ))}
             </div>

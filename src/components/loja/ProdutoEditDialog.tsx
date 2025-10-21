@@ -141,24 +141,28 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
 
 
   // Debounce para atualização automática de tabelas
-  const debouncedUpdate = useDebounce(editingTables, 500);
+  const debouncedUpdate = useDebounce(editingTables, 1000);
 
   useEffect(() => {
     if (Object.keys(debouncedUpdate).length > 0) {
       Object.entries(debouncedUpdate).forEach(([id, values]) => {
         const updates: any = {};
-        if (values.nome !== undefined) updates.nome_tabela = values.nome;
-        if (values.preco !== undefined) updates.preco_por_kg = values.preco ? parseFloat(values.preco) : null;
+        if (values.nome !== undefined && values.nome !== '') updates.nome_tabela = values.nome;
+        if (values.preco !== undefined && values.preco !== '') {
+          updates.preco_por_kg = parseFloat(values.preco);
+        }
         
-        updateTabela.mutate({
-          id,
-          produto_id: produto.id,
-          ...updates,
-        });
+        if (Object.keys(updates).length > 0) {
+          updateTabela.mutate({
+            id,
+            produto_id: produto.id,
+            ...updates,
+          });
+        }
       });
       setEditingTables({});
     }
-  }, [debouncedUpdate]);
+  }, [debouncedUpdate, produto?.id, updateTabela]);
 
   const handleTableChange = (id: string, field: 'nome' | 'preco', value: string) => {
     setEditingTables(prev => ({
@@ -303,81 +307,86 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
               {/* Tabelas existentes - CARDS EDITÁVEIS */}
               {tabelasPreco.length > 0 ? (
                 <div className="space-y-3">
-                  {tabelasPreco.map(t => (
-                    <div key={t.id} className="border rounded-lg p-3 bg-background space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs">Nome da Tabela</Label>
-                          <Input
-                            type="text"
-                            defaultValue={t.nome_tabela}
-                            className="h-9"
-                            onChange={(e) => handleTableChange(t.id, 'nome', e.target.value)}
-                            placeholder="Nome"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Preço (R$/kg)</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            defaultValue={t.preco_por_kg || ''}
-                            className="h-9"
-                            onChange={(e) => handleTableChange(t.id, 'preco', e.target.value)}
-                            placeholder="0.00"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              id={`ativo-${t.id}`}
-                              checked={t.ativo}
-                              onCheckedChange={(checked) => {
-                                updateTabela.mutate({
-                                  id: t.id,
-                                  produto_id: produto.id,
-                                  ativo: checked,
-                                });
-                              }}
+                  {tabelasPreco.map(t => {
+                    const tabelaId = t.id;
+                    return (
+                      <div key={tabelaId} className="border rounded-lg p-3 bg-background space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">Nome da Tabela</Label>
+                            <Input
+                              type="text"
+                              key={`nome-${tabelaId}-${t.nome_tabela}`}
+                              defaultValue={t.nome_tabela}
+                              className="h-9"
+                              onChange={(e) => handleTableChange(tabelaId, 'nome', e.target.value)}
+                              placeholder="Nome"
                             />
-                            <Label htmlFor={`ativo-${t.id}`} className="text-xs cursor-pointer">
-                              Ativa
-                            </Label>
                           </div>
-
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`usar-site-${t.id}`}
-                              checked={t.usar_no_site}
-                              onCheckedChange={(checked) => {
-                                updateTabela.mutate({
-                                  id: t.id,
-                                  produto_id: produto.id,
-                                  usar_no_site: !!checked,
-                                });
-                              }}
+                          <div>
+                            <Label className="text-xs">Preço (R$/kg)</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              key={`preco-${tabelaId}-${t.preco_por_kg}`}
+                              defaultValue={t.preco_por_kg || ''}
+                              className="h-9"
+                              onChange={(e) => handleTableChange(tabelaId, 'preco', e.target.value)}
+                              placeholder="0.00"
                             />
-                            <Label htmlFor={`usar-site-${t.id}`} className="text-xs cursor-pointer">
-                              Usar no site
-                            </Label>
                           </div>
                         </div>
 
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="hover:text-destructive"
-                          onClick={() => handleDeleteTabela(t.id)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Excluir
-                        </Button>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                id={`ativo-${tabelaId}`}
+                                checked={t.ativo}
+                                onCheckedChange={(checked) => {
+                                  updateTabela.mutate({
+                                    id: tabelaId,
+                                    produto_id: produto.id,
+                                    ativo: checked,
+                                  });
+                                }}
+                              />
+                              <Label htmlFor={`ativo-${tabelaId}`} className="text-xs cursor-pointer">
+                                Ativa
+                              </Label>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`usar-site-${tabelaId}`}
+                                checked={t.usar_no_site}
+                                onCheckedChange={(checked) => {
+                                  updateTabela.mutate({
+                                    id: tabelaId,
+                                    produto_id: produto.id,
+                                    usar_no_site: !!checked,
+                                  });
+                                }}
+                              />
+                              <Label htmlFor={`usar-site-${tabelaId}`} className="text-xs cursor-pointer">
+                                Usar no site
+                              </Label>
+                            </div>
+                          </div>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:text-destructive"
+                            onClick={() => handleDeleteTabela(tabelaId)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Excluir
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">
