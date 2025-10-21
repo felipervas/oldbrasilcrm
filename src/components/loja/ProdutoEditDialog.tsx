@@ -12,7 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTabelasPreco, useCreateTabelaPreco, useUpdateTabelaPreco, useDeleteTabelaPreco } from '@/hooks/useTabelasPreco';
-import { Trash2, Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ProdutoEditDialogProps {
   produto: any;
@@ -23,7 +25,7 @@ interface ProdutoEditDialogProps {
 export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDialogProps) => {
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [novaTabela, setNovaTabela] = useState({ nome: '', preco: '' });
+  const [novaTabela, setNovaTabela] = useState<{ marcadas?: string[] }>({ marcadas: [] });
   
   const updateProduto = useUpdateProduto();
   const uploadImagem = useUploadImagemProduto();
@@ -133,26 +135,6 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
     }
   };
 
-  const handleAddTabela = () => {
-    if (!novaTabela.nome.trim()) {
-      toast({
-        title: "❌ Nome obrigatório",
-        description: "Digite o nome da tabela",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createTabela.mutate({
-      produto_id: produto.id,
-      nome_tabela: novaTabela.nome.trim(),
-      preco_por_kg: novaTabela.preco ? parseFloat(novaTabela.preco) : null,
-    }, {
-      onSuccess: () => {
-        setNovaTabela({ nome: '', preco: '' });
-      }
-    });
-  };
 
   const handleUpdateTabela = (id: string, field: 'nome_tabela' | 'preco_por_kg', value: string) => {
     updateTabela.mutate({
@@ -176,11 +158,10 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
         </DialogHeader>
 
         <Tabs defaultValue="basico" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="basico">Básico</TabsTrigger>
             <TabsTrigger value="imagens">Imagens</TabsTrigger>
             <TabsTrigger value="precos">Preços</TabsTrigger>
-            <TabsTrigger value="tabelas">Tabelas de Preço</TabsTrigger>
             <TabsTrigger value="loja">Loja</TabsTrigger>
           </TabsList>
 
@@ -283,87 +264,107 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                 </p>
               </div>
             )}
-          </TabsContent>
 
-          <TabsContent value="tabelas" className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Tabelas de Preço</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Adicione múltiplas tabelas de negociação (ex: Tabela 01, Tabela 02)
-                  </p>
-                </div>
+            {/* Seção de Tabelas - COMPACTA e INTEGRADA */}
+            <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+              <div>
+                <Label className="text-sm font-semibold">📊 Tabelas de Negociação</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Marque para criar novas tabelas com o preço atual
+                </p>
               </div>
-
-              {/* Lista de tabelas existentes */}
-              <div className="space-y-2">
-                {loadingTabelas ? (
-                  <p className="text-sm text-muted-foreground">Carregando tabelas...</p>
-                ) : tabelasPreco.length > 0 ? (
-                  tabelasPreco.map((tabela) => (
-                    <div key={tabela.id} className="flex items-center gap-2 p-3 border rounded-lg">
-                      <div className="flex-1 grid grid-cols-2 gap-2">
-                        <div>
-                          <Label className="text-xs">Nome da Tabela</Label>
-                          <Input
-                            value={tabela.nome_tabela}
-                            onChange={(e) => handleUpdateTabela(tabela.id, 'nome_tabela', e.target.value)}
-                            placeholder="Ex: Tabela 01"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Preço por Kg (R$)</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={tabela.preco_por_kg ?? ''}
-                            onChange={(e) => handleUpdateTabela(tabela.id, 'preco_por_kg', e.target.value)}
-                            placeholder="0.00"
-                          />
-                        </div>
+              
+              {/* Tabelas existentes (badges compactos) */}
+              {tabelasPreco.length > 0 && (
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Existentes:</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {tabelasPreco.map(t => (
+                      <div key={t.id} className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary text-xs">
+                        <span>{t.nome_tabela} - R$ {t.preco_por_kg?.toFixed(2)}/kg</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-4 w-4 hover:text-destructive"
+                          onClick={() => handleDeleteTabela(t.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteTabela(tabela.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">Nenhuma tabela cadastrada</p>
-                )}
-              </div>
-
-              {/* Adicionar nova tabela */}
-              <div className="border-t pt-4 mt-4">
-                <Label className="text-sm font-semibold mb-2 block">Adicionar Nova Tabela</Label>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <Input
-                      value={novaTabela.nome}
-                      onChange={(e) => setNovaTabela({ ...novaTabela, nome: e.target.value })}
-                      placeholder="Nome da tabela (ex: Tabela 01)"
-                    />
+                    ))}
                   </div>
-                  <div className="flex-1">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={novaTabela.preco}
-                      onChange={(e) => setNovaTabela({ ...novaTabela, preco: e.target.value })}
-                      placeholder="Preço por kg"
-                    />
-                  </div>
-                  <Button onClick={handleAddTabela} disabled={createTabela.isPending}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Adicionar
-                  </Button>
+                </div>
+              )}
+              
+              {/* Grid de checkboxes para criar novas */}
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">
+                  Criar novas:
+                </Label>
+                <div className="grid grid-cols-5 gap-2">
+                  {Array.from({ length: 10 }, (_, i) => {
+                    const num = tabelasPreco.length + i + 1;
+                    const nomeTabela = `Tabela ${String(num).padStart(2, '0')}`;
+                    const isChecked = novaTabela.marcadas?.includes(nomeTabela) || false;
+                    
+                    return (
+                      <div key={num} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`new-tabela-${num}`}
+                          checked={isChecked}
+                          onCheckedChange={(checked) => {
+                            const marcadas = novaTabela.marcadas || [];
+                            if (checked) {
+                              setNovaTabela({
+                                ...novaTabela,
+                                marcadas: [...marcadas, nomeTabela]
+                              });
+                            } else {
+                              setNovaTabela({
+                                ...novaTabela,
+                                marcadas: marcadas.filter(n => n !== nomeTabela)
+                              });
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor={`new-tabela-${num}`}
+                          className="text-xs cursor-pointer"
+                        >
+                          {String(num).padStart(2, '0')}
+                        </Label>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+              
+              {/* Botão para criar tabelas marcadas */}
+              {novaTabela.marcadas && novaTabela.marcadas.length > 0 && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    const precoAtual = formData.preco_por_kg || 0;
+                    novaTabela.marcadas?.forEach(nome => {
+                      createTabela.mutate({
+                        produto_id: produto.id,
+                        nome_tabela: nome,
+                        preco_por_kg: precoAtual,
+                      });
+                    });
+                    setNovaTabela({ marcadas: [] });
+                    toast({
+                      title: "Tabelas criadas!",
+                      description: `${novaTabela.marcadas.length} tabelas adicionadas`
+                    });
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Criar {novaTabela.marcadas.length} tabelas selecionadas
+                </Button>
+              )}
             </div>
           </TabsContent>
 

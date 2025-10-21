@@ -33,7 +33,7 @@ const Produtos = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [imagensLoja, setImagensLoja] = useState<any[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string; preco: string }>>([]);
+  const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagemInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -158,12 +158,14 @@ const Produtos = () => {
       
       // Criar tabelas de preço se houver
       if (data && data[0] && tabelasPrecoCriacao.length > 0) {
+        const precoBase = preco_por_kg || preco_base; // Usar preço por kg ou preço base
+        
         const tabelasParaInserir = tabelasPrecoCriacao
           .filter(t => t.nome.trim() !== '')
           .map(t => ({
             produto_id: data[0].id,
             nome_tabela: t.nome.trim(),
-            preco_por_kg: t.preco ? parseFloat(t.preco) : null,
+            preco_por_kg: precoBase, // Usar o preço base definido
           }));
 
         if (tabelasParaInserir.length > 0) {
@@ -463,13 +465,7 @@ const Produtos = () => {
               <DialogTitle>Novo Produto</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <Tabs defaultValue="basico">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="basico">Dados Básicos</TabsTrigger>
-                  <TabsTrigger value="tabelas">Tabelas de Preço</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="basico" className="space-y-4 mt-4">
+              <div className="space-y-4">
               <div>
                 <Label htmlFor="nome">Nome Interno (CRM) *</Label>
                 <Input id="nome" name="nome" required placeholder="Ex: Manteiga de Cacau 04" />
@@ -622,105 +618,65 @@ const Produtos = () => {
                 <Label htmlFor="descricao">Descrição</Label>
                 <Textarea id="descricao" name="descricao" />
               </div>
-                </TabsContent>
 
-                <TabsContent value="tabelas" className="space-y-4 mt-4">
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-sm font-semibold mb-2">Tabelas de Preço</h3>
-                      <p className="text-xs text-muted-foreground mb-4">
-                        Adicione tabelas de negociação. Elas serão criadas após salvar o produto.
-                      </p>
-                    </div>
-
-                    {/* Botões rápidos para adicionar múltiplas tabelas */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs text-muted-foreground">Adicionar rapidamente:</span>
-                      {[1, 2, 3, 5].map(qtd => (
-                        <Button
-                          key={qtd}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const novasTabelas = Array.from({ length: qtd }, (_, i) => ({
-                              nome: `Tabela ${String(tabelasPrecoCriacao.length + i + 1).padStart(2, '0')}`,
-                              preco: ''
-                            }));
-                            setTabelasPrecoCriacao([...tabelasPrecoCriacao, ...novasTabelas]);
+              {/* Seção de Tabelas de Preço - COMPACTA */}
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <Label className="text-sm font-semibold mb-2 block">
+                  📊 Tabelas de Negociação
+                </Label>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Marque quais tabelas criar. Todas usarão o preço base definido acima.
+                </p>
+                
+                <div className="grid grid-cols-5 gap-2">
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map(num => {
+                    const nomeTabela = `Tabela ${String(num).padStart(2, '0')}`;
+                    const isChecked = tabelasPrecoCriacao.some(
+                      t => t.nome === nomeTabela
+                    );
+                    
+                    return (
+                      <div key={num} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`tabela-${num}`}
+                          checked={isChecked}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setTabelasPrecoCriacao([
+                                ...tabelasPrecoCriacao,
+                                { nome: nomeTabela }
+                              ]);
+                            } else {
+                              setTabelasPrecoCriacao(
+                                tabelasPrecoCriacao.filter(t => t.nome !== nomeTabela)
+                              );
+                            }
                           }}
+                        />
+                        <Label
+                          htmlFor={`tabela-${num}`}
+                          className="text-xs font-normal cursor-pointer"
                         >
-                          +{qtd}
-                        </Button>
-                      ))}
-                    </div>
-
-                    {tabelasPrecoCriacao.length > 0 && (
-                      <div className="space-y-2">
-                        {tabelasPrecoCriacao.map((tabela, index) => (
-                          <div key={index} className="flex items-center gap-2 p-3 border rounded-lg">
-                            <div className="flex-1 grid grid-cols-2 gap-2">
-                              <div>
-                                <Label className="text-xs">Nome da Tabela</Label>
-                                <Input
-                                  value={tabela.nome}
-                                  onChange={(e) => {
-                                    const novas = [...tabelasPrecoCriacao];
-                                    novas[index].nome = e.target.value;
-                                    setTabelasPrecoCriacao(novas);
-                                  }}
-                                  placeholder="Ex: Tabela 01"
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-xs">Preço por Kg (R$)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={tabela.preco}
-                                  onChange={(e) => {
-                                    const novas = [...tabelasPrecoCriacao];
-                                    novas[index].preco = e.target.value;
-                                    setTabelasPrecoCriacao(novas);
-                                  }}
-                                  placeholder="0.00"
-                                />
-                              </div>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setTabelasPrecoCriacao(tabelasPrecoCriacao.filter((_, i) => i !== index));
-                              }}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
+                          {String(num).padStart(2, '0')}
+                        </Label>
                       </div>
-                    )}
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setTabelasPrecoCriacao([...tabelasPrecoCriacao, { nome: '', preco: '' }]);
-                      }}
-                      className="w-full"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Adicionar Tabela de Preço
-                    </Button>
+                    );
+                  })}
+                </div>
+                
+                {tabelasPrecoCriacao.length > 0 && (
+                  <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      ✓ Serão criadas <strong>{tabelasPrecoCriacao.length} tabelas</strong> com o preço base
+                    </p>
                   </div>
-                </TabsContent>
-              </Tabs>
+                )}
+              </div>
 
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Salvando..." : "Salvar Produto"}
               </Button>
+            </div>
             </form>
           </DialogContent>
           </Dialog>
