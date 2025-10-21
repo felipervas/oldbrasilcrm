@@ -11,6 +11,8 @@ import { useUpdateProduto, useUploadImagemProduto, useRemoveImagemProduto } from
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useTabelasPreco, useCreateTabelaPreco, useUpdateTabelaPreco, useDeleteTabelaPreco } from '@/hooks/useTabelasPreco';
+import { Trash2, Plus } from 'lucide-react';
 
 interface ProdutoEditDialogProps {
   produto: any;
@@ -21,10 +23,17 @@ interface ProdutoEditDialogProps {
 export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDialogProps) => {
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [novaTabela, setNovaTabela] = useState({ nome: '', preco: '' });
+  
   const updateProduto = useUpdateProduto();
   const uploadImagem = useUploadImagemProduto();
   const removeImagem = useRemoveImagemProduto();
   const { toast } = useToast();
+  
+  const { data: tabelasPreco = [], isLoading: loadingTabelas } = useTabelasPreco(produto?.id);
+  const createTabela = useCreateTabelaPreco();
+  const updateTabela = useUpdateTabelaPreco();
+  const deleteTabela = useDeleteTabelaPreco();
 
   // FASE 1: Função helper para tratar valores numéricos
   const parseNumericValue = (value: string) => {
@@ -123,6 +132,41 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
     }
   };
 
+  const handleAddTabela = () => {
+    if (!novaTabela.nome.trim()) {
+      toast({
+        title: "❌ Nome obrigatório",
+        description: "Digite o nome da tabela",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createTabela.mutate({
+      produto_id: produto.id,
+      nome_tabela: novaTabela.nome.trim(),
+      preco_por_kg: novaTabela.preco ? parseFloat(novaTabela.preco) : null,
+    }, {
+      onSuccess: () => {
+        setNovaTabela({ nome: '', preco: '' });
+      }
+    });
+  };
+
+  const handleUpdateTabela = (id: string, field: 'nome_tabela' | 'preco_por_kg', value: string) => {
+    updateTabela.mutate({
+      id,
+      produto_id: produto.id,
+      [field]: field === 'preco_por_kg' ? (value ? parseFloat(value) : null) : value,
+    });
+  };
+
+  const handleDeleteTabela = (id: string) => {
+    if (confirm('Tem certeza que deseja remover esta tabela de preço?')) {
+      deleteTabela.mutate({ id, produto_id: produto.id });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -131,10 +175,11 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
         </DialogHeader>
 
         <Tabs defaultValue="basico" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basico">Básico</TabsTrigger>
             <TabsTrigger value="imagens">Imagens</TabsTrigger>
             <TabsTrigger value="precos">Preços</TabsTrigger>
+            <TabsTrigger value="tabelas">Tabelas de Preço</TabsTrigger>
             <TabsTrigger value="loja">Loja</TabsTrigger>
           </TabsList>
 
@@ -237,6 +282,88 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                 </p>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="tabelas" className="space-y-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">Tabelas de Preço</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Adicione múltiplas tabelas de negociação (ex: Tabela 01, Tabela 02)
+                  </p>
+                </div>
+              </div>
+
+              {/* Lista de tabelas existentes */}
+              <div className="space-y-2">
+                {loadingTabelas ? (
+                  <p className="text-sm text-muted-foreground">Carregando tabelas...</p>
+                ) : tabelasPreco.length > 0 ? (
+                  tabelasPreco.map((tabela) => (
+                    <div key={tabela.id} className="flex items-center gap-2 p-3 border rounded-lg">
+                      <div className="flex-1 grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">Nome da Tabela</Label>
+                          <Input
+                            value={tabela.nome_tabela}
+                            onChange={(e) => handleUpdateTabela(tabela.id, 'nome_tabela', e.target.value)}
+                            placeholder="Ex: Tabela 01"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Preço por Kg (R$)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={tabela.preco_por_kg ?? ''}
+                            onChange={(e) => handleUpdateTabela(tabela.id, 'preco_por_kg', e.target.value)}
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteTabela(tabela.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhuma tabela cadastrada</p>
+                )}
+              </div>
+
+              {/* Adicionar nova tabela */}
+              <div className="border-t pt-4 mt-4">
+                <Label className="text-sm font-semibold mb-2 block">Adicionar Nova Tabela</Label>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      value={novaTabela.nome}
+                      onChange={(e) => setNovaTabela({ ...novaTabela, nome: e.target.value })}
+                      placeholder="Nome da tabela (ex: Tabela 01)"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={novaTabela.preco}
+                      onChange={(e) => setNovaTabela({ ...novaTabela, preco: e.target.value })}
+                      placeholder="Preço por kg"
+                    />
+                  </div>
+                  <Button onClick={handleAddTabela} disabled={createTabela.isPending}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar
+                  </Button>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="loja" className="space-y-4">

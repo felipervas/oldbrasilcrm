@@ -940,6 +940,44 @@ export type Database = {
           },
         ]
       }
+      produto_tabelas_preco: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome_tabela: string
+          preco_por_kg: number | null
+          produto_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome_tabela: string
+          preco_por_kg?: number | null
+          produto_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome_tabela?: string
+          preco_por_kg?: number | null
+          produto_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produto_tabelas_preco_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           ativo: boolean
