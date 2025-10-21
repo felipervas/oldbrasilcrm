@@ -11,7 +11,6 @@ interface ProdutoCardProps {
     id: string;
     nome: string;
     nome_loja?: string;
-    sku: string;
     preco_por_kg?: number;
     peso_embalagem_kg?: number;
     rendimento_dose_gramas?: number;
@@ -53,7 +52,6 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
           <h3 className="font-semibold text-base line-clamp-2 min-h-[3rem]">
             {produto.nome_loja || produto.nome}
           </h3>
-          <p className="text-xs text-muted-foreground mt-1">SKU: {produto.sku}</p>
         </div>
         
         <div className="pt-2 border-t space-y-2">

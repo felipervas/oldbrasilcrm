@@ -94,7 +94,6 @@ const LancarPedido = () => {
       .select(`
         id, 
         nome, 
-        sku, 
         preco_base, 
         preco_por_kg, 
         peso_embalagem_kg, 
@@ -704,7 +703,7 @@ const LancarPedido = () => {
                           <Combobox
                             options={produtos.map(p => ({
                               value: p.id,
-                              label: `${p.nome} ${p.sku ? `(${p.sku})` : ''} ${(p as any).marcas?.nome ? `- ${(p as any).marcas.nome}` : ''}`
+                              label: `${p.nome}${(p as any).marcas?.nome ? ` - ${(p as any).marcas.nome}` : ''}`
                             }))}
                             value={selectedProduto}
                             onValueChange={async (v) => {
