@@ -83,8 +83,11 @@ export const useUpdateProduto = () => {
         console.error("🔴 useUpdateProduto - Erro Supabase:", error);
         
         // Tratamento específico para erro de duplicate key
-        if (error.code === '23505' && error.message.includes('produtos_sku_key')) {
-          throw new Error('❌ Este SKU já está em uso. Deixe vazio ou use outro valor.');
+        if (error.code === '23505') {
+          if (error.message.includes('produtos_sku_key')) {
+            throw new Error('❌ Este SKU já está em uso. Deixe vazio ou use outro valor.');
+          }
+          throw new Error('❌ Valor duplicado. Verifique os dados e tente novamente.');
         }
         
         throw error;

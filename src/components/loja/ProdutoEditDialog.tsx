@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageUploadZone } from './ImageUploadZone';
 import { useUpdateProduto, useUploadImagemProduto, useRemoveImagemProduto } from '@/hooks/useGerenciarLoja';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProdutoEditDialogProps {
   produto: any;
@@ -21,6 +22,7 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   const updateProduto = useUpdateProduto();
   const uploadImagem = useUploadImagemProduto();
   const removeImagem = useRemoveImagemProduto();
+  const { toast } = useToast();
 
   // FASE 1: Função helper para tratar valores numéricos
   const parseNumericValue = (value: string) => {
@@ -58,15 +60,20 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   const handleSave = () => {
     // Validação: não permitir salvar se nome estiver vazio
     if (!formData.nome || formData.nome.trim() === '') {
+      toast({
+        title: "⚠️ Nome do produto é obrigatório",
+        variant: "destructive",
+      });
       return;
     }
 
     // Sanitizar ANTES de enviar: converter strings vazias e NaN em null
     const sanitizedData = Object.entries(formData).reduce((acc, [key, value]) => {
-      if (typeof value === 'string' && value.trim() === '') {
-        acc[key] = null;
-      } else if (typeof value === 'number' && isNaN(value)) {
-        acc[key] = null;
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        acc[key] = trimmed === '' ? null : trimmed;
+      } else if (typeof value === 'number') {
+        acc[key] = isNaN(value) ? null : value;
       } else {
         acc[key] = value;
       }
@@ -299,7 +306,13 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
             Cancelar
           </Button>
           <Button onClick={handleSave} disabled={updateProduto.isPending}>
-            {updateProduto.isPending ? 'Salvando...' : 'Salvar Alterações'}
+            {updateProduto.isPending ? (
+              <>
+                <span className="animate-pulse">Salvando...</span>
+              </>
+            ) : (
+              'Salvar Alterações'
+            )}
           </Button>
         </div>
       </DialogContent>

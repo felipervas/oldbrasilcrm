@@ -26,10 +26,12 @@ export function GerenciarEquipe() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState({
     email: "",
     password: "",
     nome: "",
+    telefone: "",
     role: "colaborador" as UserRole,
   });
 
@@ -81,48 +83,31 @@ export function GerenciarEquipe() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsCreating(true);
 
     try {
-      // Criar usuário
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: {
-            nome: form.nome
-          }
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Você precisa estar autenticado');
+      }
+
+      // Chamar edge function ao invés de criar diretamente
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: form.email,
+          password: form.password,
+          nome: form.nome,
+          telefone: form.telefone || null,
+          role: form.role
         }
       });
 
-      if (authError) throw authError;
-
-      if (!authData.user) {
-        throw new Error('Erro ao criar usuário');
-      }
-
-      // Criar perfil
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          nome: form.nome,
-          perfil: form.role
-        });
-
-      if (profileError) throw profileError;
-
-      // Atribuir role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role: form.role
-        });
-
-      if (roleError) throw roleError;
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
-        title: "Membro adicionado com sucesso!",
+        title: "✅ Membro adicionado com sucesso!",
       });
 
       setIsDialogOpen(false);
@@ -130,16 +115,19 @@ export function GerenciarEquipe() {
         email: "",
         password: "",
         nome: "",
+        telefone: "",
         role: "colaborador",
       });
       loadMembers();
     } catch (error: any) {
-      console.error('Erro ao criar membro:', error);
+      console.error('❌ Erro ao criar membro:', error);
       toast({
-        title: "Erro ao criar membro",
+        title: "❌ Erro ao criar membro",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -235,6 +223,15 @@ export function GerenciarEquipe() {
                   />
                 </div>
                 <div>
+                  <Label>Telefone (opcional)</Label>
+                  <Input
+                    type="tel"
+                    value={form.telefone}
+                    onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div>
                   <Label>Função</Label>
                   <Select value={form.role} onValueChange={(value: UserRole) => setForm({ ...form, role: value })}>
                     <SelectTrigger>
@@ -247,8 +244,8 @@ export function GerenciarEquipe() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button type="submit" className="w-full">
-                  Adicionar à Equipe
+                <Button type="submit" className="w-full" disabled={isCreating}>
+                  {isCreating ? "Criando..." : "Adicionar à Equipe"}
                 </Button>
               </form>
             </DialogContent>
