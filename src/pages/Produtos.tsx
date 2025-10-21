@@ -33,6 +33,7 @@ const Produtos = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [imagensLoja, setImagensLoja] = useState<any[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string; preco: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagemInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -154,9 +155,37 @@ const Produtos = () => {
       }
 
       console.log('✅ Produto criado:', data);
+      
+      // Criar tabelas de preço se houver
+      if (data && data[0] && tabelasPrecoCriacao.length > 0) {
+        const tabelasParaInserir = tabelasPrecoCriacao
+          .filter(t => t.nome.trim() !== '')
+          .map(t => ({
+            produto_id: data[0].id,
+            nome_tabela: t.nome.trim(),
+            preco_por_kg: t.preco ? parseFloat(t.preco) : null,
+          }));
+
+        if (tabelasParaInserir.length > 0) {
+          const { error: tabelasError } = await supabase
+            .from('produto_tabelas_preco')
+            .insert(tabelasParaInserir);
+
+          if (tabelasError) {
+            console.error('⚠️ Erro ao criar tabelas de preço:', tabelasError);
+            toast({ 
+              title: "⚠️ Produto criado, mas erro nas tabelas", 
+              description: "O produto foi criado mas houve erro ao adicionar as tabelas de preço",
+              variant: "destructive" 
+            });
+          }
+        }
+      }
+
       toast({ title: "✅ Produto adicionado com sucesso!" });
       setOpen(false);
       setMarcaSelecionada("");
+      setTabelasPrecoCriacao([]);
       loadProdutos();
       
     } catch (error: any) {
@@ -429,11 +458,18 @@ const Produtos = () => {
                 Novo Produto
               </Button>
             </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Novo Produto</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <Tabs defaultValue="basico">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="basico">Dados Básicos</TabsTrigger>
+                  <TabsTrigger value="tabelas">Tabelas de Preço</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="basico" className="space-y-4 mt-4">
               <div>
                 <Label htmlFor="nome">Nome Interno (CRM) *</Label>
                 <Input id="nome" name="nome" required placeholder="Ex: Manteiga de Cacau 04" />
@@ -586,6 +622,80 @@ const Produtos = () => {
                 <Label htmlFor="descricao">Descrição</Label>
                 <Textarea id="descricao" name="descricao" />
               </div>
+                </TabsContent>
+
+                <TabsContent value="tabelas" className="space-y-4 mt-4">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2">Tabelas de Preço</h3>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Adicione tabelas de negociação. Elas serão criadas após salvar o produto.
+                      </p>
+                    </div>
+
+                    {tabelasPrecoCriacao.length > 0 && (
+                      <div className="space-y-2">
+                        {tabelasPrecoCriacao.map((tabela, index) => (
+                          <div key={index} className="flex items-center gap-2 p-3 border rounded-lg">
+                            <div className="flex-1 grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs">Nome da Tabela</Label>
+                                <Input
+                                  value={tabela.nome}
+                                  onChange={(e) => {
+                                    const novas = [...tabelasPrecoCriacao];
+                                    novas[index].nome = e.target.value;
+                                    setTabelasPrecoCriacao(novas);
+                                  }}
+                                  placeholder="Ex: Tabela 01"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Preço por Kg (R$)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={tabela.preco}
+                                  onChange={(e) => {
+                                    const novas = [...tabelasPrecoCriacao];
+                                    novas[index].preco = e.target.value;
+                                    setTabelasPrecoCriacao(novas);
+                                  }}
+                                  placeholder="0.00"
+                                />
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setTabelasPrecoCriacao(tabelasPrecoCriacao.filter((_, i) => i !== index));
+                              }}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setTabelasPrecoCriacao([...tabelasPrecoCriacao, { nome: '', preco: '' }]);
+                      }}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Adicionar Tabela de Preço
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Salvando..." : "Salvar Produto"}
               </Button>
