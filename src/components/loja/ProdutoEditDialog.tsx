@@ -20,6 +20,7 @@ interface ProdutoEditDialogProps {
 
 export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDialogProps) => {
   const [formData, setFormData] = useState<any>({});
+  const [isSaving, setIsSaving] = useState(false);
   const updateProduto = useUpdateProduto();
   const uploadImagem = useUploadImagemProduto();
   const removeImagem = useRemoveImagemProduto();
@@ -59,80 +60,121 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   }, [produto]);
 
   const handleSave = async () => {
-    // Validação: nome obrigatório
-    if (!formData.nome || formData.nome.trim() === '') {
-      toast({
-        title: "Nome do produto é obrigatório",
-        variant: "destructive",
-      });
+    // Evitar múltiplos saves simultâneos
+    if (isSaving) {
       return;
     }
 
-    // FASE 4: Validação de SKU único otimizada
-    if (formData.sku?.trim()) {
-      const { data: existingSKU } = await supabase
-        .from('produtos')
-        .select('id')
-        .eq('sku', formData.sku.trim())
-        .neq('id', produto.id)
-        .maybeSingle();
-      
-      if (existingSKU) {
-        toast({ 
-          title: "SKU já está em uso", 
-          description: "Escolha outro SKU ou deixe vazio",
-          variant: "destructive" 
-        });
-        return;
-      }
-    }
+    setIsSaving(true);
 
-    // Sanitizar ANTES de enviar: converter strings vazias e NaN em null
-    const sanitizedData = Object.entries(formData).reduce((acc, [key, value]) => {
-      if (typeof value === 'string') {
-        const trimmed = value.trim();
-        acc[key] = trimmed === '' ? null : trimmed;
-      } else if (typeof value === 'number') {
-        acc[key] = isNaN(value) ? null : value;
-      } else {
-        acc[key] = value;
-      }
-      return acc;
-    }, {} as any);
-
-    updateProduto.mutate({
-      id: produto.id,
-      data: sanitizedData,
-    }, {
-      onSuccess: () => {
+    try {
+      // Validação: nome obrigatório
+      if (!formData.nome || formData.nome.trim() === '') {
         toast({
-          title: "Produto atualizado!",
-          description: "As alterações foram salvas com sucesso.",
-        });
-        onOpenChange(false);
-      },
-      onError: (error: any) => {
-        // FASE 5: Melhor feedback de erro
-        let errorMessage = "Erro desconhecido ao atualizar produto.";
-        
-        if (error.message) {
-          errorMessage = error.message;
-        } else if (error.code === '23505') {
-          errorMessage = "Já existe um produto com estes dados.";
-        } else if (error.code === '23503') {
-          errorMessage = "Marca inválida. Selecione uma marca existente.";
-        } else if (error.code === '42501') {
-          errorMessage = "Você não tem permissão para atualizar este produto.";
-        }
-        
-        console.error("Erro ao atualizar produto:", error);
-        toast({
-          title: "Erro ao atualizar produto",
-          description: errorMessage,
+          title: "Nome do produto é obrigatório",
           variant: "destructive",
         });
-      },
-    });
+        setIsSaving(false);
+        return;
+      }
+
+      // Validação de SKU único
+      const skuTrimmed = formData.sku?.trim();
+      if (skuTrimmed && skuTrimmed !== '') {
+        const { data: existingSKU, error: skuCheckError } = await supabase
+          .from('produtos')
+          .select('id, nome')
+          .eq('sku', skuTrimmed)
+          .neq('id', produto.id)
+          .maybeSingle();
+        
+        if (skuCheckError) {
+          toast({ 
+            title: "Erro ao verificar SKU", 
+            description: "Tente novamente",
+            variant: "destructive" 
+          });
+          setIsSaving(false);
+          return;
+        }
+        
+        if (existingSKU) {
+          toast({ 
+            title: "SKU já está em uso", 
+            description: `SKU "${skuTrimmed}" já está sendo usado no produto: ${existingSKU.nome}`,
+            variant: "destructive" 
+          });
+          setIsSaving(false);
+          return;
+        }
+      }
+
+      // Sanitizar ANTES de enviar: converter strings vazias e NaN em null
+      const sanitizedData = Object.entries(formData).reduce((acc, [key, value]) => {
+        if (typeof value === 'string') {
+          const trimmed = value.trim();
+          // Converter strings vazias em null, ESPECIALMENTE para SKU
+          acc[key] = trimmed === '' ? null : trimmed;
+        } else if (typeof value === 'number') {
+          acc[key] = isNaN(value) ? null : value;
+        } else {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as any);
+
+      // Garantir que SKU vazio seja null
+      if (sanitizedData.sku === '') {
+        sanitizedData.sku = null;
+      }
+
+      updateProduto.mutate({
+        id: produto.id,
+        data: sanitizedData,
+      }, {
+        onSuccess: () => {
+          toast({
+            title: "Produto atualizado!",
+            description: "As alterações foram salvas com sucesso.",
+          });
+          setIsSaving(false);
+          onOpenChange(false);
+        },
+        onError: (error: any) => {
+          setIsSaving(false);
+          
+          let errorMessage = "Erro desconhecido ao atualizar produto.";
+          
+          // Tratamento específico para duplicate key no SKU
+          if (error.code === '23505' && error.message?.includes('produtos_sku_key')) {
+            errorMessage = `O SKU "${sanitizedData.sku}" já está em uso por outro produto. Escolha um SKU diferente ou deixe em branco.`;
+          } else if (error.message) {
+            errorMessage = error.message;
+          } else if (error.code === '23505') {
+            errorMessage = "Já existe um produto com estes dados.";
+          } else if (error.code === '23503') {
+            errorMessage = "Marca inválida. Selecione uma marca existente.";
+          } else if (error.code === '42501') {
+            errorMessage = "Você não tem permissão para atualizar este produto.";
+          }
+          
+          console.error("Erro ao atualizar produto:", error);
+          toast({
+            title: "Erro ao atualizar produto",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        },
+      });
+    } catch (error) {
+      setIsSaving(false);
+      console.error("Erro inesperado:", error);
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao processar sua solicitação",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleUpload = async (files: File[]) => {
@@ -344,8 +386,8 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={updateProduto.isPending}>
-            {updateProduto.isPending ? (
+          <Button onClick={handleSave} disabled={isSaving || updateProduto.isPending}>
+            {(isSaving || updateProduto.isPending) ? (
               <>
                 <span className="animate-pulse">Salvando...</span>
               </>
