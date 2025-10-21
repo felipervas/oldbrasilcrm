@@ -24,6 +24,8 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
     slug: '',
     descricao: '',
     site: '',
+    telefone: '',
+    whatsapp: '',
     ativa: true,
     imagem_banner: '',
     mostrar_texto_banner: true,
@@ -47,6 +49,8 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         slug: marca.slug || '',
         descricao: marca.descricao || '',
         site: marca.site || '',
+        telefone: marca.telefone || '',
+        whatsapp: marca.whatsapp || '',
         ativa: marca.ativa ?? true,
         imagem_banner: marca.imagem_banner || '',
         mostrar_texto_banner: marca.mostrar_texto_banner ?? true,
@@ -58,6 +62,8 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         slug: '',
         descricao: '',
         site: '',
+        telefone: '',
+        whatsapp: '',
         ativa: true,
         imagem_banner: '',
         mostrar_texto_banner: true,
@@ -264,6 +270,30 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
               onChange={(e) => setFormData({ ...formData, site: e.target.value })}
               placeholder="https://..."
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Telefone</Label>
+              <Input
+                type="tel"
+                value={formData.telefone}
+                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                placeholder="(11) 1234-5678"
+              />
+            </div>
+            <div>
+              <Label>WhatsApp</Label>
+              <Input
+                type="tel"
+                value={formData.whatsapp}
+                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                placeholder="(11) 98765-4321"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Clicável, abre o WhatsApp
+              </p>
+            </div>
           </div>
 
           <div>

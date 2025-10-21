@@ -722,7 +722,9 @@ export type Database = {
           nome: string
           site: string | null
           slug: string | null
+          telefone: string | null
           updated_at: string
+          whatsapp: string | null
         }
         Insert: {
           ativa?: boolean
@@ -734,7 +736,9 @@ export type Database = {
           nome: string
           site?: string | null
           slug?: string | null
+          telefone?: string | null
           updated_at?: string
+          whatsapp?: string | null
         }
         Update: {
           ativa?: boolean
@@ -746,7 +750,9 @@ export type Database = {
           nome?: string
           site?: string | null
           slug?: string | null
+          telefone?: string | null
           updated_at?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
