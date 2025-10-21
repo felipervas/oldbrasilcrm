@@ -28,6 +28,7 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
   const [localTables, setLocalTables] = useState<Record<string, { nome_tabela: string; preco_por_kg: string }>>({});
+  const [marcas, setMarcas] = useState<any[]>([]);
   
   const updateProduto = useUpdateProduto();
   const uploadImagem = useUploadImagemProduto();
@@ -39,6 +40,15 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   const createTabela = useCreateTabelaPreco();
   const updateTabela = useUpdateTabelaPreco();
   const deleteTabela = useDeleteTabelaPreco();
+
+  // Carregar marcas
+  useEffect(() => {
+    const loadMarcas = async () => {
+      const { data } = await supabase.from('marcas').select('*').eq('ativa', true).order('nome');
+      setMarcas(data || []);
+    };
+    loadMarcas();
+  }, []);
 
   // FASE 1: Função helper para tratar valores numéricos
   const parseNumericValue = (value: string) => {
@@ -225,13 +235,32 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                 />
               </div>
               <div>
-                <Label>Submarca</Label>
-                <Input
-                  value={formData.submarca}
-                  onChange={(e) => setFormData({ ...formData, submarca: e.target.value })}
-                  placeholder="Ex: Premium, Light..."
-                />
+                <Label>Marca</Label>
+                <Select
+                  value={formData.marca_id || ''}
+                  onValueChange={(value) => setFormData({ ...formData, marca_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma marca" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {marcas.map((marca) => (
+                      <SelectItem key={marca.id} value={marca.id}>
+                        {marca.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
+
+            <div>
+              <Label>Submarca</Label>
+              <Input
+                value={formData.submarca}
+                onChange={(e) => setFormData({ ...formData, submarca: e.target.value })}
+                placeholder="Ex: Premium, Light..."
+              />
             </div>
 
             <div>
@@ -264,58 +293,106 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
           </TabsContent>
 
           <TabsContent value="precos" className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            {/* Seção de Cálculos */}
+            <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
               <div>
-                <Label>Preço por Kg (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.preco_por_kg ?? ''}
-                  onChange={(e) => setFormData({ ...formData, preco_por_kg: parseNumericValue(e.target.value) })}
-                />
+                <Label className="text-sm font-semibold">💰 Cálculos de Preço</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Configure o peso e preço para cálculos automáticos
+                </p>
               </div>
-              <div>
-                <Label>Peso da Embalagem (kg)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.peso_embalagem_kg ?? ''}
-                  onChange={(e) => setFormData({ ...formData, peso_embalagem_kg: parseNumericValue(e.target.value) })}
-                />
-              </div>
-              <div>
-                <Label>Tipo de Embalagem</Label>
-                <Select
-                  value={formData.tipo_embalagem}
-                  onValueChange={(value) => setFormData({ ...formData, tipo_embalagem: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="caixa">Caixa</SelectItem>
-                    <SelectItem value="saco">Saco</SelectItem>
-                    <SelectItem value="balde">Balde</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            {produto?.marcas?.nome?.toUpperCase().includes('UNIKA') && (
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Peso da Embalagem (kg)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.peso_embalagem_kg ?? ''}
+                    onChange={(e) => {
+                      const peso = parseNumericValue(e.target.value);
+                      const precoKg = formData.preco_por_kg;
+                      setFormData({
+                        ...formData,
+                        peso_embalagem_kg: peso,
+                        preco_base: peso && precoKg ? (peso * precoKg).toFixed(2) : formData.preco_base
+                      });
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <Label>Preço por Kg (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.preco_por_kg ?? ''}
+                    onChange={(e) => {
+                      const precoKg = parseNumericValue(e.target.value);
+                      const peso = formData.peso_embalagem_kg;
+                      setFormData({
+                        ...formData,
+                        preco_por_kg: precoKg,
+                        preco_base: precoKg && peso ? (precoKg * peso).toFixed(2) : formData.preco_base
+                      });
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <Label>Tipo de Embalagem</Label>
+                  <Select
+                    value={formData.tipo_embalagem}
+                    onValueChange={(value) => setFormData({ ...formData, tipo_embalagem: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="caixa">Caixa</SelectItem>
+                      <SelectItem value="saco">Saco</SelectItem>
+                      <SelectItem value="balde">Balde</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div>
                 <Label>Rendimento por Dose (gramas)</Label>
                 <Input
                   type="number"
                   value={formData.rendimento_dose_gramas ?? ''}
                   onChange={(e) => setFormData({ ...formData, rendimento_dose_gramas: parseNumericValue(e.target.value) })}
+                  placeholder="Ex: 150 (gramas por dose de sorvete)"
                 />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Ex: 150g por dose de sorvete
-                </p>
               </div>
-            )}
 
-            {/* Seção de Tabelas - NOVA INTERFACE */}
+              {/* Resumo dos Cálculos */}
+              {formData.preco_por_kg && formData.peso_embalagem_kg && (
+                <div className="bg-primary/10 p-4 rounded-lg space-y-2 text-sm">
+                  <p className="font-semibold text-primary">📊 Resumo de Preços:</p>
+                  <p>
+                    <strong>Preço Total da Embalagem:</strong>{' '}
+                    R$ {(parseFloat(formData.preco_por_kg) * parseFloat(formData.peso_embalagem_kg)).toFixed(2)}
+                  </p>
+                  
+                  {formData.rendimento_dose_gramas && (
+                    <>
+                      <p>
+                        <strong>Doses por kg:</strong>{' '}
+                        {(1000 / parseInt(formData.rendimento_dose_gramas)).toFixed(1)} doses
+                      </p>
+                      <p>
+                        <strong>Custo por dose ({formData.rendimento_dose_gramas}g):</strong>{' '}
+                        R$ {((parseFloat(formData.preco_por_kg) * parseInt(formData.rendimento_dose_gramas)) / 1000).toFixed(2)}
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Seção de Tabelas */}
             <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
               <div>
                 <Label className="text-sm font-semibold">📊 Tabelas de Negociação</Label>
