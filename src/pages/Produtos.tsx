@@ -633,6 +633,28 @@ const Produtos = () => {
                       </p>
                     </div>
 
+                    {/* Botões rápidos para adicionar múltiplas tabelas */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-muted-foreground">Adicionar rapidamente:</span>
+                      {[1, 2, 3, 5].map(qtd => (
+                        <Button
+                          key={qtd}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const novasTabelas = Array.from({ length: qtd }, (_, i) => ({
+                              nome: `Tabela ${String(tabelasPrecoCriacao.length + i + 1).padStart(2, '0')}`,
+                              preco: ''
+                            }));
+                            setTabelasPrecoCriacao([...tabelasPrecoCriacao, ...novasTabelas]);
+                          }}
+                        >
+                          +{qtd}
+                        </Button>
+                      ))}
+                    </div>
+
                     {tabelasPrecoCriacao.length > 0 && (
                       <div className="space-y-2">
                         {tabelasPrecoCriacao.map((tabela, index) => (

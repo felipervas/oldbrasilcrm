@@ -19,7 +19,12 @@ export const useProdutosLoja = (filtros?: {
           preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo,
           visivel_loja, destaque_loja, rendimento_dose_gramas, preco_atualizado_em,
           marcas(id, nome, slug),
-          produto_imagens(url, ordem)
+          produto_imagens(url, ordem),
+          tabela_loja:produto_tabelas_preco!produtos_tabela_preco_loja_id_fkey(
+            id,
+            nome_tabela,
+            preco_por_kg
+          )
         `)
         .eq('ativo', true)
         .eq('visivel_loja', true);
@@ -92,7 +97,12 @@ export const useProdutoDetalhes = (id: string) => {
           preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo,
           rendimento_dose_gramas, preco_atualizado_em,
           marcas(id, nome, site, slug),
-          produto_imagens(url, ordem)
+          produto_imagens(url, ordem),
+          tabela_loja:produto_tabelas_preco!produtos_tabela_preco_loja_id_fkey(
+            id,
+            nome_tabela,
+            preco_por_kg
+          )
         `)
         .eq('id', id)
         .eq('visivel_loja', true)

@@ -20,10 +20,17 @@ export const PrecoCard = ({
   produto,
   compact = false,
 }: PrecoCardProps) => {
-  const infoPreco = formatarInfoPreco(produto);
+  // Usar preço da tabela selecionada se existir
+  const produtoComPreco = {
+    ...produto,
+    preco_por_kg: produto.tabela_loja?.preco_por_kg || produto.preco_por_kg
+  };
+  
+  const infoPreco = formatarInfoPreco(produtoComPreco);
   const tipoEmb = produto.tipo_embalagem || 'caixa';
   const iconEmb = getEmbalagemIcon(tipoEmb);
   const nomeEmb = tipoEmb.charAt(0).toUpperCase() + tipoEmb.slice(1);
+  const nomeTabela = produto.tabela_loja?.nome_tabela;
   
   if (!infoPreco) {
     if (compact) {
@@ -59,6 +66,11 @@ export const PrecoCard = ({
 
     return (
       <div className="space-y-2">
+        {nomeTabela && (
+          <Badge variant="outline" className="text-xs mb-1">
+            📋 {nomeTabela}
+          </Badge>
+        )}
         <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg">
           <span className="text-sm">💰 Preço/kg</span>
           <span className="font-bold text-lg">{formatarPreco(infoPreco.precoKg)}</span>
@@ -97,6 +109,11 @@ export const PrecoCard = ({
 
     return (
       <div className="space-y-2">
+        {nomeTabela && (
+          <Badge variant="outline" className="text-xs mb-1">
+            📋 {nomeTabela}
+          </Badge>
+        )}
         <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
           <span className="text-sm">💰 Preço/kg (ref)</span>
           <span className="font-bold text-lg">{formatarPreco(infoPreco.precoKg)}</span>
@@ -128,6 +145,11 @@ export const PrecoCard = ({
 
   return (
     <div className="space-y-2">
+      {nomeTabela && (
+        <Badge variant="outline" className="text-xs mb-1">
+          📋 {nomeTabela}
+        </Badge>
+      )}
       <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg">
         <span className="text-sm">💰 Preço/kg</span>
         <span className="font-bold text-lg">{formatarPreco(infoPreco.precoKg)}</span>

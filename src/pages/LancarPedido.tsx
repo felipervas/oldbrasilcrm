@@ -21,6 +21,7 @@ interface ProdutoItem {
   quantidade: number;
   preco_unitario: number;
   observacoes?: string;
+  tabela_preco_id?: string;
 }
 
 const LancarPedido = () => {
@@ -39,6 +40,8 @@ const LancarPedido = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [responsavelSelecionado, setResponsavelSelecionado] = useState("");
   const [responsavelOutro, setResponsavelOutro] = useState("");
+  const [tabelasProduto, setTabelasProduto] = useState<any[]>([]);
+  const [tabelaSelecionada, setTabelaSelecionada] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -137,6 +140,7 @@ const LancarPedido = () => {
       quantidade: quantidade,
       preco_unitario: precoUnitario || produto.preco_base || 0,
       observacoes: observacoesProduto || undefined,
+      tabela_preco_id: tabelaSelecionada || undefined,
     };
 
     setProdutosEscolhidos([...produtosEscolhidos, novoProduto]);
@@ -144,6 +148,8 @@ const LancarPedido = () => {
     setQuantidade(1);
     setPrecoUnitario(0);
     setObservacoesProduto("");
+    setTabelasProduto([]);
+    setTabelaSelecionada("");
   };
 
   const removerProduto = (index: number) => {
@@ -260,6 +266,7 @@ const LancarPedido = () => {
         quantidade: p.quantidade,
         preco_unitario: p.preco_unitario,
         observacoes: p.observacoes || null,
+        tabela_preco_id: p.tabela_preco_id || null,
       }));
 
       const { error: produtosError } = await supabase
@@ -700,10 +707,27 @@ const LancarPedido = () => {
                               label: `${p.nome} ${p.sku ? `(${p.sku})` : ''} ${(p as any).marcas?.nome ? `- ${(p as any).marcas.nome}` : ''}`
                             }))}
                             value={selectedProduto}
-                            onValueChange={(v) => {
+                            onValueChange={async (v) => {
                               setSelectedProduto(v);
                               const prod = produtos.find(p => p.id === v);
-                              if (prod?.preco_base) {
+                              
+                              // Carregar tabelas deste produto
+                              const { data: tabelas } = await supabase
+                                .from('produto_tabelas_preco')
+                                .select('*')
+                                .eq('produto_id', v)
+                                .eq('ativo', true)
+                                .order('nome_tabela');
+                              
+                              setTabelasProduto(tabelas || []);
+                              
+                              // Auto-selecionar primeira tabela ou usar preco_base
+                              if (tabelas && tabelas.length > 0) {
+                                setTabelaSelecionada(tabelas[0].id);
+                                const pesoEmb = prod?.peso_embalagem_kg || 25;
+                                setPrecoUnitario(tabelas[0].preco_por_kg * pesoEmb);
+                              } else if (prod?.preco_base) {
+                                setTabelaSelecionada("");
                                 setPrecoUnitario(parseFloat(prod.preco_base));
                               }
                             }}
@@ -730,6 +754,34 @@ const LancarPedido = () => {
                             );
                           })()}
                         </div>
+                        {tabelasProduto.length > 0 && (
+                          <div className="col-span-5">
+                            <Label className="text-xs">Tabela de Preço</Label>
+                            <Select 
+                              value={tabelaSelecionada}
+                              onValueChange={(id) => {
+                                setTabelaSelecionada(id);
+                                const tabela = tabelasProduto.find(t => t.id === id);
+                                if (tabela) {
+                                  const produto = produtos.find(p => p.id === selectedProduto);
+                                  const pesoEmb = produto?.peso_embalagem_kg || 25;
+                                  setPrecoUnitario(tabela.preco_por_kg * pesoEmb);
+                                }
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {tabelasProduto.map(t => (
+                                  <SelectItem key={t.id} value={t.id}>
+                                    {t.nome_tabela} - R$ {t.preco_por_kg.toFixed(2)}/kg
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                       <div className="col-span-2">
                         <Label className="text-xs">Qtd</Label>
                         <Input 

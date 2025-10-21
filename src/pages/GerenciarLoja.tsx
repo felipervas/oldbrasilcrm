@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +13,7 @@ import { ProdutoEditDialog } from '@/components/loja/ProdutoEditDialog';
 import { MarcaEditDialog } from '@/components/loja/MarcaEditDialog';
 import { ListLoadingSkeleton } from '@/components/LoadingSkeleton';
 import { getCorMarca } from '@/lib/precosLoja';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function GerenciarLoja() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,10 +27,45 @@ export default function GerenciarLoja() {
     destaque: 'todos',
   });
 
-  const { data: produtos, isLoading: loadingProdutos } = useGerenciarProdutos(searchTerm);
+  const { data: produtosRaw, isLoading: loadingProdutos } = useGerenciarProdutos(searchTerm);
   const { data: marcas, isLoading: loadingMarcas } = useGerenciarMarcas();
   const toggleVisibilidade = useToggleVisibilidadeProduto();
   const toggleDestaque = useToggleDestaqueProduto();
+
+  // Enriquecer produtos com contagem de tabelas
+  const [produtos, setProdutos] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const enrichProducts = async () => {
+      if (!produtosRaw) return;
+      
+      const enriched = await Promise.all(
+        produtosRaw.map(async (p: any) => {
+          const { data: tabelas } = await supabase
+            .from('produto_tabelas_preco')
+            .select('id, nome_tabela')
+            .eq('produto_id', p.id)
+            .eq('ativo', true);
+          
+          const { data: tabelaLoja } = await supabase
+            .from('produto_tabelas_preco')
+            .select('nome_tabela')
+            .eq('id', p.tabela_preco_loja_id || '')
+            .single();
+          
+          return {
+            ...p,
+            tabelas_count: tabelas?.length || 0,
+            tabela_loja: tabelaLoja
+          };
+        })
+      );
+      
+      setProdutos(enriched);
+    };
+    
+    enrichProducts();
+  }, [produtosRaw]);
 
   // Filtrar produtos
   const produtosFiltrados = useMemo(() => {
@@ -274,6 +310,18 @@ export default function GerenciarLoja() {
                             {produto.categoria && (
                               <Badge variant="secondary">
                                 {produto.categoria}
+                              </Badge>
+                            )}
+
+                            {produto.tabelas_count > 0 && (
+                              <Badge variant="outline" className="gap-1">
+                                📋 {produto.tabelas_count} {produto.tabelas_count === 1 ? 'tabela' : 'tabelas'}
+                              </Badge>
+                            )}
+
+                            {produto.tabela_loja?.nome_tabela && (
+                              <Badge variant="default" className="gap-1">
+                                🌐 {produto.tabela_loja.nome_tabela}
                               </Badge>
                             )}
                           </div>

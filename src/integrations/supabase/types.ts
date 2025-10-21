@@ -872,6 +872,7 @@ export type Database = {
           preco_unitario: number
           produto_id: string | null
           quantidade: number
+          tabela_preco_id: string | null
         }
         Insert: {
           created_at?: string
@@ -881,6 +882,7 @@ export type Database = {
           preco_unitario: number
           produto_id?: string | null
           quantidade: number
+          tabela_preco_id?: string | null
         }
         Update: {
           created_at?: string
@@ -890,6 +892,7 @@ export type Database = {
           preco_unitario?: number
           produto_id?: string | null
           quantidade?: number
+          tabela_preco_id?: string | null
         }
         Relationships: [
           {
@@ -904,6 +907,13 @@ export type Database = {
             columns: ["produto_id"]
             isOneToOne: false
             referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_produtos_tabela_preco_id_fkey"
+            columns: ["tabela_preco_id"]
+            isOneToOne: false
+            referencedRelation: "produto_tabelas_preco"
             referencedColumns: ["id"]
           },
         ]
@@ -999,7 +1009,7 @@ export type Database = {
           rendimento_dose_gramas: number | null
           subcategoria: string | null
           submarca: string | null
-          tabela_preco_loja: string | null
+          tabela_preco_loja_id: string | null
           tipo_calculo: string | null
           tipo_embalagem: string | null
           updated_at: string
@@ -1025,7 +1035,7 @@ export type Database = {
           rendimento_dose_gramas?: number | null
           subcategoria?: string | null
           submarca?: string | null
-          tabela_preco_loja?: string | null
+          tabela_preco_loja_id?: string | null
           tipo_calculo?: string | null
           tipo_embalagem?: string | null
           updated_at?: string
@@ -1051,7 +1061,7 @@ export type Database = {
           rendimento_dose_gramas?: number | null
           subcategoria?: string | null
           submarca?: string | null
-          tabela_preco_loja?: string | null
+          tabela_preco_loja_id?: string | null
           tipo_calculo?: string | null
           tipo_embalagem?: string | null
           updated_at?: string
@@ -1063,6 +1073,13 @@ export type Database = {
             columns: ["marca_id"]
             isOneToOne: false
             referencedRelation: "marcas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtos_tabela_preco_loja_id_fkey"
+            columns: ["tabela_preco_loja_id"]
+            isOneToOne: false
+            referencedRelation: "produto_tabelas_preco"
             referencedColumns: ["id"]
           },
         ]

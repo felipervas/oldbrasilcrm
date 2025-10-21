@@ -63,6 +63,7 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
         ordem_exibicao: produto.ordem_exibicao || 0,
         ativo: produto.ativo ?? true,
         tipo_embalagem: produto.tipo_embalagem || 'caixa',
+        tabela_preco_loja_id: produto.tabela_preco_loja_id || null,
       });
     }
   }, [produto]);
@@ -368,6 +369,31 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
 
           <TabsContent value="loja" className="space-y-4">
             <div className="space-y-4">
+              <div>
+                <Label>Tabela de Preço para Loja Pública</Label>
+                <Select
+                  value={formData.tabela_preco_loja_id || ''}
+                  onValueChange={(value) => 
+                    setFormData({ ...formData, tabela_preco_loja_id: value || null })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Usar preço padrão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Preço Padrão (preco_por_kg)</SelectItem>
+                    {tabelasPreco.map(t => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.nome_tabela} - R$ {t.preco_por_kg?.toFixed(2)}/kg
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Preço exibido na loja online para o público
+                </p>
+              </div>
+
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={formData.visivel_loja}
