@@ -213,7 +213,7 @@ const LancarPedido = () => {
         ? responsavelOutro
         : responsavelSelecionado;
 
-      // 🆕 CAPTURAR DADOS CUSTOMIZADOS DO CLIENTE
+      // 🆕 CAPTURAR DADOS CUSTOMIZADOS DO CLIENTE para observações internas
       const clienteOverrides = {
         razao_social: formData.get("cliente_razao_social_override"),
         cnpj: formData.get("cliente_cnpj_override"),
@@ -224,16 +224,16 @@ const LancarPedido = () => {
         contato_responsavel: formData.get("cliente_contato_responsavel"),
       };
       
-      // Criar string com overrides para adicionar nas observações
+      // Criar string com overrides para adicionar nas observações INTERNAS
       const overridesText = Object.entries(clienteOverrides)
-        .filter(([_, value]) => value) // Apenas campos preenchidos
+        .filter(([_, value]) => value)
         .map(([key, value]) => `${key}: ${value}`)
-        .join('\n');
+        .join(', ');
       
-      const observacoesFinais = [
-        formData.get("observacoes"),
-        overridesText ? `\n--- Dados Customizados do Cliente ---\n${overridesText}` : ''
-      ].filter(Boolean).join('\n');
+      const observacoesInternas = [
+        formData.get("observacoes_internas"),
+        overridesText ? `Dados Customizados do Cliente: ${overridesText}` : ''
+      ].filter(Boolean).join('\n\n');
 
 
       // Inserir pedido
@@ -250,7 +250,8 @@ const LancarPedido = () => {
           dias_pagamento: formData.get("dias_pagamento") as string || null,
           tipo_frete: formData.get("tipo_frete") as string || null,
           transportadora: formData.get("transportadora") as string || null,
-          observacoes: observacoesFinais || null,
+          observacoes: formData.get("observacoes") as string || null,
+          observacoes_internas: observacoesInternas || null,
           responsavel_venda_id: responsavelFinal || null,
         })
         .select()
@@ -875,12 +876,23 @@ const LancarPedido = () => {
 
 
                 <div>
-                  <Label htmlFor="observacoes">Observações</Label>
+                  <Label htmlFor="observacoes">Observações (aparecem na impressão)</Label>
                   <Textarea 
                     id="observacoes" 
                     name="observacoes" 
-                    placeholder="Observações adicionais sobre o pedido..."
-                    rows={3}
+                    placeholder="Observações que serão impressas no pedido..."
+                    rows={2}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="observacoes_internas">Observações Internas (apenas CRM)</Label>
+                  <Textarea 
+                    id="observacoes_internas" 
+                    name="observacoes_internas" 
+                    placeholder="Observações internas que não aparecem na impressão..."
+                    rows={2}
+                    className="border-orange-200 focus:border-orange-400"
                   />
                 </div>
 

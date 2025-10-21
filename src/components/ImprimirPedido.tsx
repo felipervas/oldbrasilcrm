@@ -21,58 +21,58 @@ export function ImprimirPedido({ pedido, produtos }: ImprimirPedidoProps) {
     printWindow.document.write('<html><head><title>Pedido</title>');
     printWindow.document.write(`
       <style>
-        @page { size: A4; margin: 15mm; }
+        @page { size: A4; margin: 8mm; }
         body { 
           font-family: Arial, sans-serif; 
           padding: 0;
           margin: 0;
           color: #000;
-          font-size: 11pt;
+          font-size: 9pt;
         }
         .header {
           text-align: center;
-          border-bottom: 3px solid #000;
-          padding-bottom: 15px;
-          margin-bottom: 20px;
-        }
-        .logo {
-          max-width: 180px;
-          height: auto;
+          border-bottom: 2px solid #000;
+          padding-bottom: 8px;
           margin-bottom: 10px;
         }
+        .logo {
+          max-width: 140px;
+          height: auto;
+          margin-bottom: 5px;
+        }
         .company-info {
-          font-size: 10pt;
-          line-height: 1.5;
-          margin-top: 8px;
+          font-size: 8pt;
+          line-height: 1.3;
+          margin-top: 4px;
         }
         .company-name {
           font-weight: bold;
-          font-size: 12pt;
-          margin-bottom: 4px;
+          font-size: 10pt;
+          margin-bottom: 2px;
         }
         .pedido-info {
           text-align: center;
-          font-size: 13pt;
+          font-size: 11pt;
           font-weight: bold;
-          margin: 15px 0;
-          padding: 8px;
+          margin: 8px 0;
+          padding: 5px;
           background: #f5f5f5;
-          border-radius: 4px;
+          border-radius: 3px;
         }
         .section-title {
-          font-size: 12pt;
+          font-size: 10pt;
           font-weight: bold;
-          margin: 18px 0 8px 0;
-          padding-bottom: 4px;
-          border-bottom: 2px solid #666;
+          margin: 10px 0 5px 0;
+          padding-bottom: 2px;
+          border-bottom: 1px solid #666;
           color: #333;
         }
         .info-grid {
           display: grid;
-          grid-template-columns: 150px 1fr;
-          gap: 6px 12px;
-          margin: 10px 0;
-          font-size: 10pt;
+          grid-template-columns: 120px 1fr;
+          gap: 3px 8px;
+          margin: 6px 0;
+          font-size: 8pt;
         }
         .info-label {
           font-weight: bold;
@@ -84,56 +84,58 @@ export function ImprimirPedido({ pedido, produtos }: ImprimirPedidoProps) {
         table {
           width: 100%;
           border-collapse: collapse;
-          margin: 15px 0;
-          font-size: 10pt;
+          margin: 8px 0;
+          font-size: 8pt;
         }
         th {
           background-color: #e8e8e8;
           font-weight: bold;
-          padding: 10px 8px;
+          padding: 5px 4px;
           text-align: left;
           border: 1px solid #999;
         }
         td {
           border: 1px solid #ccc;
-          padding: 8px;
+          padding: 4px;
           vertical-align: top;
         }
         .totals-box {
-          margin-top: 20px;
+          margin-top: 10px;
           border: 2px solid #000;
-          padding: 12px;
+          padding: 8px;
           background: #f9f9f9;
         }
         .total-row {
           display: flex;
           justify-content: space-between;
-          margin: 6px 0;
-          font-size: 11pt;
+          margin: 3px 0;
+          font-size: 9pt;
         }
         .total-final {
           display: flex;
           justify-content: space-between;
-          font-size: 14pt;
+          font-size: 11pt;
           font-weight: bold;
           border-top: 2px solid #000;
-          padding-top: 10px;
-          margin-top: 10px;
+          padding-top: 6px;
+          margin-top: 6px;
         }
         .footer {
-          margin-top: 30px;
-          font-size: 9pt;
+          margin-top: 15px;
+          font-size: 7pt;
           text-align: center;
           color: #666;
           border-top: 1px solid #ccc;
-          padding-top: 10px;
+          padding-top: 6px;
         }
         .obs-box {
           border: 1px solid #ccc;
-          padding: 10px;
+          padding: 6px;
           background: #fafafa;
-          margin: 10px 0;
-          font-size: 10pt;
+          margin: 6px 0;
+          font-size: 8pt;
+          max-height: 40px;
+          overflow: hidden;
         }
         @media print {
           body { margin: 0; }

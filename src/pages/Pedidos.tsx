@@ -97,7 +97,8 @@ const Pedidos = () => {
           data_pedido, 
           valor_total, 
           status, 
-          observacoes, 
+          observacoes,
+          observacoes_internas,
           clientes(
             nome_fantasia, 
             razao_social, 
@@ -321,15 +322,24 @@ const Pedidos = () => {
                            Vendedor: {pedido.clientes.profiles.nome}
                          </p>
                        )}
-                       {produtosPorPedido[pedido.id] && (
-                         <div className="mt-2">
-                           <ProdutoTooltip produtos={produtosPorPedido[pedido.id]} />
-                         </div>
-                       )}
-                       {pedido.observacoes && (
-                         <p className="text-sm mt-2">{pedido.observacoes}</p>
-                       )}
-                     </div>
+                        {produtosPorPedido[pedido.id] && (
+                          <div className="mt-2">
+                            <ProdutoTooltip produtos={produtosPorPedido[pedido.id]} />
+                          </div>
+                        )}
+                        {pedido.observacoes && (
+                          <div className="mt-2 p-2 bg-muted/50 rounded border border-border">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                            <p className="text-sm">{pedido.observacoes}</p>
+                          </div>
+                        )}
+                        {pedido.observacoes_internas && (
+                          <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-950/20 rounded border border-orange-200 dark:border-orange-800">
+                            <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mb-1">Observações Internas (CRM):</p>
+                            <p className="text-sm text-orange-800 dark:text-orange-200">{pedido.observacoes_internas}</p>
+                          </div>
+                        )}
+                      </div>
                      <div className="text-right flex flex-col items-end gap-2">
                        <div>
                          {pedido.valor_total && (

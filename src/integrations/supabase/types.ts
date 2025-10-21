@@ -806,6 +806,7 @@ export type Database = {
           id: string
           numero_pedido: string | null
           observacoes: string | null
+          observacoes_internas: string | null
           parcelas: number | null
           responsavel_venda_id: string | null
           status: string | null
@@ -825,6 +826,7 @@ export type Database = {
           id?: string
           numero_pedido?: string | null
           observacoes?: string | null
+          observacoes_internas?: string | null
           parcelas?: number | null
           responsavel_venda_id?: string | null
           status?: string | null
@@ -844,6 +846,7 @@ export type Database = {
           id?: string
           numero_pedido?: string | null
           observacoes?: string | null
+          observacoes_internas?: string | null
           parcelas?: number | null
           responsavel_venda_id?: string | null
           status?: string | null

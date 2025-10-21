@@ -27,6 +27,7 @@ const EditarPedido = () => {
     parcelas: "",
     dias_pagamento: "",
     observacoes: "",
+    observacoes_internas: "",
     responsavel_venda_id: "",
     tipo_frete: "",
     transportadora: "",
@@ -74,6 +75,7 @@ const EditarPedido = () => {
       parcelas: data.parcelas?.toString() || "",
       dias_pagamento: data.dias_pagamento || "",
       observacoes: data.observacoes || "",
+      observacoes_internas: data.observacoes_internas || "",
       responsavel_venda_id: data.responsavel_venda_id || "",
       tipo_frete: data.tipo_frete || "",
       transportadora: data.transportadora || "",
@@ -96,6 +98,7 @@ const EditarPedido = () => {
         parcelas: formData.parcelas ? parseInt(formData.parcelas) : null,
         dias_pagamento: formData.dias_pagamento || null,
         observacoes: formData.observacoes || null,
+        observacoes_internas: formData.observacoes_internas || null,
         responsavel_venda_id: formData.responsavel_venda_id || null,
         tipo_frete: formData.tipo_frete || null,
         transportadora: formData.transportadora || null,
@@ -290,13 +293,25 @@ const EditarPedido = () => {
             </div>
 
             <div>
-              <Label htmlFor="observacoes">Observações</Label>
+              <Label htmlFor="observacoes">Observações (aparecem na impressão)</Label>
               <Textarea
                 id="observacoes"
                 value={formData.observacoes}
                 onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                placeholder="Observações do pedido..."
-                rows={4}
+                placeholder="Observações que serão impressas no pedido..."
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="observacoes_internas">Observações Internas (apenas CRM)</Label>
+              <Textarea
+                id="observacoes_internas"
+                value={formData.observacoes_internas}
+                onChange={(e) => setFormData({ ...formData, observacoes_internas: e.target.value })}
+                placeholder="Observações internas que não aparecem na impressão..."
+                rows={3}
+                className="border-orange-200 focus:border-orange-400"
               />
             </div>
 
