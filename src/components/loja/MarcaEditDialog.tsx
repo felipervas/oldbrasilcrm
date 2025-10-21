@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUpdateMarca, useCreateMarca } from '@/hooks/useGerenciarLoja';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Plus, Trash2, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface MarcaEditDialogProps {
@@ -27,6 +29,13 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
     mostrar_texto_banner: true,
   });
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [contatos, setContatos] = useState<any[]>([]);
+  const [novoContato, setNovoContato] = useState({
+    nome: '',
+    cargo: '',
+    telefone: '',
+    email: '',
+  });
 
   const updateMarca = useUpdateMarca();
   const createMarca = useCreateMarca();
@@ -42,6 +51,7 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         imagem_banner: marca.imagem_banner || '',
         mostrar_texto_banner: marca.mostrar_texto_banner ?? true,
       });
+      loadContatos(marca.id);
     } else {
       setFormData({
         nome: '',
@@ -52,8 +62,71 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         imagem_banner: '',
         mostrar_texto_banner: true,
       });
+      setContatos([]);
     }
   }, [marca]);
+
+  const loadContatos = async (marcaId: string) => {
+    const { data, error } = await supabase
+      .from('marca_contatos')
+      .select('*')
+      .eq('marca_id', marcaId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao carregar contatos:', error);
+    } else {
+      setContatos(data || []);
+    }
+  };
+
+  const handleAdicionarContato = async () => {
+    if (!novoContato.nome.trim()) {
+      toast.error('Nome do contato é obrigatório');
+      return;
+    }
+
+    if (!marca?.id) {
+      toast.error('Salve a marca antes de adicionar contatos');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('marca_contatos')
+      .insert({
+        marca_id: marca.id,
+        nome: novoContato.nome,
+        cargo: novoContato.cargo || null,
+        telefone: novoContato.telefone || null,
+        email: novoContato.email || null,
+      });
+
+    if (error) {
+      console.error('Erro ao adicionar contato:', error);
+      toast.error('Erro ao adicionar contato');
+    } else {
+      toast.success('Contato adicionado!');
+      setNovoContato({ nome: '', cargo: '', telefone: '', email: '' });
+      loadContatos(marca.id);
+    }
+  };
+
+  const handleRemoverContato = async (contatoId: string) => {
+    if (!confirm('Deseja remover este contato?')) return;
+
+    const { error } = await supabase
+      .from('marca_contatos')
+      .delete()
+      .eq('id', contatoId);
+
+    if (error) {
+      console.error('Erro ao remover contato:', error);
+      toast.error('Erro ao remover contato');
+    } else {
+      toast.success('Contato removido!');
+      if (marca?.id) loadContatos(marca.id);
+    }
+  };
 
   const handleSave = () => {
     if (marca) {
@@ -131,12 +204,20 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{marca ? 'Editar Marca' : 'Nova Marca'}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <Tabs defaultValue="info" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="info">Informações</TabsTrigger>
+            <TabsTrigger value="contatos" disabled={!marca}>
+              Contatos {marca && contatos.length > 0 && `(${contatos.length})`}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="info" className="space-y-4 mt-4">
           <div>
             <Label>Nome da Marca</Label>
             <Input
@@ -234,26 +315,150 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
             <Label>Mostrar nome da marca sobre o banner</Label>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={formData.ativa}
-              onCheckedChange={(checked) => setFormData({ ...formData, ativa: checked })}
-            />
-            <Label>Marca ativa</Label>
-          </div>
-        </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={formData.ativa}
+                onCheckedChange={(checked) => setFormData({ ...formData, ativa: checked })}
+              />
+              <Label>Marca ativa</Label>
+            </div>
 
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleSave} 
-            disabled={updateMarca.isPending || createMarca.isPending}
-          >
-            {(updateMarca.isPending || createMarca.isPending) ? 'Salvando...' : 'Salvar'}
-          </Button>
-        </div>
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSave} 
+                disabled={updateMarca.isPending || createMarca.isPending}
+              >
+                {(updateMarca.isPending || createMarca.isPending) ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="contatos" className="space-y-4 mt-4">
+            {/* Adicionar Novo Contato */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Adicionar Novo Contato
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Nome *</Label>
+                    <Input
+                      placeholder="Ex: João Silva"
+                      value={novoContato.nome}
+                      onChange={(e) => setNovoContato({ ...novoContato, nome: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Cargo / Função</Label>
+                    <Input
+                      placeholder="Ex: Operacional, Secretária"
+                      value={novoContato.cargo}
+                      onChange={(e) => setNovoContato({ ...novoContato, cargo: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Telefone</Label>
+                    <Input
+                      placeholder="(11) 99999-9999"
+                      value={novoContato.telefone}
+                      onChange={(e) => setNovoContato({ ...novoContato, telefone: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      placeholder="contato@empresa.com"
+                      value={novoContato.email}
+                      onChange={(e) => setNovoContato({ ...novoContato, email: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleAdicionarContato}
+                  className="w-full"
+                  disabled={!novoContato.nome.trim()}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Contato
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Lista de Contatos */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Contatos da Marca ({contatos.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {contatos.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum contato cadastrado ainda
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {contatos.map((contato) => (
+                      <div 
+                        key={contato.id}
+                        className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold">{contato.nome}</h4>
+                              {contato.cargo && (
+                                <span className="text-sm text-muted-foreground">
+                                  • {contato.cargo}
+                                </span>
+                              )}
+                            </div>
+                            {contato.telefone && (
+                              <p className="text-sm">
+                                📞 <a href={`tel:${contato.telefone}`} className="hover:underline">
+                                  {contato.telefone}
+                                </a>
+                              </p>
+                            )}
+                            {contato.email && (
+                              <p className="text-sm">
+                                ✉️ <a href={`mailto:${contato.email}`} className="hover:underline">
+                                  {contato.email}
+                                </a>
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoverContato(contato.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Fechar
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
