@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,6 +35,7 @@ const Produtos = () => {
   const [imagensLoja, setImagensLoja] = useState<any[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string; preco?: number }>>([]);
+  const [usarTabelas, setUsarTabelas] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagemInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -119,9 +121,38 @@ const Produtos = () => {
       return;
     }
 
+    // Validação condicional: ou tem tabelas OU tem preço base
+    const temTabelas = tabelasPrecoCriacao.length > 0;
+    const temPrecoBase = formData.get("preco_por_kg") || formData.get("preco_base");
+
+    if (!temTabelas && !temPrecoBase) {
+      toast({ 
+        title: "❌ Preço obrigatório", 
+        description: "Defina um preço base OU adicione tabelas de preço",
+        variant: "destructive" 
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Se usar tabelas, validar se todas têm preço
+    if (usarTabelas && temTabelas) {
+      const tabelasSemPreco = tabelasPrecoCriacao.filter(t => !t.preco || t.preco <= 0);
+      if (tabelasSemPreco.length > 0) {
+        toast({ 
+          title: "❌ Preços obrigatórios", 
+          description: `Defina preços para todas as tabelas selecionadas (${tabelasSemPreco.length} sem preço)`,
+          variant: "destructive" 
+        });
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
-      const preco_base = formData.get("preco_base") ? parseFloat(formData.get("preco_base") as string) : null;
-      const preco_por_kg = formData.get("preco_por_kg") ? parseFloat(formData.get("preco_por_kg") as string) : null;
+      // Se usar tabelas, preço base pode ser null
+      const preco_base = formData.get("preco_base") && !usarTabelas ? parseFloat(formData.get("preco_base") as string) : null;
+      const preco_por_kg = formData.get("preco_por_kg") && !usarTabelas ? parseFloat(formData.get("preco_por_kg") as string) : null;
       const peso_embalagem_kg = formData.get("peso_embalagem_kg") ? parseFloat(formData.get("peso_embalagem_kg") as string) : 25;
       
       const produtoData = {
@@ -157,14 +188,12 @@ const Produtos = () => {
       
       // Criar tabelas de preço se houver
       if (data && data[0] && tabelasPrecoCriacao.length > 0) {
-        const precoBase = preco_por_kg || preco_base; // Usar preço por kg ou preço base
-        
         const tabelasParaInserir = tabelasPrecoCriacao
-          .filter(t => t.nome.trim() !== '')
+          .filter(t => t.nome.trim() !== '' && t.preco && t.preco > 0)
           .map(t => ({
             produto_id: data[0].id,
             nome_tabela: t.nome.trim(),
-            preco_por_kg: t.preco || precoBase, // Usar preço individual ou preço base
+            preco_por_kg: t.preco,
           }));
 
         if (tabelasParaInserir.length > 0) {
@@ -187,6 +216,7 @@ const Produtos = () => {
       setOpen(false);
       setMarcaSelecionada("");
       setTabelasPrecoCriacao([]);
+      setUsarTabelas(false);
       loadProdutos();
       
     } catch (error: any) {
@@ -513,64 +543,80 @@ const Produtos = () => {
                 </Select>
                 <input type="hidden" id="tipo_calculo" name="tipo_calculo" value="normal" />
               </div>
-              <div>
-                <Label htmlFor="preco_base">
-                  {marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
-                   marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial') 
-                    ? 'Preço por Kg *' 
-                    : 'Preço Base *'}
-                </Label>
-                <Input 
-                  id={marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
-                      marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')
-                    ? 'preco_por_kg'
-                    : 'preco_base'}
-                  name={marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
-                        marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')
-                    ? 'preco_por_kg'
-                    : 'preco_base'}
-                  type="number" 
-                  step="0.01" 
-                  required
-                  onChange={(e) => {
-                    const preco = parseFloat(e.target.value) || 0;
-                    const peso = parseFloat((document.getElementById('peso_unidade_kg') as HTMLInputElement)?.value) || 0;
-                    const rendimento = parseFloat((document.getElementById('rendimento_dose_gramas') as HTMLInputElement)?.value) || 0;
-                    calcularEExibir(preco, peso, rendimento);
-                    
-                    // Se for produto Genial, calcular preço da caixa
-                    const isGenial = marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
-                                   marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial');
-                    if (isGenial) {
-                      const precoCaixa = preco * 25;
-                      const inputPrecoBase = document.getElementById('preco_base_hidden') as HTMLInputElement;
-                      if (inputPrecoBase) inputPrecoBase.value = precoCaixa.toFixed(2);
-                      const pesoInput = document.getElementById('peso_embalagem_kg') as HTMLInputElement;
-                      if (pesoInput && !pesoInput.value) pesoInput.value = '25';
-                      
-                      // Mostrar cálculo
-                      const calcDiv = document.getElementById('genial-calc');
-                      if (calcDiv) {
-                        calcDiv.innerHTML = `<p class="text-sm text-muted-foreground mt-1">Preço por caixa (25kg): R$ ${precoCaixa.toFixed(2)}</p>`;
-                      }
-                    }
-                  }}
+
+              {/* Toggle para usar tabelas ou preço base */}
+              <div className="flex items-center space-x-2 p-3 border rounded-lg bg-muted/30">
+                <Switch
+                  id="usar-tabelas"
+                  checked={usarTabelas}
+                  onCheckedChange={setUsarTabelas}
                 />
-                {(marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
-                  marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')) && (
-                  <>
-                    <div id="genial-calc"></div>
-                    <input type="hidden" id="preco_base_hidden" name="preco_base" />
-                    <input type="hidden" id="peso_embalagem_kg" name="peso_embalagem_kg" value="25" />
-                    <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mt-2">
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        ⚖️ <strong>Produto com Preço Volátil (Cacau)</strong><br />
-                        Digite o preço por kg. O sistema calculará automaticamente o preço por caixa de 25kg.
-                      </p>
-                    </div>
-                  </>
-                )}
+                <Label htmlFor="usar-tabelas" className="font-semibold cursor-pointer">
+                  📊 Usar apenas Tabelas de Negociação (sem preço base)
+                </Label>
               </div>
+
+              {/* Se NÃO usar tabelas, mostrar preço base obrigatório */}
+              {!usarTabelas && (
+                <div>
+                  <Label htmlFor="preco_base">
+                    {marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
+                     marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial') 
+                      ? 'Preço por Kg *' 
+                      : 'Preço Base *'}
+                  </Label>
+                  <Input 
+                    id={marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
+                        marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')
+                      ? 'preco_por_kg'
+                      : 'preco_base'}
+                    name={marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
+                          marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')
+                      ? 'preco_por_kg'
+                      : 'preco_base'}
+                    type="number" 
+                    step="0.01" 
+                    required={!usarTabelas}
+                    onChange={(e) => {
+                      const preco = parseFloat(e.target.value) || 0;
+                      const peso = parseFloat((document.getElementById('peso_unidade_kg') as HTMLInputElement)?.value) || 0;
+                      const rendimento = parseFloat((document.getElementById('rendimento_dose_gramas') as HTMLInputElement)?.value) || 0;
+                      calcularEExibir(preco, peso, rendimento);
+                      
+                      // Se for produto Genial, calcular preço da caixa
+                      const isGenial = marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
+                                     marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial');
+                      if (isGenial) {
+                        const precoCaixa = preco * 25;
+                        const inputPrecoBase = document.getElementById('preco_base_hidden') as HTMLInputElement;
+                        if (inputPrecoBase) inputPrecoBase.value = precoCaixa.toFixed(2);
+                        const pesoInput = document.getElementById('peso_embalagem_kg') as HTMLInputElement;
+                        if (pesoInput && !pesoInput.value) pesoInput.value = '25';
+                        
+                        // Mostrar cálculo
+                        const calcDiv = document.getElementById('genial-calc');
+                        if (calcDiv) {
+                          calcDiv.innerHTML = `<p class="text-sm text-muted-foreground mt-1">Preço por caixa (25kg): R$ ${precoCaixa.toFixed(2)}</p>`;
+                        }
+                      }
+                    }}
+                  />
+                  {(marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
+                    marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')) && (
+                    <>
+                      <div id="genial-calc"></div>
+                      <input type="hidden" id="preco_base_hidden" name="preco_base" />
+                      <input type="hidden" id="peso_embalagem_kg" name="peso_embalagem_kg" value="25" />
+                      <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mt-2">
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          ⚖️ <strong>Produto com Preço Volátil (Cacau)</strong><br />
+                          Digite o preço por kg. O sistema calculará automaticamente o preço por caixa de 25kg.
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="peso_unidade_kg">Peso da Unidade (kg)</Label>
@@ -618,13 +664,14 @@ const Produtos = () => {
               </div>
 
               {/* Seção de Tabelas de Preço - COMPACTA */}
-              <div className="border rounded-lg p-4 bg-muted/30">
-                <Label className="text-sm font-semibold mb-2 block">
-                  📊 Tabelas de Negociação
-                </Label>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Marque quais tabelas criar. Você pode definir preços individuais ou usar o preço base.
-                </p>
+              {usarTabelas && (
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <Label className="text-sm font-semibold mb-2 block">
+                    📊 Tabelas de Negociação (defina preços individuais)
+                  </Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Marque as tabelas e defina o preço de cada uma.
+                  </p>
                 
                 <div className="grid grid-cols-5 gap-2">
                   {Array.from({ length: 10 }, (_, i) => i + 1).map(num => {
@@ -687,15 +734,13 @@ const Produtos = () => {
                     </div>
                     <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
                       <p className="text-xs text-blue-700 dark:text-blue-300">
-                        ✓ Serão criadas <strong>{tabelasPrecoCriacao.length} tabelas</strong>
-                        {tabelasPrecoCriacao.every(t => t.preco) 
-                          ? ' com preços individuais' 
-                          : ' (sem preço usará o preço base)'}
+                        ✓ Serão criadas <strong>{tabelasPrecoCriacao.length} tabelas</strong> com preços individuais
                       </p>
                     </div>
                   </>
                 )}
-              </div>
+                </div>
+              )}
 
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Salvando..." : "Salvar Produto"}

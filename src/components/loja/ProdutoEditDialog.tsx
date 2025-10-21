@@ -12,9 +12,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTabelasPreco, useCreateTabelaPreco, useUpdateTabelaPreco, useDeleteTabelaPreco } from '@/hooks/useTabelasPreco';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ProdutoEditDialogProps {
   produto: any;
@@ -26,11 +28,13 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
   const [novaTabela, setNovaTabela] = useState<{ marcadas?: string[] }>({ marcadas: [] });
+  const [editingTables, setEditingTables] = useState<Record<string, { nome: string; preco: string }>>({});
   
   const updateProduto = useUpdateProduto();
   const uploadImagem = useUploadImagemProduto();
   const removeImagem = useRemoveImagemProduto();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const { data: tabelasPreco = [], isLoading: loadingTabelas } = useTabelasPreco(produto?.id);
   const createTabela = useCreateTabelaPreco();
@@ -136,12 +140,34 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   };
 
 
-  const handleUpdateTabela = (id: string, field: 'nome_tabela' | 'preco_por_kg', value: string) => {
-    updateTabela.mutate({
-      id,
-      produto_id: produto.id,
-      [field]: field === 'preco_por_kg' ? (value ? parseFloat(value) : null) : value,
-    });
+  // Debounce para atualização automática de tabelas
+  const debouncedUpdate = useDebounce(editingTables, 500);
+
+  useEffect(() => {
+    if (Object.keys(debouncedUpdate).length > 0) {
+      Object.entries(debouncedUpdate).forEach(([id, values]) => {
+        const updates: any = {};
+        if (values.nome !== undefined) updates.nome_tabela = values.nome;
+        if (values.preco !== undefined) updates.preco_por_kg = values.preco ? parseFloat(values.preco) : null;
+        
+        updateTabela.mutate({
+          id,
+          produto_id: produto.id,
+          ...updates,
+        });
+      });
+      setEditingTables({});
+    }
+  }, [debouncedUpdate]);
+
+  const handleTableChange = (id: string, field: 'nome' | 'preco', value: string) => {
+    setEditingTables(prev => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: value,
+      }
+    }));
   };
 
   const handleDeleteTabela = (id: string) => {
@@ -265,30 +291,57 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
               </div>
             )}
 
-            {/* Seção de Tabelas - COMPACTA e INTEGRADA */}
+            {/* Seção de Tabelas - EDITÁVEL */}
             <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
               <div>
                 <Label className="text-sm font-semibold">📊 Tabelas de Negociação</Label>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Marque para criar novas tabelas com o preço atual
+                  Edite os preços diretamente. As alterações são salvas automaticamente.
                 </p>
               </div>
               
-              {/* Tabelas existentes (badges compactos) */}
+              {/* Tabelas existentes - EDITÁVEIS */}
               {tabelasPreco.length > 0 && (
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Existentes:</Label>
-                  <div className="flex flex-wrap gap-2">
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Tabelas Cadastradas:</Label>
+                  <div className="space-y-2">
                     {tabelasPreco.map(t => (
-                      <div key={t.id} className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary text-xs">
-                        <span>{t.nome_tabela} - R$ {t.preco_por_kg?.toFixed(2)}/kg</span>
+                      <div key={t.id} className="flex items-center gap-2 p-2 rounded-md bg-secondary/50">
+                        <Input
+                          type="text"
+                          defaultValue={t.nome_tabela}
+                          className="w-32 h-8 text-xs font-medium"
+                          onChange={(e) => handleTableChange(t.id, 'nome', e.target.value)}
+                          placeholder="Nome"
+                        />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          defaultValue={t.preco_por_kg || ''}
+                          className="w-28 h-8 text-xs"
+                          onChange={(e) => handleTableChange(t.id, 'preco', e.target.value)}
+                          placeholder="R$/kg"
+                        />
+                        <span className="text-xs text-muted-foreground">/kg</span>
+                        
+                        <Switch
+                          checked={t.ativo}
+                          onCheckedChange={(checked) => {
+                            updateTabela.mutate({
+                              id: t.id,
+                              produto_id: produto.id,
+                              ativo: checked,
+                            });
+                          }}
+                        />
+                        
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-4 w-4 hover:text-destructive"
+                          className="h-6 w-6 hover:text-destructive"
                           onClick={() => handleDeleteTabela(t.id)}
                         >
-                          <X className="h-3 w-3" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     ))}
