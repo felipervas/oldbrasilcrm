@@ -6,7 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { useColaboradorEventos } from "@/hooks/useColaboradorEventos";
+import { useHistoricoEquipe } from "@/hooks/useHistoricoEquipe";
+import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const MeuPerfil = () => {
   const navigate = useNavigate();
@@ -15,6 +25,19 @@ const MeuPerfil = () => {
   const [profile, setProfile] = useState<any>(null);
   const [clientes, setClientes] = useState<any[]>([]);
   const [tarefas, setTarefas] = useState<any[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [eventoEditando, setEventoEditando] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [formEvento, setFormEvento] = useState({
+    titulo: '',
+    descricao: '',
+    data: format(new Date(), 'yyyy-MM-dd'),
+    horario: '',
+    tipo: 'evento'
+  });
+
+  const { eventos, createEvento, updateEvento, deleteEvento } = useColaboradorEventos();
+  const { data: historico } = useHistoricoEquipe();
 
   useEffect(() => {
     loadProfile();
@@ -104,6 +127,65 @@ const MeuPerfil = () => {
   const tarefasPendentes = tarefas.filter(t => t.status === "pendente" || t.status === "em_andamento");
   const tarefasConcluidas = tarefas.filter(t => t.status === "concluida");
 
+  const handleSaveEvento = async () => {
+    try {
+      if (eventoEditando) {
+        await updateEvento.mutateAsync({ id: eventoEditando.id, ...formEvento });
+      } else {
+        await createEvento.mutateAsync(formEvento);
+      }
+      setDialogOpen(false);
+      setEventoEditando(null);
+      setFormEvento({
+        titulo: '',
+        descricao: '',
+        data: format(new Date(), 'yyyy-MM-dd'),
+        horario: '',
+        tipo: 'evento'
+      });
+    } catch (error) {
+      console.error('Erro ao salvar evento:', error);
+    }
+  };
+
+  const handleEditEvento = (evento: any) => {
+    setEventoEditando(evento);
+    setFormEvento({
+      titulo: evento.titulo,
+      descricao: evento.descricao || '',
+      data: evento.data,
+      horario: evento.horario || '',
+      tipo: evento.tipo
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeleteEvento = async (id: string) => {
+    if (confirm('Tem certeza que deseja deletar este evento?')) {
+      await deleteEvento.mutateAsync(id);
+    }
+  };
+
+  const eventosDoMes = eventos?.filter(e => {
+    if (!selectedDate) return false;
+    const eventoDate = new Date(e.data);
+    return eventoDate.getMonth() === selectedDate.getMonth() &&
+           eventoDate.getFullYear() === selectedDate.getFullYear();
+  }) || [];
+
+  const getAcaoLabel = (acao: string) => {
+    const labels: Record<string, string> = {
+      criar_tarefa: 'Criou tarefa',
+      atualizar_tarefa: 'Atualizou tarefa',
+      concluir_tarefa: 'Concluiu tarefa',
+      criar_pedido: 'Criou pedido',
+      editar_pedido: 'Editou pedido',
+      criar_cliente: 'Criou cliente',
+      editar_cliente: 'Editou cliente',
+    };
+    return labels[acao] || acao;
+  };
+
   if (loading) {
     return (
       <div className="flex-1 p-8">
@@ -170,9 +252,11 @@ const MeuPerfil = () => {
 
       {/* Tabs de Conteúdo */}
       <Tabs defaultValue="clientes" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="clientes">Meus Clientes</TabsTrigger>
           <TabsTrigger value="tarefas">Minhas Tarefas</TabsTrigger>
+          <TabsTrigger value="calendario">Calendário</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
         </TabsList>
 
         <TabsContent value="clientes" className="space-y-4">
@@ -330,6 +414,173 @@ const MeuPerfil = () => {
                             {tarefa.clientes.nome_fantasia}
                           </div>
                         )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="calendario" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Meus Compromissos</CardTitle>
+                  <CardDescription>Gerencie seus eventos e compromissos</CardDescription>
+                </div>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => {
+                      setEventoEditando(null);
+                      setFormEvento({
+                        titulo: '',
+                        descricao: '',
+                        data: format(selectedDate || new Date(), 'yyyy-MM-dd'),
+                        horario: '',
+                        tipo: 'evento'
+                      });
+                    }}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Novo Evento
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{eventoEditando ? 'Editar Evento' : 'Novo Evento'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Título</Label>
+                        <Input
+                          value={formEvento.titulo}
+                          onChange={(e) => setFormEvento({ ...formEvento, titulo: e.target.value })}
+                          placeholder="Ex: Visita em Botuvera"
+                        />
+                      </div>
+                      <div>
+                        <Label>Data</Label>
+                        <Input
+                          type="date"
+                          value={formEvento.data}
+                          onChange={(e) => setFormEvento({ ...formEvento, data: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Horário (opcional)</Label>
+                        <Input
+                          type="time"
+                          value={formEvento.horario}
+                          onChange={(e) => setFormEvento({ ...formEvento, horario: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Descrição / Observações</Label>
+                        <Textarea
+                          value={formEvento.descricao}
+                          onChange={(e) => setFormEvento({ ...formEvento, descricao: e.target.value })}
+                          placeholder="O que você vai fazer..."
+                        />
+                      </div>
+                      <Button onClick={handleSaveEvento} className="w-full">
+                        {eventoEditando ? 'Atualizar' : 'Criar'} Evento
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <CalendarComponent
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    locale={ptBR}
+                    className="rounded-md border"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <h3 className="font-semibold">
+                    Eventos de {format(selectedDate || new Date(), 'MMMM/yyyy', { locale: ptBR })}
+                  </h3>
+                  {eventosDoMes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum evento neste mês</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {eventosDoMes.map((evento) => (
+                        <div key={evento.id} className="border rounded-lg p-3 space-y-2">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium">{evento.titulo}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {format(new Date(evento.data), "dd/MM/yyyy", { locale: ptBR })}
+                                {evento.horario && ` às ${evento.horario}`}
+                              </p>
+                              {evento.descricao && (
+                                <p className="text-sm text-muted-foreground mt-1">{evento.descricao}</p>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEditEvento(evento)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteEvento(evento.id)}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="historico" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Atividades</CardTitle>
+              <CardDescription>Acompanhe todas as ações da equipe</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!historico || historico.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhuma atividade registrada</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                  {historico.map((item: any) => (
+                    <div key={item.id} className="border-l-2 border-primary pl-4 py-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium">
+                            {item.profiles?.nome || 'Usuário'} - {getAcaoLabel(item.acao)}
+                          </p>
+                          {item.detalhes && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {JSON.stringify(item.detalhes)}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                        </span>
                       </div>
                     </div>
                   ))}

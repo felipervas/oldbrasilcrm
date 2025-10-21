@@ -37,6 +37,7 @@ const LojaHome = lazy(() => import("./pages/loja/LojaHome"));
 const ProdutoDetalhes = lazy(() => import("./pages/loja/ProdutoDetalhes"));
 const LojaMarcas = lazy(() => import("./pages/loja/LojaMarcas"));
 const MarcaProdutos = lazy(() => import("./pages/loja/MarcaProdutos"));
+const LojaCatalogos = lazy(() => import("./pages/loja/LojaCatalogos"));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-screen">
@@ -116,6 +117,19 @@ const App = () => (
                   <LojaHeader />
                   <main className="flex-1">
                     <MarcaProdutos />
+                  </main>
+                  <LojaFooter />
+                  <WhatsAppButton />
+                </div>
+              }
+            />
+            <Route
+              path="/loja/catalogos"
+              element={
+                <div className="min-h-screen flex flex-col">
+                  <LojaHeader />
+                  <main className="flex-1">
+                    <LojaCatalogos />
                   </main>
                   <LojaFooter />
                   <WhatsAppButton />

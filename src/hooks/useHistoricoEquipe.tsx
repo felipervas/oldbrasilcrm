@@ -1,4 +1,22 @@
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+
+// Hook para buscar histórico da equipe
+export const useHistoricoEquipe = () => {
+  return useQuery({
+    queryKey: ['historico-equipe'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('historico_equipe')
+        .select('*, profiles(nome)')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+};
 
 // Função helper para registrar atividades no histórico da equipe
 export const registrarAtividade = async (params: {

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { registrarAtividade } from '@/hooks/useHistoricoEquipe';
 
 export const useTarefas = (page: number = 0, pageSize: number = 20) => {
   const start = page * pageSize;
@@ -32,9 +33,19 @@ export const useCreateTarefa = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['tarefas'] });
       toast({ title: 'Tarefa criada com sucesso!' });
+      
+      // Registrar no histórico
+      if (data && data[0]) {
+        await registrarAtividade({
+          acao: 'criar_tarefa',
+          entidade_tipo: 'tarefa',
+          entidade_id: data[0].id,
+          detalhes: { titulo: data[0].titulo, status: data[0].status }
+        });
+      }
     },
     onError: (error: any) => {
       toast({ title: 'Erro ao criar tarefa', description: error.message, variant: 'destructive' });
@@ -52,9 +63,20 @@ export const useUpdateTarefa = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tarefas'] });
       toast({ title: 'Tarefa atualizada com sucesso!' });
+      
+      // Registrar no histórico
+      if (data && data[0]) {
+        const acao = data[0].status === 'concluida' ? 'concluir_tarefa' : 'atualizar_tarefa';
+        await registrarAtividade({
+          acao,
+          entidade_tipo: 'tarefa',
+          entidade_id: variables.id,
+          detalhes: { titulo: data[0].titulo, status: data[0].status, mudancas: Object.keys(variables).filter(k => k !== 'id') }
+        });
+      }
     },
     onError: (error: any) => {
       toast({ title: 'Erro ao atualizar tarefa', description: error.message, variant: 'destructive' });

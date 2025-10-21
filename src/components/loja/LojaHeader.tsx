@@ -22,6 +22,7 @@ export const LojaHeader = () => {
   const menuItems = [
     { label: "Produtos", href: "/loja" },
     { label: "Marcas", href: "/loja/marcas" },
+    { label: "Catálogos", href: "/loja/catalogos" },
     { label: "Acessar CRM", href: "/crm" },
   ];
 
