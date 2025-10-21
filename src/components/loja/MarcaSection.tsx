@@ -42,7 +42,7 @@ export const MarcaSection = ({ marca }: MarcaSectionProps) => {
       </div>
       
       {/* Grid de Linhas/Produtos */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
         {linhas ? (
           // Se tem linhas, mostrar cards de linhas
           <>
@@ -80,14 +80,14 @@ export const MarcaSection = ({ marca }: MarcaSectionProps) => {
               <ProdutoCard key={produto.id} produto={produto} />
             ))}
             
-            {/* Botão Ver Mais se tiver mais de 5 produtos */}
-            {produtos.length > 5 && (
+            {/* Botão Ver Mais se tiver mais de 8 produtos */}
+            {produtos.length > 8 && (
               <Link to={`/loja/marca/${slug}`}>
                 <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col items-center justify-center text-center bg-primary/10">
                   <ChevronRight className="h-8 w-8 text-primary mb-2" />
                   <div className="font-semibold text-primary">Ver Mais</div>
                   <div className="text-xs text-muted-foreground">
-                    +{produtos.length - 5} {produtos.length - 5 === 1 ? 'produto' : 'produtos'}
+                    +{produtos.length - 8} {produtos.length - 8 === 1 ? 'produto' : 'produtos'}
                   </div>
                 </Card>
               </Link>

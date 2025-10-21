@@ -13,12 +13,12 @@ export default function LojaHome() {
       <ModalAtendimentoExclusivo />
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/10 via-background to-accent/10 py-16 px-4">
-        <div className="container mx-auto text-center space-y-6">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground">
+      <section className="bg-gradient-to-br from-primary/10 via-background to-accent/10 py-12 md:py-16 px-4">
+        <div className="container mx-auto text-center space-y-4 md:space-y-6">
+          <h1 className="text-3xl md:text-5xl font-bold text-foreground">
             Loja OLD BRASIL
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             Produtos Premium para Sorveterias e Confeitarias
           </p>
           <a href={gerarLinkWhatsApp()} target="_blank" rel="noopener noreferrer">
@@ -30,15 +30,20 @@ export default function LojaHome() {
       </section>
       
       {/* Marcas e Produtos */}
-      <div id="produtos" className="container mx-auto px-4 py-16">
+      <div id="produtos" className="container mx-auto px-4 py-8 md:py-16">
         {isLoading ? (
-          <div className="flex items-center justify-center py-32">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary"></div>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-primary mb-4"></div>
+            <p className="text-muted-foreground">Carregando produtos...</p>
           </div>
-        ) : (
-          marcas?.map((marca) => (
+        ) : marcas && marcas.length > 0 ? (
+          marcas.map((marca) => (
             <MarcaSection key={marca.id} marca={marca} />
           ))
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-xl text-muted-foreground">Nenhum produto disponível no momento.</p>
+          </div>
         )}
       </div>
     </div>

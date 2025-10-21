@@ -31,12 +31,13 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
       <div className="relative aspect-square overflow-hidden bg-muted">
         <img
           src={imagemPrincipal}
-          alt={produto.nome}
+          alt={produto.nome_loja || produto.nome}
           className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
           loading="lazy"
           decoding="async"
-          width={400}
-          height={400}
+          fetchPriority="low"
+          width={300}
+          height={300}
         />
         {produto.destaque_loja && (
           <Badge className="absolute top-2 right-2 bg-accent text-accent-foreground">
@@ -46,20 +47,20 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
       </div>
       <CardContent className="p-4 space-y-3">
         <div>
-          <Badge className={`${corMarca} text-white mb-2`}>
+          <Badge className={`${corMarca} text-white mb-2 text-xs`}>
             {marca}
           </Badge>
-          <h3 className="font-semibold text-base line-clamp-2 min-h-[3rem]">
+          <h3 className="font-semibold text-sm line-clamp-2 min-h-[2.5rem]">
             {produto.nome_loja || produto.nome}
           </h3>
         </div>
         
         <div className="pt-2 border-t space-y-2">
-          <PrecoCard produto={produto} compact={false} />
+          <PrecoCard produto={produto} compact={true} />
         </div>
 
         <Link to={`/loja/produto/${produto.id}`} className="block">
-          <Button className="w-full" variant="default">
+          <Button className="w-full" variant="default" size="sm">
             Ver Detalhes
           </Button>
         </Link>

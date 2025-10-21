@@ -3,87 +3,123 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const useLojaAgrupada = () => {
   return useQuery({
-    queryKey: ['loja-agrupada'],
+    queryKey: ['loja-agrupada-v2'],
     queryFn: async () => {
-      // 🚀 QUERY OTIMIZADA: 1 única chamada para buscar tudo
-      // Reduz de ~10-15 queries para apenas 1 query SQL otimizada
-      const { data, error } = await supabase
-        .rpc('get_loja_home_otimizada', { limite_produtos_por_marca: 5 });
+      // 🚀 QUERY SUPER OTIMIZADA: Buscar apenas primeiras imagens + informações essenciais
+      const { data: produtos, error } = await supabase
+        .from('produtos')
+        .select(`
+          id, nome, nome_loja, descricao, categoria, 
+          preco_por_kg, peso_embalagem_kg, rendimento_dose_gramas, tipo_calculo,
+          destaque_loja, ordem_exibicao,
+          marca_id,
+          marcas(id, nome, slug, descricao, site, imagem_banner, mostrar_texto_banner)
+        `)
+        .eq('ativo', true)
+        .eq('visivel_loja', true)
+        .order('marca_id', { ascending: true, nullsFirst: false })
+        .order('destaque_loja', { ascending: false })
+        .order('ordem_exibicao', { ascending: true })
+        .order('nome', { ascending: true });
       
       if (error) {
-        console.error('❌ Erro ao buscar dados da loja:', error);
+        console.error('❌ Erro ao buscar produtos:', error);
         throw error;
       }
       
-      if (!data || data.length === 0) {
+      if (!produtos || produtos.length === 0) {
         return [];
       }
+
+      // Buscar APENAS as primeiras imagens de cada produto (muito mais rápido!)
+      const produtoIds = produtos.map(p => p.id);
+      const { data: imagens } = await supabase
+        .from('produto_imagens')
+        .select('produto_id, url')
+        .in('produto_id', produtoIds)
+        .eq('ordem', 0);
+
+      // Criar map de imagens para lookup rápido
+      const imagensMap = new Map(
+        (imagens || []).map(img => [img.produto_id, img.url])
+      );
       
-      // Agrupar resultados por marca
+      // Agrupar por marca (incluindo produtos sem marca)
       const marcasMap = new Map();
       
-      data.forEach((row: any) => {
-        if (!marcasMap.has(row.marca_id)) {
-          marcasMap.set(row.marca_id, {
-            id: row.marca_id,
-            nome: row.marca_nome,
-            slug: row.marca_slug,
-            descricao: row.marca_descricao,
-            site: row.marca_site,
-            imagem_banner: row.marca_imagem_banner,
-            mostrar_texto_banner: row.marca_mostrar_texto_banner,
-            ativa: row.marca_ativa,
-            created_at: row.marca_created_at,
-            updated_at: row.marca_updated_at,
+      // Criar grupo para produtos sem marca
+      marcasMap.set('sem-marca', {
+        id: 'sem-marca',
+        nome: 'Outros Produtos',
+        slug: 'outros',
+        descricao: 'Produtos diversos',
+        site: null,
+        imagem_banner: null,
+        mostrar_texto_banner: true,
+        produtos: [],
+        primeiros5: []
+      });
+      
+      produtos.forEach((produto: any) => {
+        const marcaId = produto.marca_id || 'sem-marca';
+        
+        // Criar entrada da marca se não existir
+        if (!marcasMap.has(marcaId) && produto.marcas) {
+          marcasMap.set(marcaId, {
+            id: produto.marcas.id,
+            nome: produto.marcas.nome,
+            slug: produto.marcas.slug,
+            descricao: produto.marcas.descricao,
+            site: produto.marcas.site,
+            imagem_banner: produto.marcas.imagem_banner,
+            mostrar_texto_banner: produto.marcas.mostrar_texto_banner,
             produtos: [],
             primeiros5: []
           });
         }
         
-        const marca = marcasMap.get(row.marca_id);
+        const marca = marcasMap.get(marcaId);
         
-        // Adicionar produto com sua imagem principal já incluída
-        if (row.produto_id) {
-          const produto = {
-            id: row.produto_id,
-            nome: row.produto_nome,
-            nome_loja: row.produto_nome_loja,
-            sku: row.produto_sku,
-            descricao: row.produto_descricao,
-            categoria: row.produto_categoria,
-            subcategoria: row.produto_subcategoria,
-            preco_por_kg: row.produto_preco_por_kg,
-            peso_embalagem_kg: row.produto_peso_embalagem_kg,
-            rendimento_dose_gramas: row.produto_rendimento_dose_gramas,
-            tipo_calculo: row.produto_tipo_calculo,
-            destaque_loja: row.produto_destaque_loja,
-            ordem_exibicao: row.produto_ordem_exibicao,
-            ativo: row.produto_ativo,
-            visivel_loja: row.produto_visivel_loja,
-            marcas: {
-              id: row.marca_id,
-              nome: row.marca_nome,
-              slug: row.marca_slug
-            },
-            produto_imagens: [{
-              url: row.imagem_url,
-              ordem: row.imagem_ordem
-            }]
-          };
-          
-          marca.produtos.push(produto);
-          
-          // Primeiros 5 já limitados pela query SQL
-          if (marca.primeiros5.length < 5) {
-            marca.primeiros5.push(produto);
-          }
+        const produtoFormatado = {
+          id: produto.id,
+          nome: produto.nome_loja || produto.nome,
+          nome_loja: produto.nome_loja,
+          descricao: produto.descricao,
+          categoria: produto.categoria,
+          preco_por_kg: produto.preco_por_kg,
+          peso_embalagem_kg: produto.peso_embalagem_kg,
+          rendimento_dose_gramas: produto.rendimento_dose_gramas,
+          tipo_calculo: produto.tipo_calculo,
+          destaque_loja: produto.destaque_loja,
+          marcas: produto.marcas || { id: 'sem-marca', nome: 'Outros Produtos', slug: 'outros' },
+          produto_imagens: [{
+            url: imagensMap.get(produto.id) || '/placeholder.svg',
+            ordem: 0
+          }]
+        };
+        
+        marca.produtos.push(produtoFormatado);
+        
+        // Adicionar aos primeiros 5 se ainda houver espaço
+        if (marca.primeiros5.length < 8) {
+          marca.primeiros5.push(produtoFormatado);
         }
       });
       
-      return Array.from(marcasMap.values());
+      // Converter para array e ordenar marcas
+      const marcasArray = Array.from(marcasMap.values())
+        .filter(m => m.produtos.length > 0)
+        .sort((a, b) => {
+          // "Outros Produtos" vai para o final
+          if (a.id === 'sem-marca') return 1;
+          if (b.id === 'sem-marca') return -1;
+          return a.nome.localeCompare(b.nome);
+        });
+      
+      return marcasArray;
     },
-    // ⚡ CACHE OTIMIZADO: Dados da loja mudam pouco, cache mais longo
-    staleTime: 15 * 60 * 1000, // 15 minutos (produtos mudam raramente)
-    gcTime: 60 * 60 * 1000, // 60 minutos (manter em memória por mais tempo)
+    // ⚡ CACHE: 5 minutos (produtos mudam pouco)
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 };
