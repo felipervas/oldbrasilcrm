@@ -82,10 +82,12 @@ const TabelasPrecos = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedFile) {
+      console.log("❌ Nenhum arquivo selecionado");
       toast({ title: "Selecione um arquivo", variant: "destructive" });
       return;
     }
 
+    console.log("🔵 Iniciando upload:", selectedFile.name, "Tamanho:", selectedFile.size);
     setLoading(true);
     setUploading(true);
 
@@ -93,20 +95,31 @@ const TabelasPrecos = () => {
     const nome = formData.get("nome") as string;
     const descricao = formData.get("descricao") as string;
 
+    console.log("📝 Dados do formulário:", { nome, descricao });
+
     try {
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log("📤 Fazendo upload para:", filePath);
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('catalogos')
         .upload(filePath, selectedFile);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("❌ Erro no upload:", uploadError);
+        throw uploadError;
+      }
+
+      console.log("✅ Upload concluído:", uploadData);
 
       const { data: urlData } = supabase.storage
         .from('catalogos')
         .getPublicUrl(filePath);
+
+      console.log("🔗 URL pública:", urlData.publicUrl);
 
       const { error: insertError } = await supabase.from("catalogos").insert({
         nome,
@@ -116,15 +129,23 @@ const TabelasPrecos = () => {
         arquivo_nome: selectedFile.name,
       });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("❌ Erro ao inserir no DB:", insertError);
+        throw insertError;
+      }
 
-      toast({ title: "Tabela adicionada com sucesso!" });
+      console.log("✅ Tabela criada com sucesso!");
+      toast({ title: "✅ Tabela adicionada com sucesso!" });
       setOpen(false);
       setSelectedFile(null);
       loadTabelas();
     } catch (error: any) {
-      console.error(error);
-      toast({ title: "Erro ao adicionar tabela", variant: "destructive" });
+      console.error("❌ Erro geral:", error);
+      toast({ 
+        title: "❌ Erro ao adicionar tabela", 
+        description: error.message || "Erro desconhecido",
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
       setUploading(false);

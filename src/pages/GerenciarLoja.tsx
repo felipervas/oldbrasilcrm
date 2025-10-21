@@ -255,6 +255,14 @@ export default function GerenciarLoja() {
                               </Badge>
                             )}
                             
+                            <Badge variant={produto.ativo ? "default" : "destructive"}>
+                              {produto.ativo ? "Ativo" : "Inativo"}
+                            </Badge>
+
+                            <Badge variant={produto.visivel_loja ? "default" : "secondary"}>
+                              {produto.visivel_loja ? "Visível" : "Oculto"}
+                            </Badge>
+
                             <Badge variant="outline">
                               <ImageIcon className="h-3 w-3 mr-1" />
                               {produto.produto_imagens?.length || 0} imagens

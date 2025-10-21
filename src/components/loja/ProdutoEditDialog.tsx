@@ -57,7 +57,7 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
     }
   }, [produto]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     console.log("🔵 ProdutoEditDialog - Iniciando handleSave");
     console.log("🔵 ProdutoEditDialog - formData:", formData);
     
@@ -69,6 +69,32 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
         variant: "destructive",
       });
       return;
+    }
+
+    // Validação de SKU único (se preenchido)
+    if (formData.sku?.trim()) {
+      console.log('🔍 Verificando SKU único:', formData.sku);
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: existingSKU, error: skuError } = await supabase
+        .from('produtos')
+        .select('id')
+        .eq('sku', formData.sku.trim())
+        .neq('id', produto.id)
+        .maybeSingle();
+      
+      if (skuError) {
+        console.error('❌ Erro ao verificar SKU:', skuError);
+      }
+      
+      if (existingSKU) {
+        console.log('❌ SKU já existe:', existingSKU);
+        toast({ 
+          title: "⚠️ SKU já está em uso", 
+          description: "Escolha outro SKU ou deixe vazio",
+          variant: "destructive" 
+        });
+        return;
+      }
     }
 
     // Sanitizar ANTES de enviar: converter strings vazias e NaN em null

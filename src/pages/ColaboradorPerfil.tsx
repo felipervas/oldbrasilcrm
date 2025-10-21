@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Calendar, Plus, Trash2, CheckSquare, Clock, Package, Edit } from "lucide-react";
+import { Calendar, Plus, Trash2, CheckSquare, Clock, Package, Edit, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,15 +16,19 @@ import { format } from "date-fns";
 
 const ColaboradorPerfil = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [colaborador, setColaborador] = useState<any>(null);
   const [eventos, setEventos] = useState<any[]>([]);
   const [tarefas, setTarefas] = useState<any[]>([]);
+  const [atividades, setAtividades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvento, setEditingEvento] = useState<any>(null);
   const [tarefaDialogOpen, setTarefaDialogOpen] = useState(false);
   const [editingTarefa, setEditingTarefa] = useState<any>(null);
+  const [detalheTarefaOpen, setDetalheTarefaOpen] = useState(false);
+  const [tarefaSelecionada, setTarefaSelecionada] = useState<any>(null);
   const [stats, setStats] = useState({
     tarefasConcluidas: 0,
     tarefasPendentes: 0,
@@ -89,6 +93,16 @@ const ColaboradorPerfil = () => {
         tarefasPendentes: pendentes,
         pedidosLancados: pedidosCount || 0,
       });
+
+      // Carregar histórico de atividades
+      const { data: atividadesData } = await supabase
+        .from('historico_equipe')
+        .select('*')
+        .eq('user_id', id)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      
+      setAtividades(atividadesData || []);
 
     } catch (error: any) {
       console.error("Erro ao carregar dados:", error);
@@ -261,6 +275,68 @@ const ColaboradorPerfil = () => {
       setEditingTarefa(null);
       loadColaboradorData();
     }
+  };
+
+  const formatarAcao = (acao: string) => {
+    const acoes: Record<string, string> = {
+      'criar_cliente': '✅ Cliente criado',
+      'editar_cliente': '✏️ Cliente editado',
+      'criar_pedido': '🛒 Pedido criado',
+      'concluir_tarefa': '✔️ Tarefa concluída',
+      'criar_tarefa': '📝 Tarefa criada',
+      'adicionar_amostra': '🎁 Amostra adicionada',
+      'criar_usuario': '👤 Usuário criado',
+      'editar_usuario': '✏️ Usuário editado',
+      'deletar_usuario': '🗑️ Usuário removido',
+    };
+    return acoes[acao] || acao;
+  };
+
+  const formatarDetalhes = (tipo: string, detalhes: any) => {
+    if (!detalhes) return 'Atividade registrada';
+    if (tipo === 'cliente') return detalhes?.nome_fantasia || 'Cliente';
+    if (tipo === 'pedido') return `Pedido ${detalhes?.numero_pedido || ''}`;
+    if (tipo === 'tarefa') return detalhes?.titulo || 'Tarefa';
+    if (tipo === 'usuario') return detalhes?.nome || 'Usuário';
+    return JSON.stringify(detalhes);
+  };
+
+  const handleVerDetalhes = (atividade: any) => {
+    if (atividade.entidade_tipo === 'cliente' && atividade.entidade_id) {
+      navigate(`/clientes/${atividade.entidade_id}`);
+    } else if (atividade.entidade_tipo === 'pedido' && atividade.entidade_id) {
+      navigate(`/pedidos`);
+    } else if (atividade.entidade_tipo === 'tarefa' && atividade.entidade_id) {
+      const tarefa = tarefas.find(t => t.id === atividade.entidade_id);
+      if (tarefa) {
+        setTarefaSelecionada(tarefa);
+        setDetalheTarefaOpen(true);
+      }
+    }
+  };
+
+  const handleVerTarefa = (tarefa: any) => {
+    setTarefaSelecionada(tarefa);
+    setDetalheTarefaOpen(true);
+  };
+
+  const getStatusVariant = (status: string) => {
+    const variants: Record<string, any> = {
+      'pendente': 'secondary',
+      'em_andamento': 'default',
+      'concluida': 'default',
+      'cancelada': 'destructive',
+    };
+    return variants[status] || 'secondary';
+  };
+
+  const getPrioridadeVariant = (prioridade: string) => {
+    const variants: Record<string, any> = {
+      'baixa': 'secondary',
+      'media': 'default',
+      'alta': 'destructive',
+    };
+    return variants[prioridade] || 'secondary';
   };
 
   const renderEventos = () => {
@@ -523,6 +599,50 @@ const ColaboradorPerfil = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Histórico de Atividades */}
+      <Card className="border-primary/20 shadow-elegant">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="h-5 w-5 text-primary" />
+            Histórico de Atividades
+          </CardTitle>
+          <CardDescription>
+            Todas as suas ações no sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {atividades.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">Nenhuma atividade registrada</p>
+            ) : (
+              atividades.map((ativ) => (
+                <div 
+                  key={ativ.id} 
+                  className="p-3 border rounded-lg hover:bg-accent/50 cursor-pointer transition-all"
+                  onClick={() => handleVerDetalhes(ativ)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="font-medium">{formatarAcao(ativ.acao)}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatarDetalhes(ativ.entidade_tipo, ativ.detalhes)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {format(new Date(ativ.created_at), 'dd/MM/yyyy HH:mm')}
+                      </div>
+                    </div>
+                    <Badge variant="outline">
+                      {ativ.entidade_tipo || 'ação'}
+                    </Badge>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tarefas Recentes */}
       <Card>
         <CardHeader>
           <CardTitle>Minhas Tarefas Recentes</CardTitle>
@@ -530,15 +650,19 @@ const ColaboradorPerfil = () => {
         <CardContent>
           <div className="space-y-3">
             {tarefas.slice(0, 10).map(tarefa => (
-              <div key={tarefa.id} className="border rounded-lg p-3 hover:shadow-sm transition-shadow">
+              <div 
+                key={tarefa.id} 
+                className="border rounded-lg p-3 hover:bg-accent/50 cursor-pointer transition-all"
+                onClick={() => handleVerTarefa(tarefa)}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-medium">{tarefa.titulo}</h4>
                     {tarefa.descricao && (
-                      <p className="text-sm text-muted-foreground mt-1">{tarefa.descricao}</p>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{tarefa.descricao}</p>
                     )}
                     {tarefa.clientes && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-primary font-medium mt-1">
                         Cliente: {tarefa.clientes.nome_fantasia}
                       </p>
                     )}
@@ -548,51 +672,38 @@ const ColaboradorPerfil = () => {
                         {tarefa.horario && ` • ${tarefa.horario}`}
                       </p>
                     )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={tarefa.status === "concluida" ? "default" : "secondary"}>
-                      {tarefa.status}
-                    </Badge>
-                    <div style={{ position: 'relative', zIndex: 40, display: 'flex', gap: '0.5rem' }}>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        style={{ pointerEvents: 'auto' }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          console.log("✏️ EDITAR - MouseDown capturado", tarefa.id);
-                        }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          console.log("✏️ EDITAR TAREFA:", tarefa.id);
-                          handleEditTarefa(tarefa);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        style={{ pointerEvents: 'auto' }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          console.log("🗑️ EXCLUIR - MouseDown capturado", tarefa.id);
-                        }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          console.log("🗑️ EXCLUIR TAREFA:", tarefa.id);
-                          handleDeleteTarefa(tarefa.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                    <div className="flex gap-2 mt-2">
+                      <Badge variant={getStatusVariant(tarefa.status)}>
+                        {tarefa.status}
+                      </Badge>
+                      <Badge variant={getPrioridadeVariant(tarefa.prioridade)}>
+                        {tarefa.prioridade}
+                      </Badge>
                     </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditTarefa(tarefa);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTarefa(tarefa.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -603,6 +714,79 @@ const ColaboradorPerfil = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de Detalhes da Tarefa */}
+      <Dialog open={detalheTarefaOpen} onOpenChange={setDetalheTarefaOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Tarefa</DialogTitle>
+          </DialogHeader>
+          {tarefaSelecionada && (
+            <div className="space-y-4">
+              <div>
+                <Label>Título</Label>
+                <div className="font-medium">{tarefaSelecionada.titulo}</div>
+              </div>
+              <div>
+                <Label>Descrição</Label>
+                <div className="text-sm text-muted-foreground">
+                  {tarefaSelecionada.descricao || 'Sem descrição'}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Status</Label>
+                  <div>
+                    <Badge variant={getStatusVariant(tarefaSelecionada.status)}>
+                      {tarefaSelecionada.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label>Prioridade</Label>
+                  <div>
+                    <Badge variant={getPrioridadeVariant(tarefaSelecionada.prioridade)}>
+                      {tarefaSelecionada.prioridade}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              {tarefaSelecionada.clientes && (
+                <div>
+                  <Label>Cliente</Label>
+                  <Button
+                    variant="link"
+                    className="p-0 h-auto"
+                    onClick={() => navigate(`/clientes/${tarefaSelecionada.cliente_id}`)}
+                  >
+                    {tarefaSelecionada.clientes.nome_fantasia}
+                  </Button>
+                </div>
+              )}
+              {tarefaSelecionada.data_prevista && (
+                <div>
+                  <Label>Data Prevista</Label>
+                  <div className="text-sm">
+                    {new Date(tarefaSelecionada.data_prevista).toLocaleDateString('pt-BR')}
+                    {tarefaSelecionada.horario && ` às ${tarefaSelecionada.horario}`}
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setDetalheTarefaOpen(false)}>
+                  Fechar
+                </Button>
+                <Button onClick={() => {
+                  setDetalheTarefaOpen(false);
+                  handleEditTarefa(tarefaSelecionada);
+                }}>
+                  Editar Tarefa
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={tarefaDialogOpen} onOpenChange={setTarefaDialogOpen}>
         <DialogContent>
