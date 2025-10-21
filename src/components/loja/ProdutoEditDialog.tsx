@@ -291,163 +291,135 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
               </div>
             )}
 
-            {/* Seção de Tabelas - EDITÁVEL */}
-            <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+            {/* Seção de Tabelas - NOVA INTERFACE */}
+            <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
               <div>
                 <Label className="text-sm font-semibold">📊 Tabelas de Negociação</Label>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Edite os preços diretamente. As alterações são salvas automaticamente.
+                  Edite as tabelas diretamente. Alterações são salvas automaticamente (500ms).
                 </p>
               </div>
               
-              {/* Tabelas existentes - EDITÁVEIS */}
-              {tabelasPreco.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Tabelas Cadastradas:</Label>
-                  <div className="space-y-2">
-                    {tabelasPreco.map(t => (
-                      <div key={t.id} className="flex items-center gap-2 p-2 rounded-md bg-secondary/50">
-                        <Input
-                          type="text"
-                          defaultValue={t.nome_tabela}
-                          className="w-32 h-8 text-xs font-medium"
-                          onChange={(e) => handleTableChange(t.id, 'nome', e.target.value)}
-                          placeholder="Nome"
-                        />
-                        <Input
-                          type="number"
-                          step="0.01"
-                          defaultValue={t.preco_por_kg || ''}
-                          className="w-28 h-8 text-xs"
-                          onChange={(e) => handleTableChange(t.id, 'preco', e.target.value)}
-                          placeholder="R$/kg"
-                        />
-                        <span className="text-xs text-muted-foreground">/kg</span>
-                        
-                        <Switch
-                          checked={t.ativo}
-                          onCheckedChange={(checked) => {
-                            updateTabela.mutate({
-                              id: t.id,
-                              produto_id: produto.id,
-                              ativo: checked,
-                            });
-                          }}
-                        />
-                        
+              {/* Tabelas existentes - CARDS EDITÁVEIS */}
+              {tabelasPreco.length > 0 ? (
+                <div className="space-y-3">
+                  {tabelasPreco.map(t => (
+                    <div key={t.id} className="border rounded-lg p-3 bg-background space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Nome da Tabela</Label>
+                          <Input
+                            type="text"
+                            defaultValue={t.nome_tabela}
+                            className="h-9"
+                            onChange={(e) => handleTableChange(t.id, 'nome', e.target.value)}
+                            placeholder="Nome"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Preço (R$/kg)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            defaultValue={t.preco_por_kg || ''}
+                            className="h-9"
+                            onChange={(e) => handleTableChange(t.id, 'preco', e.target.value)}
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id={`ativo-${t.id}`}
+                              checked={t.ativo}
+                              onCheckedChange={(checked) => {
+                                updateTabela.mutate({
+                                  id: t.id,
+                                  produto_id: produto.id,
+                                  ativo: checked,
+                                });
+                              }}
+                            />
+                            <Label htmlFor={`ativo-${t.id}`} className="text-xs cursor-pointer">
+                              Ativa
+                            </Label>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`usar-site-${t.id}`}
+                              checked={t.usar_no_site}
+                              onCheckedChange={(checked) => {
+                                updateTabela.mutate({
+                                  id: t.id,
+                                  produto_id: produto.id,
+                                  usar_no_site: !!checked,
+                                });
+                              }}
+                            />
+                            <Label htmlFor={`usar-site-${t.id}`} className="text-xs cursor-pointer">
+                              Usar no site
+                            </Label>
+                          </div>
+                        </div>
+
                         <Button
                           variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 hover:text-destructive"
+                          size="sm"
+                          className="hover:text-destructive"
                           onClick={() => handleDeleteTabela(t.id)}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Excluir
                         </Button>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhuma tabela de preço cadastrada
+                </p>
               )}
               
-              {/* Grid de checkboxes para criar novas */}
-              <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">
-                  Criar novas:
-                </Label>
-                <div className="grid grid-cols-5 gap-2">
-                  {Array.from({ length: 10 }, (_, i) => {
-                    const num = tabelasPreco.length + i + 1;
-                    const nomeTabela = `Tabela ${String(num).padStart(2, '0')}`;
-                    const isChecked = novaTabela.marcadas?.includes(nomeTabela) || false;
-                    
-                    return (
-                      <div key={num} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`new-tabela-${num}`}
-                          checked={isChecked}
-                          onCheckedChange={(checked) => {
-                            const marcadas = novaTabela.marcadas || [];
-                            if (checked) {
-                              setNovaTabela({
-                                ...novaTabela,
-                                marcadas: [...marcadas, nomeTabela]
-                              });
-                            } else {
-                              setNovaTabela({
-                                ...novaTabela,
-                                marcadas: marcadas.filter(n => n !== nomeTabela)
-                              });
-                            }
-                          }}
-                        />
-                        <Label
-                          htmlFor={`new-tabela-${num}`}
-                          className="text-xs cursor-pointer"
-                        >
-                          {String(num).padStart(2, '0')}
-                        </Label>
-                      </div>
-                    );
-                  })}
-                </div>
+              {/* Botão para adicionar nova tabela */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  const precoAtual = formData.preco_por_kg || 0;
+                  const proximoNumero = tabelasPreco.length + 1;
+                  createTabela.mutate({
+                    produto_id: produto.id,
+                    nome_tabela: `Tabela ${String(proximoNumero).padStart(2, '0')}`,
+                    preco_por_kg: precoAtual,
+                    usar_no_site: false,
+                  });
+                  toast({
+                    title: "✅ Nova tabela criada",
+                    description: "Edite o nome e preço conforme necessário"
+                  });
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Nova Tabela
+              </Button>
+
+              <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  💡 Marque "Usar no site" na tabela que deseja exibir na loja pública. Apenas uma pode estar marcada.
+                </p>
               </div>
-              
-              {/* Botão para criar tabelas marcadas */}
-              {novaTabela.marcadas && novaTabela.marcadas.length > 0 && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    const precoAtual = formData.preco_por_kg || 0;
-                    novaTabela.marcadas?.forEach(nome => {
-                      createTabela.mutate({
-                        produto_id: produto.id,
-                        nome_tabela: nome,
-                        preco_por_kg: precoAtual,
-                      });
-                    });
-                    setNovaTabela({ marcadas: [] });
-                    toast({
-                      title: "Tabelas criadas!",
-                      description: `${novaTabela.marcadas.length} tabelas adicionadas`
-                    });
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Criar {novaTabela.marcadas.length} tabelas selecionadas
-                </Button>
-              )}
             </div>
           </TabsContent>
 
           <TabsContent value="loja" className="space-y-4">
             <div className="space-y-4">
-              <div>
-                <Label>Tabela de Preço para Loja Pública</Label>
-                <Select
-                  value={formData.tabela_preco_loja_id || ''}
-                  onValueChange={(value) => 
-                    setFormData({ ...formData, tabela_preco_loja_id: value || null })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Usar preço padrão" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Preço Padrão (preco_por_kg)</SelectItem>
-                    {tabelasPreco.map(t => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.nome_tabela} - R$ {t.preco_por_kg?.toFixed(2)}/kg
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Preço exibido na loja online para o público
-                </p>
-              </div>
-
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={formData.visivel_loja}

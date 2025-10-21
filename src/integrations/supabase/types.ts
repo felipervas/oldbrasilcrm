@@ -965,6 +965,7 @@ export type Database = {
           preco_por_kg: number | null
           produto_id: string
           updated_at: string
+          usar_no_site: boolean | null
         }
         Insert: {
           ativo?: boolean
@@ -974,6 +975,7 @@ export type Database = {
           preco_por_kg?: number | null
           produto_id: string
           updated_at?: string
+          usar_no_site?: boolean | null
         }
         Update: {
           ativo?: boolean
@@ -983,6 +985,7 @@ export type Database = {
           preco_por_kg?: number | null
           produto_id?: string
           updated_at?: string
+          usar_no_site?: boolean | null
         }
         Relationships: [
           {

@@ -30,7 +30,9 @@ export const formatarInfoPreco = (produto: any): {
   tipo: 'unika' | 'volatil' | 'normal';
 } | null => {
   const marca = produto.marcas?.nome?.toUpperCase() || '';
-  const precoKg = produto.preco_por_kg;
+  
+  // Usar preço da tabela_site se existir, senão usar preco_por_kg do produto
+  const precoKg = produto.tabela_site?.preco_por_kg || produto.preco_por_kg;
   const pesoEmb = produto.peso_embalagem_kg || 25;
   const rendDose = produto.rendimento_dose_gramas;
   

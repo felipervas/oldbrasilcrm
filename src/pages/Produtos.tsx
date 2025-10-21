@@ -34,7 +34,7 @@ const Produtos = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [imagensLoja, setImagensLoja] = useState<any[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string; preco?: number }>>([]);
+  const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string; preco?: number; usarNoSite?: boolean }>>([]);
   const [usarTabelas, setUsarTabelas] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagemInputRef = useRef<HTMLInputElement>(null);
@@ -194,6 +194,7 @@ const Produtos = () => {
             produto_id: data[0].id,
             nome_tabela: t.nome.trim(),
             preco_por_kg: t.preco,
+            usar_no_site: t.usarNoSite || false,
           }));
 
         if (tabelasParaInserir.length > 0) {
@@ -663,82 +664,107 @@ const Produtos = () => {
                 <Textarea id="descricao" name="descricao" />
               </div>
 
-              {/* Seção de Tabelas de Preço - COMPACTA */}
+              {/* Seção de Tabelas de Preço - NOVA INTERFACE */}
               {usarTabelas && (
-                <div className="border rounded-lg p-4 bg-muted/30">
-                  <Label className="text-sm font-semibold mb-2 block">
-                    📊 Tabelas de Negociação (defina preços individuais)
-                  </Label>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Marque as tabelas e defina o preço de cada uma.
-                  </p>
-                
-                <div className="grid grid-cols-5 gap-2">
-                  {Array.from({ length: 10 }, (_, i) => i + 1).map(num => {
-                    const nomeTabela = `Tabela ${String(num).padStart(2, '0')}`;
-                    const tabela = tabelasPrecoCriacao.find(t => t.nome === nomeTabela);
-                    const isChecked = !!tabela;
-                    
-                    return (
-                      <div key={num} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`tabela-${num}`}
-                          checked={isChecked}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setTabelasPrecoCriacao([
-                                ...tabelasPrecoCriacao,
-                                { nome: nomeTabela }
-                              ]);
-                            } else {
-                              setTabelasPrecoCriacao(
-                                tabelasPrecoCriacao.filter(t => t.nome !== nomeTabela)
-                              );
-                            }
-                          }}
-                        />
-                        <Label
-                          htmlFor={`tabela-${num}`}
-                          className="text-xs font-normal cursor-pointer"
-                        >
-                          {String(num).padStart(2, '0')}
-                        </Label>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                {tabelasPrecoCriacao.length > 0 && (
-                  <>
-                    <div className="mt-4 space-y-2">
-                      <Label className="text-xs font-semibold">Preços das Tabelas Selecionadas:</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {tabelasPrecoCriacao.map((tabela, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <Label className="text-xs w-16">{tabela.nome}:</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="R$/kg"
-                              value={tabela.preco || ''}
-                              onChange={(e) => {
-                                const novas = [...tabelasPrecoCriacao];
-                                novas[index].preco = e.target.value ? parseFloat(e.target.value) : undefined;
+                <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
+                  <div>
+                    <Label className="text-sm font-semibold mb-2 block">
+                      📊 Tabelas de Negociação
+                    </Label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Crie tabelas com nomes personalizados e preços individuais. Uma delas será exibida no site.
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="qtd-tabelas" className="text-sm">Quantas tabelas criar?</Label>
+                    <select
+                      id="qtd-tabelas"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      value={tabelasPrecoCriacao.length}
+                      onChange={(e) => {
+                        const qtd = parseInt(e.target.value);
+                        const novasTabelas = Array.from({ length: qtd }, (_, i) => {
+                          const existente = tabelasPrecoCriacao[i];
+                          return existente || { nome: '', preco: undefined, usarNoSite: i === 0 };
+                        });
+                        setTabelasPrecoCriacao(novasTabelas);
+                      }}
+                    >
+                      <option value="0">Selecione...</option>
+                      {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num}>{num} {num === 1 ? 'tabela' : 'tabelas'}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {tabelasPrecoCriacao.length > 0 && (
+                    <div className="space-y-3">
+                      {tabelasPrecoCriacao.map((tabela, index) => (
+                        <div key={index} className="border rounded-lg p-3 bg-background space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm font-semibold">Tabela {index + 1}</Label>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs">Nome da Tabela *</Label>
+                              <Input
+                                placeholder="Ex: Varejo, Atacado..."
+                                value={tabela.nome || ''}
+                                onChange={(e) => {
+                                  const novas = [...tabelasPrecoCriacao];
+                                  novas[index].nome = e.target.value;
+                                  setTabelasPrecoCriacao(novas);
+                                }}
+                                className="h-9"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Preço (R$/kg) *</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={tabela.preco || ''}
+                                onChange={(e) => {
+                                  const novas = [...tabelasPrecoCriacao];
+                                  novas[index].preco = e.target.value ? parseFloat(e.target.value) : undefined;
+                                  setTabelasPrecoCriacao(novas);
+                                }}
+                                className="h-9"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`usar-site-${index}`}
+                              checked={tabela.usarNoSite || false}
+                              onCheckedChange={(checked) => {
+                                const novas = tabelasPrecoCriacao.map((t, i) => ({
+                                  ...t,
+                                  usarNoSite: i === index ? !!checked : false
+                                }));
                                 setTabelasPrecoCriacao(novas);
                               }}
-                              className="h-8 text-xs"
                             />
+                            <Label htmlFor={`usar-site-${index}`} className="text-xs cursor-pointer">
+                              Usar esta tabela no site/loja
+                            </Label>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
+                  )}
+
+                  {tabelasPrecoCriacao.length > 0 && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
                       <p className="text-xs text-blue-700 dark:text-blue-300">
-                        ✓ Serão criadas <strong>{tabelasPrecoCriacao.length} tabelas</strong> com preços individuais
+                        💡 A tabela marcada será usada para exibir o preço no site. As demais ficam disponíveis para negociação.
                       </p>
                     </div>
-                  </>
-                )}
+                  )}
                 </div>
               )}
 

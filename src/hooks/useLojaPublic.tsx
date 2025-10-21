@@ -20,7 +20,7 @@ export const useProdutosLoja = (filtros?: {
           visivel_loja, destaque_loja, rendimento_dose_gramas, preco_atualizado_em,
           marcas(id, nome, slug),
           produto_imagens(url, ordem),
-          tabela_loja:produto_tabelas_preco!produtos_tabela_preco_loja_id_fkey(
+          tabela_site:produto_tabelas_preco(
             id,
             nome_tabela,
             preco_por_kg
@@ -75,11 +75,23 @@ export const useProdutosLoja = (filtros?: {
 
       if (error) throw error;
       
-      // Ordenar imagens por ordem
-      return (data || []).map(produto => ({
-        ...produto,
-        produto_imagens: (produto.produto_imagens || []).sort((a: any, b: any) => a.ordem - b.ordem)
+      // Para cada produto, buscar a tabela com usar_no_site = true
+      const produtosComTabela = await Promise.all((data || []).map(async (produto: any) => {
+        const { data: tabelaSite } = await supabase
+          .from('produto_tabelas_preco')
+          .select('id, nome_tabela, preco_por_kg')
+          .eq('produto_id', produto.id)
+          .eq('usar_no_site', true)
+          .maybeSingle();
+        
+        return {
+          ...produto,
+          tabela_site: tabelaSite,
+          produto_imagens: (produto.produto_imagens || []).sort((a: any, b: any) => a.ordem - b.ordem)
+        };
       }));
+      
+      return produtosComTabela;
     },
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
@@ -97,12 +109,7 @@ export const useProdutoDetalhes = (id: string) => {
           preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo,
           rendimento_dose_gramas, preco_atualizado_em,
           marcas(id, nome, site, slug),
-          produto_imagens(url, ordem),
-          tabela_loja:produto_tabelas_preco!produtos_tabela_preco_loja_id_fkey(
-            id,
-            nome_tabela,
-            preco_por_kg
-          )
+          produto_imagens(url, ordem)
         `)
         .eq('id', id)
         .eq('visivel_loja', true)
@@ -110,12 +117,23 @@ export const useProdutoDetalhes = (id: string) => {
 
       if (error) throw error;
       
+      // Buscar a tabela com usar_no_site = true
+      const { data: tabelaSite } = await supabase
+        .from('produto_tabelas_preco')
+        .select('id, nome_tabela, preco_por_kg')
+        .eq('produto_id', id)
+        .eq('usar_no_site', true)
+        .maybeSingle();
+      
       // Ordenar imagens
       if (data.produto_imagens) {
         data.produto_imagens.sort((a: any, b: any) => a.ordem - b.ordem);
       }
       
-      return data;
+      return {
+        ...data,
+        tabela_site: tabelaSite
+      };
     },
   });
 };
