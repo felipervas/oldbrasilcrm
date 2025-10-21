@@ -16,7 +16,6 @@ import { useColaboradorEventos } from "@/hooks/useColaboradorEventos";
 import { useHistoricoEquipe } from "@/hooks/useHistoricoEquipe";
 import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 const MeuPerfil = () => {
   const navigate = useNavigate();
@@ -499,13 +498,12 @@ const MeuPerfil = () => {
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    locale={ptBR}
                     className="rounded-md border"
                   />
                 </div>
                 <div className="space-y-3">
                   <h3 className="font-semibold">
-                    Eventos de {format(selectedDate || new Date(), 'MMMM/yyyy', { locale: ptBR })}
+                    Eventos de {format(selectedDate || new Date(), 'MM/yyyy')}
                   </h3>
                   {eventosDoMes.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Nenhum evento neste mês</p>
@@ -517,7 +515,7 @@ const MeuPerfil = () => {
                             <div className="flex-1">
                               <h4 className="font-medium">{evento.titulo}</h4>
                               <p className="text-sm text-muted-foreground">
-                                {format(new Date(evento.data), "dd/MM/yyyy", { locale: ptBR })}
+                                {format(new Date(evento.data), "dd/MM/yyyy")}
                                 {evento.horario && ` às ${evento.horario}`}
                               </p>
                               {evento.descricao && (
@@ -579,7 +577,7 @@ const MeuPerfil = () => {
                           )}
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                          {format(new Date(item.created_at), "dd/MM/yyyy HH:mm")}
                         </span>
                       </div>
                     </div>
