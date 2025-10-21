@@ -33,7 +33,7 @@ const Produtos = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [imagensLoja, setImagensLoja] = useState<any[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string }>>([]);
+  const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string; preco?: number }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagemInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -127,7 +127,6 @@ const Produtos = () => {
       const produtoData = {
         nome: nome.trim(),
         nome_loja: formData.get("nome_loja") as string || null,
-        sku: formData.get("sku") as string || null,
         descricao: formData.get("descricao") as string || null,
         marca_id: marcaSelecionada || null,
         preco_base,
@@ -165,7 +164,7 @@ const Produtos = () => {
           .map(t => ({
             produto_id: data[0].id,
             nome_tabela: t.nome.trim(),
-            preco_por_kg: precoBase, // Usar o preço base definido
+            preco_por_kg: t.preco || precoBase, // Usar preço individual ou preço base
           }));
 
         if (tabelasParaInserir.length > 0) {
@@ -222,7 +221,6 @@ const Produtos = () => {
         
         return {
           nome: nome || 'Produto sem nome',
-          sku: sku || null,
           marca_id: marca?.id || null,
           preco_base: preco ? parseFloat(preco) : null,
           descricao: descricao || null,
@@ -439,7 +437,7 @@ const Produtos = () => {
               </DialogHeader>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  O arquivo CSV deve ter o formato: Nome, SKU, Marca, Preço, Descrição
+                  O arquivo CSV deve ter o formato: Nome, Marca, Preço, Descrição
                 </p>
                 <Input
                   ref={fileInputRef}
@@ -625,15 +623,14 @@ const Produtos = () => {
                   📊 Tabelas de Negociação
                 </Label>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Marque quais tabelas criar. Todas usarão o preço base definido acima.
+                  Marque quais tabelas criar. Você pode definir preços individuais ou usar o preço base.
                 </p>
                 
                 <div className="grid grid-cols-5 gap-2">
                   {Array.from({ length: 10 }, (_, i) => i + 1).map(num => {
                     const nomeTabela = `Tabela ${String(num).padStart(2, '0')}`;
-                    const isChecked = tabelasPrecoCriacao.some(
-                      t => t.nome === nomeTabela
-                    );
+                    const tabela = tabelasPrecoCriacao.find(t => t.nome === nomeTabela);
+                    const isChecked = !!tabela;
                     
                     return (
                       <div key={num} className="flex items-center space-x-2">
@@ -665,11 +662,38 @@ const Produtos = () => {
                 </div>
                 
                 {tabelasPrecoCriacao.length > 0 && (
-                  <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
-                    <p className="text-xs text-blue-700 dark:text-blue-300">
-                      ✓ Serão criadas <strong>{tabelasPrecoCriacao.length} tabelas</strong> com o preço base
-                    </p>
-                  </div>
+                  <>
+                    <div className="mt-4 space-y-2">
+                      <Label className="text-xs font-semibold">Preços das Tabelas Selecionadas:</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {tabelasPrecoCriacao.map((tabela, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Label className="text-xs w-16">{tabela.nome}:</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="R$/kg"
+                              value={tabela.preco || ''}
+                              onChange={(e) => {
+                                const novas = [...tabelasPrecoCriacao];
+                                novas[index].preco = e.target.value ? parseFloat(e.target.value) : undefined;
+                                setTabelasPrecoCriacao(novas);
+                              }}
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        ✓ Serão criadas <strong>{tabelasPrecoCriacao.length} tabelas</strong>
+                        {tabelasPrecoCriacao.every(t => t.preco) 
+                          ? ' com preços individuais' 
+                          : ' (sem preço usará o preço base)'}
+                      </p>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -694,7 +718,7 @@ const Produtos = () => {
           </CardDescription>
           <div className="mt-4">
             <Input
-              placeholder="Buscar por nome, SKU ou marca..."
+              placeholder="Buscar por nome ou marca..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -714,9 +738,6 @@ const Produtos = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{produto.nome}</h3>
-                      {produto.sku && (
-                        <p className="text-xs text-muted-foreground">SKU: {produto.sku}</p>
-                      )}
                       {produto.submarca && (
                         <p className="text-xs text-muted-foreground">Submarca: {produto.submarca}</p>
                       )}
@@ -805,14 +826,6 @@ const Produtos = () => {
                 required
                 value={editFormData.nome || ""}
                 onChange={(e) => setEditFormData({ ...editFormData, nome: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit_sku">SKU</Label>
-              <Input 
-                id="edit_sku"
-                value={editFormData.sku || ""}
-                onChange={(e) => setEditFormData({ ...editFormData, sku: e.target.value })}
               />
             </div>
             <div>
