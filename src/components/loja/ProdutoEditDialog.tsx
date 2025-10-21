@@ -27,8 +27,7 @@ interface ProdutoEditDialogProps {
 export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDialogProps) => {
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [novaTabela, setNovaTabela] = useState<{ marcadas?: string[] }>({ marcadas: [] });
-  const [editingTables, setEditingTables] = useState<Record<string, { nome: string; preco: string }>>({});
+  const [localTables, setLocalTables] = useState<Record<string, { nome_tabela: string; preco_por_kg: string }>>({});
   
   const updateProduto = useUpdateProduto();
   const uploadImagem = useUploadImagemProduto();
@@ -73,6 +72,20 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
       });
     }
   }, [produto]);
+
+  // Sincronizar localTables com tabelasPreco
+  useEffect(() => {
+    if (tabelasPreco.length > 0) {
+      const tables: Record<string, { nome_tabela: string; preco_por_kg: string }> = {};
+      tabelasPreco.forEach(t => {
+        tables[t.id] = {
+          nome_tabela: t.nome_tabela,
+          preco_por_kg: t.preco_por_kg?.toString() || '',
+        };
+      });
+      setLocalTables(tables);
+    }
+  }, [tabelasPreco]);
 
   const handleSave = async () => {
     if (isSaving) return;
@@ -141,15 +154,23 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
 
 
   // Debounce para atualização automática de tabelas
-  const debouncedUpdate = useDebounce(editingTables, 1000);
+  const debouncedTables = useDebounce(localTables, 1000);
 
   useEffect(() => {
-    if (Object.keys(debouncedUpdate).length > 0) {
-      Object.entries(debouncedUpdate).forEach(([id, values]) => {
+    if (Object.keys(debouncedTables).length > 0 && tabelasPreco.length > 0) {
+      Object.entries(debouncedTables).forEach(([id, values]) => {
+        const original = tabelasPreco.find(t => t.id === id);
+        if (!original) return;
+
         const updates: any = {};
-        if (values.nome !== undefined && values.nome !== '') updates.nome_tabela = values.nome;
-        if (values.preco !== undefined && values.preco !== '') {
-          updates.preco_por_kg = parseFloat(values.preco);
+        if (values.nome_tabela !== original.nome_tabela && values.nome_tabela.trim() !== '') {
+          updates.nome_tabela = values.nome_tabela.trim();
+        }
+        if (values.preco_por_kg !== original.preco_por_kg?.toString()) {
+          const preco = parseFloat(values.preco_por_kg);
+          if (!isNaN(preco)) {
+            updates.preco_por_kg = preco;
+          }
         }
         
         if (Object.keys(updates).length > 0) {
@@ -160,12 +181,11 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
           });
         }
       });
-      setEditingTables({});
     }
-  }, [debouncedUpdate, produto?.id, updateTabela]);
+  }, [debouncedTables]);
 
-  const handleTableChange = (id: string, field: 'nome' | 'preco', value: string) => {
-    setEditingTables(prev => ({
+  const handleTableChange = (id: string, field: 'nome_tabela' | 'preco_por_kg', value: string) => {
+    setLocalTables(prev => ({
       ...prev,
       [id]: {
         ...prev[id],
@@ -316,10 +336,9 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                             <Label className="text-xs">Nome da Tabela</Label>
                             <Input
                               type="text"
-                              key={`nome-${tabelaId}-${t.nome_tabela}`}
-                              defaultValue={t.nome_tabela}
+                              value={localTables[tabelaId]?.nome_tabela || ''}
                               className="h-9"
-                              onChange={(e) => handleTableChange(tabelaId, 'nome', e.target.value)}
+                              onChange={(e) => handleTableChange(tabelaId, 'nome_tabela', e.target.value)}
                               placeholder="Nome"
                             />
                           </div>
@@ -328,10 +347,9 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                             <Input
                               type="number"
                               step="0.01"
-                              key={`preco-${tabelaId}-${t.preco_por_kg}`}
-                              defaultValue={t.preco_por_kg || ''}
+                              value={localTables[tabelaId]?.preco_por_kg || ''}
                               className="h-9"
-                              onChange={(e) => handleTableChange(tabelaId, 'preco', e.target.value)}
+                              onChange={(e) => handleTableChange(tabelaId, 'preco_por_kg', e.target.value)}
                               placeholder="0.00"
                             />
                           </div>
