@@ -1024,6 +1024,7 @@ export type Database = {
           tabela_preco_loja_id: string | null
           tipo_calculo: string | null
           tipo_embalagem: string | null
+          tipo_venda: string
           updated_at: string
           visivel_loja: boolean | null
         }
@@ -1050,6 +1051,7 @@ export type Database = {
           tabela_preco_loja_id?: string | null
           tipo_calculo?: string | null
           tipo_embalagem?: string | null
+          tipo_venda?: string
           updated_at?: string
           visivel_loja?: boolean | null
         }
@@ -1076,6 +1078,7 @@ export type Database = {
           tabela_preco_loja_id?: string | null
           tipo_calculo?: string | null
           tipo_embalagem?: string | null
+          tipo_venda?: string
           updated_at?: string
           visivel_loja?: boolean | null
         }

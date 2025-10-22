@@ -14,7 +14,6 @@ import { useNavigate } from "react-router-dom";
 import { Combobox } from "@/components/ui/combobox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import * as pdfjsLib from 'pdfjs-dist';
-import { isMarcaVolatil } from "@/lib/precosLoja";
 
 interface ProdutoItem {
   produto_id: string;
@@ -100,6 +99,7 @@ const LancarPedido = () => {
         preco_por_kg, 
         peso_embalagem_kg, 
         rendimento_dose_gramas,
+        tipo_venda,
         marcas(nome)
       `)
       .eq("ativo", true)
@@ -694,9 +694,8 @@ const LancarPedido = () => {
                               setSelectedProduto(v);
                               const prod = produtos.find(p => p.id === v);
                               
-                              // Determinar se é vendido por kg automaticamente
-                              const marcaNome = (prod as any)?.marcas?.nome || '';
-                              const vendePorKg = isMarcaVolatil(marcaNome);
+                              // Usar o campo tipo_venda do produto
+                              const vendePorKg = (prod as any)?.tipo_venda === 'kg';
                               setIsVendidoPorKg(vendePorKg);
                               
                               // Carregar tabelas deste produto

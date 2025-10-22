@@ -167,6 +167,7 @@ const Produtos = () => {
         peso_embalagem_kg,
         tipo_embalagem: formData.get("tipo_embalagem") as string || 'caixa',
         tipo_calculo: formData.get("tipo_calculo") as string || 'normal',
+        tipo_venda: formData.get("tipo_venda") as string || 'unidade',
         peso_unidade_kg: formData.get("peso_unidade_kg") ? parseFloat(formData.get("peso_unidade_kg") as string) : null,
         rendimento_dose_gramas: formData.get("rendimento_dose_gramas") ? parseInt(formData.get("rendimento_dose_gramas") as string) : null,
         visivel_loja: true,
@@ -529,6 +530,22 @@ const Produtos = () => {
                   </SelectContent>
                 </Select>
                 <input type="hidden" id="tipo_calculo" name="tipo_calculo" value="normal" />
+              </div>
+              
+              <div>
+                <Label htmlFor="tipo_venda">Como é vendido? *</Label>
+                <Select name="tipo_venda" defaultValue="unidade">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unidade">📦 Por Unidade/Caixa (Pazinhas, Bases)</SelectItem>
+                    <SelectItem value="kg">⚖️ Por Kilo (Cacau, produtos voláteis)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Define como o produto será vendido nos pedidos
+                </p>
               </div>
 
               {/* Toggle para usar tabelas ou preço base */}

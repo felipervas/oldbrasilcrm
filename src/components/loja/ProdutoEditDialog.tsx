@@ -78,6 +78,7 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
         ordem_exibicao: produto.ordem_exibicao || 0,
         ativo: produto.ativo ?? true,
         tipo_embalagem: produto.tipo_embalagem || 'caixa',
+        tipo_venda: produto.tipo_venda || 'unidade',
         tabela_preco_loja_id: produto.tabela_preco_loja_id || null,
       });
     }
@@ -252,6 +253,25 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div>
+              <Label>Como é vendido?</Label>
+              <Select
+                value={formData.tipo_venda || 'unidade'}
+                onValueChange={(value) => setFormData({ ...formData, tipo_venda: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unidade">📦 Por Unidade/Caixa</SelectItem>
+                  <SelectItem value="kg">⚖️ Por Kilo</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Define como o produto será vendido nos pedidos
+              </p>
             </div>
 
             <div>
