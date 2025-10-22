@@ -51,6 +51,45 @@ export const PrecoCard = ({
   
   // FASE 2: UNIKA - Mostrar preço/kg + dose + embalagem total
   if (infoPreco.tipo === 'unika') {
+    // Se vendido por unidade, mostrar apenas preço da embalagem
+    if (infoPreco.tipoVenda === 'unidade') {
+      if (compact) {
+        return (
+          <div className="space-y-1">
+            <div className="text-sm font-semibold text-primary">
+              {formatarPreco(infoPreco.precoEmbalagem)}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {iconEmb} {infoPreco.pesoEmbalagem}kg
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-2">
+          {nomeTabela && (
+            <Badge variant="outline" className="text-xs mb-1">
+              📋 {nomeTabela}
+            </Badge>
+          )}
+          <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg">
+            <span className="text-sm">{iconEmb} {nomeEmb} ({infoPreco.pesoEmbalagem}kg)</span>
+            <span className="font-bold text-lg">{formatarPreco(infoPreco.precoEmbalagem)}</span>
+          </div>
+          {infoPreco.precoDose && (
+            <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+              <span className="text-sm">🥄 Dose ({infoPreco.rendimentoDose}g)</span>
+              <span className="font-bold text-lg text-green-700 dark:text-green-400">
+                {formatarPreco(infoPreco.precoDose)}
+              </span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Vendido por kg - mostrar preço/kg + dose + embalagem
     if (compact) {
       return (
         <div className="space-y-1">
@@ -93,6 +132,7 @@ export const PrecoCard = ({
   
   // FASE 2: GENCAU/CACAU - Preço volátil
   if (infoPreco.tipo === 'volatil') {
+    // Sempre mostrar preço/kg para voláteis pois o preço flutua
     if (compact) {
       return (
         <div className="space-y-1">
@@ -129,7 +169,38 @@ export const PrecoCard = ({
     );
   }
   
-  // Outras marcas - Mostrar preço/kg + total embalagem
+  // Outras marcas - Considerar tipo de venda
+  // Se vendido por unidade, mostrar apenas preço da embalagem
+  if (infoPreco.tipoVenda === 'unidade') {
+    if (compact) {
+      return (
+        <div className="space-y-1">
+          <div className="text-sm font-semibold text-primary">
+            {formatarPreco(infoPreco.precoEmbalagem)}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {iconEmb} {infoPreco.pesoEmbalagem}kg
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        {nomeTabela && (
+          <Badge variant="outline" className="text-xs mb-1">
+            📋 {nomeTabela}
+          </Badge>
+        )}
+        <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg">
+          <span className="text-sm">{iconEmb} {nomeEmb} ({infoPreco.pesoEmbalagem}kg)</span>
+          <span className="font-bold text-lg">{formatarPreco(infoPreco.precoEmbalagem)}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Vendido por kg - mostrar preço/kg + total embalagem
   if (compact) {
     return (
       <div className="space-y-1">

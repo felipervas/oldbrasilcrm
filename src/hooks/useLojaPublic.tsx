@@ -15,8 +15,8 @@ export const useProdutosLoja = (filtros?: {
       let query = supabase
         .from('produtos')
         .select(`
-          id, nome, descricao, categoria,
-          preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo,
+          id, nome, nome_loja, descricao, categoria,
+          preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo, tipo_venda,
           visivel_loja, destaque_loja, rendimento_dose_gramas, preco_atualizado_em,
           marcas(id, nome, slug),
           produto_imagens(url, ordem),
@@ -105,8 +105,8 @@ export const useProdutoDetalhes = (id: string) => {
       const { data, error } = await supabase
         .from('produtos')
         .select(`
-          id, nome, descricao, categoria,
-          preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo,
+          id, nome, nome_loja, descricao, categoria,
+          preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo, tipo_venda,
           rendimento_dose_gramas, preco_atualizado_em,
           marcas(id, nome, site, slug),
           produto_imagens(url, ordem)
@@ -145,7 +145,8 @@ export const useProdutosRelacionados = (marcaId: string, produtoAtualId: string)
       const { data, error } = await supabase
         .from('produtos')
         .select(`
-          id, nome, preco_por_kg, peso_embalagem_kg, rendimento_dose_gramas,
+          id, nome, nome_loja, preco_por_kg, peso_embalagem_kg, rendimento_dose_gramas,
+          tipo_venda, destaque_loja,
           marcas(nome, slug),
           produto_imagens(url, ordem)
         `)

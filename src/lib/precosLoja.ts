@@ -28,8 +28,10 @@ export const formatarInfoPreco = (produto: any): {
   precoDose?: number;
   rendimentoDose?: number;
   tipo: 'unika' | 'volatil' | 'normal';
+  tipoVenda?: 'kg' | 'unidade';
 } | null => {
   const marca = produto.marcas?.nome?.toUpperCase() || '';
+  const tipoVenda = produto.tipo_venda || 'unidade';
   
   // Usar preço da tabela_site se existir, senão usar preco_por_kg do produto
   const precoKg = produto.tabela_site?.preco_por_kg || produto.preco_por_kg;
@@ -42,6 +44,7 @@ export const formatarInfoPreco = (produto: any): {
     precoKg,
     pesoEmbalagem: pesoEmb,
     precoEmbalagem: calcularPrecoEmbalagem(precoKg, pesoEmb),
+    tipoVenda: tipoVenda as 'kg' | 'unidade',
   };
   
   // Se for UNIKA e tiver dose
