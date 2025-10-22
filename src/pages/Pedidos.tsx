@@ -99,6 +99,11 @@ const Pedidos = () => {
           status, 
           observacoes,
           observacoes_internas,
+          forma_pagamento,
+          parcelas,
+          dias_pagamento,
+          tipo_frete,
+          transportadora,
           clientes(
             nome_fantasia, 
             razao_social, 
@@ -317,16 +322,38 @@ const Pedidos = () => {
                        {pedido.numero_pedido && (
                          <p className="text-sm text-muted-foreground">Pedido: {pedido.numero_pedido}</p>
                        )}
-                       {pedido.clientes?.profiles && (
-                         <p className="text-xs text-muted-foreground mt-1">
-                           Vendedor: {pedido.clientes.profiles.nome}
-                         </p>
-                       )}
-                        {produtosPorPedido[pedido.id] && (
-                          <div className="mt-2">
-                            <ProdutoTooltip produtos={produtosPorPedido[pedido.id]} />
-                          </div>
+                        {pedido.clientes?.profiles && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Vendedor: {pedido.clientes.profiles.nome}
+                          </p>
                         )}
+                         {produtosPorPedido[pedido.id] && (
+                           <div className="mt-2">
+                             <ProdutoTooltip produtos={produtosPorPedido[pedido.id]} />
+                           </div>
+                         )}
+                         <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                           {pedido.forma_pagamento && (
+                             <span className="px-2 py-1 bg-muted rounded">
+                               💳 {pedido.forma_pagamento}
+                             </span>
+                           )}
+                           {pedido.parcelas && (
+                             <span className="px-2 py-1 bg-muted rounded">
+                               📊 {pedido.parcelas}x
+                             </span>
+                           )}
+                           {pedido.dias_pagamento && (
+                             <span className="px-2 py-1 bg-muted rounded">
+                               📅 {pedido.dias_pagamento} dias
+                             </span>
+                           )}
+                           {pedido.tipo_frete && (
+                             <span className="px-2 py-1 bg-muted rounded">
+                               🚚 {pedido.tipo_frete}
+                             </span>
+                           )}
+                         </div>
                         {pedido.observacoes && (
                           <div className="mt-2 p-2 bg-muted/50 rounded border border-border">
                             <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>

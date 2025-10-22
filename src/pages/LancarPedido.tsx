@@ -42,6 +42,8 @@ const LancarPedido = () => {
   const [responsavelOutro, setResponsavelOutro] = useState("");
   const [tabelasProduto, setTabelasProduto] = useState<any[]>([]);
   const [tabelaSelecionada, setTabelaSelecionada] = useState("");
+  const [tipoQuantidade, setTipoQuantidade] = useState<"unidades" | "kg">("unidades");
+  const [quantidadeKg, setQuantidadeKg] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -133,22 +135,34 @@ const LancarPedido = () => {
     const produto = produtos.find(p => p.id === selectedProduto);
     if (!produto) return;
 
+    let qtdFinal = quantidade;
+    let precoFinal = precoUnitario || produto.preco_base || 0;
+    let obsTexto = observacoesProduto;
+
+    // Se for em kg, ajustar quantidade e adicionar observação
+    if (tipoQuantidade === "kg" && quantidadeKg > 0) {
+      qtdFinal = quantidadeKg;
+      obsTexto = `${quantidadeKg}kg${obsTexto ? ` - ${obsTexto}` : ''}`;
+    }
+
     const novoProduto: ProdutoItem = {
       produto_id: selectedProduto,
       nome: produto.nome,
-      quantidade: quantidade,
-      preco_unitario: precoUnitario || produto.preco_base || 0,
-      observacoes: observacoesProduto || undefined,
+      quantidade: qtdFinal,
+      preco_unitario: precoFinal,
+      observacoes: obsTexto || undefined,
       tabela_preco_id: tabelaSelecionada || undefined,
     };
 
     setProdutosEscolhidos([...produtosEscolhidos, novoProduto]);
     setSelectedProduto("");
     setQuantidade(1);
+    setQuantidadeKg(0);
     setPrecoUnitario(0);
     setObservacoesProduto("");
     setTabelasProduto([]);
     setTabelaSelecionada("");
+    setTipoQuantidade("unidades");
   };
 
   const removerProduto = (index: number) => {
@@ -213,27 +227,7 @@ const LancarPedido = () => {
         ? responsavelOutro
         : responsavelSelecionado;
 
-      // 🆕 CAPTURAR DADOS CUSTOMIZADOS DO CLIENTE para observações internas
-      const clienteOverrides = {
-        razao_social: formData.get("cliente_razao_social_override"),
-        cnpj: formData.get("cliente_cnpj_override"),
-        endereco: formData.get("cliente_endereco_override"),
-        cidade_uf: formData.get("cliente_cidade_uf_override"),
-        telefone: formData.get("cliente_telefone_override"),
-        email: formData.get("cliente_email_override"),
-        contato_responsavel: formData.get("cliente_contato_responsavel"),
-      };
-      
-      // Criar string com overrides para adicionar nas observações INTERNAS
-      const overridesText = Object.entries(clienteOverrides)
-        .filter(([_, value]) => value)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(', ');
-      
-      const observacoesInternas = [
-        formData.get("observacoes_internas"),
-        overridesText ? `Dados Customizados do Cliente: ${overridesText}` : ''
-      ].filter(Boolean).join('\n\n');
+      const observacoesInternas = formData.get("observacoes_internas") as string || null;
 
 
       // Inserir pedido
@@ -699,7 +693,7 @@ const LancarPedido = () => {
                   
                     <div className="space-y-3">
                       <div className="grid grid-cols-12 gap-2">
-                        <div className="col-span-5">
+                         <div className="col-span-5">
                           <Label className="text-xs">Produto</Label>
                           <Combobox
                             options={produtos.map(p => ({
@@ -710,6 +704,10 @@ const LancarPedido = () => {
                             onValueChange={async (v) => {
                               setSelectedProduto(v);
                               const prod = produtos.find(p => p.id === v);
+                              
+                              // Reset tipo quantidade
+                              setTipoQuantidade("unidades");
+                              setQuantidadeKg(0);
                               
                               // Carregar tabelas deste produto
                               const { data: tabelas } = await supabase
@@ -783,16 +781,48 @@ const LancarPedido = () => {
                           </div>
                         )}
                       <div className="col-span-2">
-                        <Label className="text-xs">Qtd</Label>
+                        <Label className="text-xs">Tipo</Label>
+                        <Select 
+                          value={tipoQuantidade}
+                          onValueChange={(v: "unidades" | "kg") => {
+                            setTipoQuantidade(v);
+                            if (v === "kg") {
+                              const prod = produtos.find(p => p.id === selectedProduto);
+                              if (prod?.preco_por_kg) {
+                                const tabela = tabelasProduto.find(t => t.id === tabelaSelecionada);
+                                const precoKg = tabela?.preco_por_kg || parseFloat(prod.preco_por_kg);
+                                setPrecoUnitario(precoKg);
+                              }
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="unidades">Unidades</SelectItem>
+                            <SelectItem value="kg">Kg</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-2">
+                        <Label className="text-xs">{tipoQuantidade === "kg" ? "Kg" : "Qtd"}</Label>
                         <Input 
                           type="number" 
-                          min="1"
-                          value={quantidade}
-                          onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)}
+                          min="0.1"
+                          step={tipoQuantidade === "kg" ? "0.1" : "1"}
+                          value={tipoQuantidade === "kg" ? quantidadeKg : quantidade}
+                          onChange={(e) => {
+                            if (tipoQuantidade === "kg") {
+                              setQuantidadeKg(parseFloat(e.target.value) || 0);
+                            } else {
+                              setQuantidade(parseInt(e.target.value) || 1);
+                            }
+                          }}
                         />
                       </div>
                       <div className="col-span-3">
-                        <Label className="text-xs">Preço Unit.</Label>
+                        <Label className="text-xs">{tipoQuantidade === "kg" ? "R$/kg" : "Preço Unit."}</Label>
                         <Input 
                           type="number" 
                           step="0.01"
@@ -801,6 +831,13 @@ const LancarPedido = () => {
                           placeholder="0.00"
                         />
                       </div>
+                      {tipoQuantidade === "kg" && quantidadeKg > 0 && (
+                        <div className="col-span-3 flex items-end">
+                          <div className="text-sm font-semibold text-primary p-2 bg-primary/5 rounded w-full text-center">
+                            Total: R$ {(quantidadeKg * precoUnitario).toFixed(2)}
+                          </div>
+                        </div>
+                      )}
                       <div className="col-span-2 flex items-end">
                         <Button type="button" onClick={adicionarProduto} className="w-full">
                           <Plus className="h-4 w-4" />

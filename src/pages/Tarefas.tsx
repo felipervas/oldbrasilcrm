@@ -255,7 +255,7 @@ const Tarefas = () => {
               Nova Tarefa
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Nova Tarefa</DialogTitle>
             </DialogHeader>
@@ -525,7 +525,7 @@ const Tarefas = () => {
       </Dialog>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Tarefa</DialogTitle>
           </DialogHeader>
