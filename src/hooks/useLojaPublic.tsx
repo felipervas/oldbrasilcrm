@@ -10,7 +10,7 @@ export const useProdutosLoja = (filtros?: {
   ordenacao?: string;
 }) => {
   return useQuery({
-    queryKey: ['produtos-loja', filtros],
+    queryKey: ['produtos-loja-v2', filtros],
     queryFn: async () => {
       let query = supabase
         .from('produtos')
@@ -19,12 +19,7 @@ export const useProdutosLoja = (filtros?: {
           preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo, tipo_venda,
           visivel_loja, destaque_loja, rendimento_dose_gramas, preco_atualizado_em,
           marcas(id, nome, slug),
-          produto_imagens(url, ordem),
-          tabela_site:produto_tabelas_preco(
-            id,
-            nome_tabela,
-            preco_por_kg
-          )
+          produto_imagens(url, ordem)
         `)
         .eq('ativo', true)
         .eq('visivel_loja', true);
