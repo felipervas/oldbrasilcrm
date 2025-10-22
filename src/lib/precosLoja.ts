@@ -37,15 +37,19 @@ export const formatarInfoPreco = (produto: any): {
   
   // Usar preço da tabela_site se existir, senão usar preco_por_kg do produto
   const precoKg = produto.tabela_site?.preco_por_kg || produto.preco_por_kg;
-  const pesoEmb = produto.peso_embalagem_kg || (tipoVenda === 'kg' ? 1 : 1); // Default 1 para evitar multiplicações incorretas
+  const pesoEmb = produto.peso_embalagem_kg || (tipoVenda === 'kg' ? 1 : 1);
   const rendDose = produto.rendimento_dose_gramas;
   
   if (!precoKg) return null;
   
+  // Se produto não tem preco_por_kg original e vende por unidade,
+  // então o preço da tabela JÁ É o preço total da embalagem
+  const precoJaETotal = !produto.preco_por_kg && tipoVenda === 'unidade';
+  
   const info = {
     precoKg,
     pesoEmbalagem: pesoEmb,
-    precoEmbalagem: calcularPrecoEmbalagem(precoKg, pesoEmb),
+    precoEmbalagem: precoJaETotal ? precoKg : calcularPrecoEmbalagem(precoKg, pesoEmb),
     tipoVenda: tipoVenda as 'kg' | 'unidade',
   };
   
