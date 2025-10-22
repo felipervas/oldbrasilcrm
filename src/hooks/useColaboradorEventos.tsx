@@ -28,9 +28,16 @@ export const useColaboradorEventos = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Não autenticado');
 
+      // Converter horário vazio para null
+      const eventoData = {
+        ...evento,
+        horario: evento.horario || null,
+        colaborador_id: user.id
+      };
+
       const { data, error } = await supabase
         .from('colaborador_eventos')
-        .insert({ ...evento, colaborador_id: user.id })
+        .insert(eventoData)
         .select()
         .single();
 
@@ -48,9 +55,15 @@ export const useColaboradorEventos = () => {
 
   const updateEvento = useMutation({
     mutationFn: async ({ id, ...updates }: any) => {
+      // Converter horário vazio para null
+      const updateData = {
+        ...updates,
+        horario: updates.horario || null
+      };
+
       const { data, error } = await supabase
         .from('colaborador_eventos')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
