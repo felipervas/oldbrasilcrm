@@ -116,14 +116,29 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
         return;
       }
 
-      // Sanitizar dados
+      // Helper para converter valores numéricos
+      const toNumericOrNull = (value: any): number | null => {
+        if (value === '' || value === null || value === undefined) return null;
+        const num = parseFloat(value);
+        return isNaN(num) ? null : num;
+      };
+
+      // Sanitizar dados com conversão correta de tipos
       const sanitizedData = {
         ...formData,
         nome: formData.nome?.trim(),
+        submarca: formData.submarca?.trim() || null,
         nome_loja: formData.nome_loja?.trim() || null,
         descricao: formData.descricao?.trim() || null,
         categoria: formData.categoria?.trim() || null,
         subcategoria: formData.subcategoria?.trim() || null,
+        // Converter campos numéricos corretamente
+        preco_base: toNumericOrNull(formData.preco_base),
+        preco_por_kg: toNumericOrNull(formData.preco_por_kg),
+        peso_unidade_kg: toNumericOrNull(formData.peso_unidade_kg),
+        peso_embalagem_kg: toNumericOrNull(formData.peso_embalagem_kg),
+        rendimento_dose_gramas: toNumericOrNull(formData.rendimento_dose_gramas),
+        ordem_exibicao: toNumericOrNull(formData.ordem_exibicao) || 0,
       };
 
       console.log('📤 Dados sanitizados:', sanitizedData);
