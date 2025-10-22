@@ -14,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useColaboradorEventos } from "@/hooks/useColaboradorEventos";
 import { useHistoricoEquipe } from "@/hooks/useHistoricoEquipe";
-import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History } from "lucide-react";
+import { AgendasEquipe } from "@/components/AgendasEquipe";
+import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History, Trophy } from "lucide-react";
 import { format } from "date-fns";
 
 const MeuPerfil = () => {
@@ -27,6 +28,7 @@ const MeuPerfil = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [eventoEditando, setEventoEditando] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [searchTerm, setSearchTerm] = useState('');
   const [formEvento, setFormEvento] = useState({
     titulo: '',
     descricao: '',
@@ -126,6 +128,13 @@ const MeuPerfil = () => {
   const tarefasPendentes = tarefas.filter(t => t.status === "pendente" || t.status === "em_andamento");
   const tarefasConcluidas = tarefas.filter(t => t.status === "concluida");
 
+  // Filtrar clientes por busca
+  const clientesFiltrados = clientes.filter(cliente => 
+    cliente.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cliente.cnpj_cpf?.includes(searchTerm) ||
+    cliente.cidade?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const handleSaveEvento = async () => {
     try {
       if (eventoEditando) {
@@ -209,7 +218,13 @@ const MeuPerfil = () => {
 
       {/* Cards de Resumo */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => {
+            const element = document.getElementById('clientes-tab');
+            element?.click();
+          }}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Meus Clientes</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -222,7 +237,13 @@ const MeuPerfil = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => {
+            const element = document.getElementById('tarefas-tab');
+            element?.click();
+          }}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tarefas Pendentes</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -235,10 +256,16 @@ const MeuPerfil = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => {
+            const element = document.getElementById('tarefas-tab');
+            element?.click();
+          }}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tarefas Concluídas</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+            <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{tarefasConcluidas.length}</div>
@@ -250,13 +277,14 @@ const MeuPerfil = () => {
       </div>
 
       {/* Tabs de Conteúdo */}
-      <Tabs defaultValue="clientes" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="clientes">Meus Clientes</TabsTrigger>
-          <TabsTrigger value="tarefas">Minhas Tarefas</TabsTrigger>
-          <TabsTrigger value="calendario">Calendário</TabsTrigger>
-          <TabsTrigger value="historico">Histórico</TabsTrigger>
-        </TabsList>
+          <Tabs defaultValue="clientes" className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="clientes" id="clientes-tab">Meus Clientes</TabsTrigger>
+              <TabsTrigger value="tarefas" id="tarefas-tab">Minhas Tarefas</TabsTrigger>
+              <TabsTrigger value="calendario" id="calendario-tab">Calendário</TabsTrigger>
+              <TabsTrigger value="agendas" id="agendas-tab">Agendas da Equipe</TabsTrigger>
+              <TabsTrigger value="historico" id="historico-tab">Histórico</TabsTrigger>
+            </TabsList>
 
         <TabsContent value="clientes" className="space-y-4">
           <Card>
@@ -267,14 +295,22 @@ const MeuPerfil = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {clientes.length === 0 ? (
+              <div className="mb-4">
+                <Input
+                  placeholder="Buscar por nome, CNPJ ou cidade..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-md"
+                />
+              </div>
+              {clientesFiltrados.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Você ainda não tem clientes atribuídos</p>
+                  <p>{searchTerm ? 'Nenhum cliente encontrado com esse termo' : 'Você ainda não tem clientes atribuídos'}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {clientes.map((cliente) => (
+                  {clientesFiltrados.map((cliente) => (
                     <div
                       key={cliente.id}
                       className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
@@ -545,6 +581,18 @@ const MeuPerfil = () => {
                   )}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="agendas" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Agendas da Equipe</CardTitle>
+              <CardDescription>Visualize os compromissos dos colaboradores</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AgendasEquipe />
             </CardContent>
           </Card>
         </TabsContent>

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Shield } from "lucide-react";
+import { Shield, Store } from "lucide-react";
 import oldLogo from "@/assets/old-brasil-logo.png";
 
 const Login = () => {
@@ -75,6 +75,17 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-subtle p-4">
       <div className="w-full max-w-md space-y-8">
+        <div className="absolute top-4 right-4">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/loja')}
+            className="gap-2"
+          >
+            <Store className="h-4 w-4" />
+            Voltar para a Loja
+          </Button>
+        </div>
+
         <div className="text-center">
           <div className="inline-flex items-center justify-center mb-6">
             <img src={oldLogo} alt="OLD Brasil" className="h-20 w-auto" />
