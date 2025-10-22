@@ -7,13 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileUp, FileText, Plus, Loader2, Trash2 } from "lucide-react";
+import { FileUp, FileText, Plus, Loader2, Trash2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Combobox } from "@/components/ui/combobox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import * as pdfjsLib from 'pdfjs-dist';
+import { useFormPersistence } from "@/hooks/useFormPersistence";
 
 interface ProdutoItem {
   produto_id: string;
@@ -28,23 +30,31 @@ const LancarPedido = () => {
   const [clientes, setClientes] = useState<any[]>([]);
   const [produtos, setProdutos] = useState<any[]>([]);
   const [colaboradores, setColaboradores] = useState<any[]>([]);
-  const [produtosEscolhidos, setProdutosEscolhidos] = useState<ProdutoItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
-  const [selectedCliente, setSelectedCliente] = useState("");
   const [selectedProduto, setSelectedProduto] = useState("");
   const [quantidade, setQuantidade] = useState(1);
   const [precoUnitario, setPrecoUnitario] = useState(0);
   const [observacoesProduto, setObservacoesProduto] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [responsavelSelecionado, setResponsavelSelecionado] = useState("");
-  const [responsavelOutro, setResponsavelOutro] = useState("");
   const [tabelasProduto, setTabelasProduto] = useState<any[]>([]);
   const [tabelaSelecionada, setTabelaSelecionada] = useState("");
   const [isVendidoPorKg, setIsVendidoPorKg] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Persistência de dados do formulário
+  const [selectedCliente, setSelectedCliente, clearSelectedCliente, hasRestoredCliente] = 
+    useFormPersistence<string>('pedido_cliente', '');
+  const [produtosEscolhidos, setProdutosEscolhidos, clearProdutosEscolhidos, hasRestoredProdutos] = 
+    useFormPersistence<ProdutoItem[]>('pedido_produtos', []);
+  const [responsavelSelecionado, setResponsavelSelecionado, clearResponsavel, hasRestoredResponsavel] = 
+    useFormPersistence<string>('pedido_responsavel', '');
+  const [responsavelOutro, setResponsavelOutro, clearResponsavelOutro] = 
+    useFormPersistence<string>('pedido_responsavel_outro', '');
+  
+  const hasRestoredData = hasRestoredCliente || hasRestoredProdutos || hasRestoredResponsavel;
 
   useEffect(() => {
     loadClientes();
@@ -263,8 +273,12 @@ const LancarPedido = () => {
         description: `Total: R$ ${valorTotal.toFixed(2)}`
       });
       
-      setProdutosEscolhidos([]);
-      setSelectedCliente("");
+      // Limpar dados persistidos após sucesso
+      clearSelectedCliente();
+      clearProdutosEscolhidos();
+      clearResponsavel();
+      clearResponsavelOutro();
+      
       navigate("/pedidos");
     } catch (error: any) {
       console.error("❌ Erro ao criar pedido:", error);
@@ -474,6 +488,15 @@ const LancarPedido = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleManualSubmit} className="space-y-6">
+                {hasRestoredData && (
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-900">
+                      💡 Dados do último pedido foram restaurados automaticamente
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Cliente *</Label>
@@ -716,7 +739,7 @@ const LancarPedido = () => {
                                   setPrecoUnitario(tabelas[0].preco_por_kg);
                                 } else {
                                   // Vendido por caixa: usar preço da caixa (kg * peso)
-                                  const pesoEmb = prod?.peso_embalagem_kg || 25;
+                                  const pesoEmb = prod?.peso_embalagem_kg || 1;
                                   setPrecoUnitario(tabelas[0].preco_por_kg * pesoEmb);
                                 }
                               } else if (prod?.preco_por_kg) {
@@ -724,7 +747,7 @@ const LancarPedido = () => {
                                 if (vendePorKg) {
                                   setPrecoUnitario(parseFloat(prod.preco_por_kg));
                                 } else {
-                                  const pesoEmb = prod?.peso_embalagem_kg || 25;
+                                  const pesoEmb = prod?.peso_embalagem_kg || 1;
                                   setPrecoUnitario(parseFloat(prod.preco_por_kg) * pesoEmb);
                                 }
                               } else if (prod?.preco_base) {
@@ -739,6 +762,7 @@ const LancarPedido = () => {
                           {selectedProduto && (() => {
                             const prod = produtos.find(p => p.id === selectedProduto);
                             if (!prod) return null;
+                            const vendePorKg = (prod as any)?.tipo_venda === 'kg';
                             
                             return (
                               <div className="text-xs text-muted-foreground mt-1 space-y-1">
@@ -748,8 +772,10 @@ const LancarPedido = () => {
                                 {prod.rendimento_dose_gramas && (
                                   <p>📊 Rendimento: {prod.rendimento_dose_gramas}g/dose</p>
                                 )}
-                                {prod.peso_embalagem_kg && (
+                                {prod.peso_embalagem_kg ? (
                                   <p>📦 Embalagem: {prod.peso_embalagem_kg}kg</p>
+                                ) : !vendePorKg && (
+                                  <p className="text-amber-600">⚠️ Peso da embalagem não definido</p>
                                 )}
                               </div>
                             );
@@ -770,7 +796,7 @@ const LancarPedido = () => {
                                     setPrecoUnitario(tabela.preco_por_kg);
                                   } else {
                                     // Vendido por caixa: preço * peso
-                                    const pesoEmb = produto?.peso_embalagem_kg || 25;
+                                    const pesoEmb = produto?.peso_embalagem_kg || 1;
                                     setPrecoUnitario(tabela.preco_por_kg * pesoEmb);
                                   }
                                 }
@@ -780,11 +806,20 @@ const LancarPedido = () => {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {tabelasProduto.map(t => (
-                                  <SelectItem key={t.id} value={t.id}>
-                                    {t.nome_tabela} - R$ {t.preco_por_kg.toFixed(2)}/kg
-                                  </SelectItem>
-                                ))}
+                                {tabelasProduto.map(t => {
+                                  const produto = produtos.find(p => p.id === selectedProduto);
+                                  const vendePorKg = produto?.tipo_venda === 'kg';
+                                  const precoExibicao = vendePorKg 
+                                    ? t.preco_por_kg.toFixed(2)
+                                    : (t.preco_por_kg * (produto?.peso_embalagem_kg || 1)).toFixed(2);
+                                  const unidade = vendePorKg ? '/kg' : '/caixa';
+                                  
+                                  return (
+                                    <SelectItem key={t.id} value={t.id}>
+                                      {t.nome_tabela} - R$ {precoExibicao}{unidade}
+                                    </SelectItem>
+                                  );
+                                })}
                               </SelectContent>
                             </Select>
                           </div>
@@ -803,7 +838,7 @@ const LancarPedido = () => {
                         />
                       </div>
                       <div className="col-span-3">
-                        <Label className="text-xs">{isVendidoPorKg ? "R$/kg" : "Preço Unit."}</Label>
+                        <Label className="text-xs">{isVendidoPorKg ? "R$/kg" : "R$/caixa"}</Label>
                         <Input 
                           type="number" 
                           step="0.01"

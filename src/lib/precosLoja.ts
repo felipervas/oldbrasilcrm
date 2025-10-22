@@ -17,7 +17,9 @@ export const calcularPrecoEmbalagem = (
   precoKg: number,
   pesoEmbalagem: number
 ): number => {
-  return precoKg * pesoEmbalagem;
+  // Se não tiver peso, usar 1 como padrão para produtos vendidos por unidade
+  const peso = pesoEmbalagem || 1;
+  return precoKg * peso;
 };
 
 // FASE 2: Formatar informações completas do produto
@@ -35,7 +37,7 @@ export const formatarInfoPreco = (produto: any): {
   
   // Usar preço da tabela_site se existir, senão usar preco_por_kg do produto
   const precoKg = produto.tabela_site?.preco_por_kg || produto.preco_por_kg;
-  const pesoEmb = produto.peso_embalagem_kg || 25;
+  const pesoEmb = produto.peso_embalagem_kg || (tipoVenda === 'kg' ? 1 : 1); // Default 1 para evitar multiplicações incorretas
   const rendDose = produto.rendimento_dose_gramas;
   
   if (!precoKg) return null;
