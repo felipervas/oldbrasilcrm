@@ -170,37 +170,33 @@ export const useMarcasLoja = () => {
   return useQuery({
     queryKey: ['marcas-loja'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Buscar todas as marcas ativas
+      const { data: marcas, error: marcasError } = await supabase
         .from('marcas')
-        .select(`
-          id, nome, slug, descricao, site,
-          produtos!inner(id)
-        `)
-        .eq('ativa', true)
-        .eq('produtos.ativo', true)
-        .eq('produtos.visivel_loja', true);
+        .select('id, nome, slug, descricao, site')
+        .eq('ativa', true);
 
-      if (error) throw error;
-      
-      // Agrupar e contar produtos por marca
-      const marcasComContagem = data?.reduce((acc: any[], marca: any) => {
-        const marcaExistente = acc.find(m => m.id === marca.id);
-        if (marcaExistente) {
-          marcaExistente.produtos_count++;
-        } else {
-          acc.push({
-            id: marca.id,
-            nome: marca.nome,
-            slug: marca.slug,
-            descricao: marca.descricao,
-            site: marca.site,
-            produtos_count: 1
-          });
-        }
-        return acc;
-      }, []);
+      if (marcasError) throw marcasError;
 
-      return marcasComContagem || [];
+      // Para cada marca, contar produtos ativos e visíveis
+      const marcasComContagem = await Promise.all(
+        (marcas || []).map(async (marca) => {
+          const { count } = await supabase
+            .from('produtos')
+            .select('id', { count: 'exact', head: true })
+            .eq('marca_id', marca.id)
+            .eq('ativo', true)
+            .eq('visivel_loja', true);
+
+          return {
+            ...marca,
+            produtos_count: count || 0
+          };
+        })
+      );
+
+      // Filtrar apenas marcas com produtos
+      return marcasComContagem.filter(m => m.produtos_count > 0);
     },
     staleTime: 10 * 60 * 1000,
   });
