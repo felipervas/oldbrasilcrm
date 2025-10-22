@@ -3,14 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const useLojaAgrupada = () => {
   return useQuery({
-    queryKey: ['loja-agrupada-v2'],
+    queryKey: ['loja-agrupada-v3'],
     queryFn: async () => {
       // 🚀 QUERY SUPER OTIMIZADA: Buscar apenas primeiras imagens + informações essenciais
       const { data: produtos, error } = await supabase
         .from('produtos')
         .select(`
           id, nome, nome_loja, descricao, categoria, 
-          preco_por_kg, peso_embalagem_kg, rendimento_dose_gramas, tipo_calculo,
+          preco_por_kg, peso_embalagem_kg, rendimento_dose_gramas, tipo_calculo, tipo_venda,
           destaque_loja, ordem_exibicao,
           marca_id,
           marcas(id, nome, slug, descricao, site, imagem_banner, mostrar_texto_banner)
@@ -39,9 +39,21 @@ export const useLojaAgrupada = () => {
         .in('produto_id', produtoIds)
         .eq('ordem', 0);
 
+      // Buscar tabelas de preço marcadas para usar no site
+      const { data: tabelasPreco } = await supabase
+        .from('produto_tabelas_preco')
+        .select('produto_id, id, nome_tabela, preco_por_kg')
+        .in('produto_id', produtoIds)
+        .eq('usar_no_site', true);
+
       // Criar map de imagens para lookup rápido
       const imagensMap = new Map(
         (imagens || []).map(img => [img.produto_id, img.url])
+      );
+
+      // Criar map de tabelas de preço para lookup rápido
+      const tabelasPrecoMap = new Map(
+        (tabelasPreco || []).map(tabela => [tabela.produto_id, tabela])
       );
       
       // Agrupar por marca (incluindo produtos sem marca)
@@ -80,6 +92,8 @@ export const useLojaAgrupada = () => {
         
         const marca = marcasMap.get(marcaId);
         
+        const tabelaPreco = tabelasPrecoMap.get(produto.id);
+        
         const produtoFormatado = {
           id: produto.id,
           nome: produto.nome_loja || produto.nome,
@@ -90,8 +104,10 @@ export const useLojaAgrupada = () => {
           peso_embalagem_kg: produto.peso_embalagem_kg,
           rendimento_dose_gramas: produto.rendimento_dose_gramas,
           tipo_calculo: produto.tipo_calculo,
+          tipo_venda: produto.tipo_venda,
           destaque_loja: produto.destaque_loja,
           marcas: produto.marcas || { id: 'sem-marca', nome: 'Outros Produtos', slug: 'outros' },
+          tabela_site: tabelaPreco || null,
           produto_imagens: [{
             url: imagensMap.get(produto.id) || '/placeholder.svg',
             ordem: 0
