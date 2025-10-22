@@ -57,6 +57,8 @@ export const useUpdateProduto = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      console.log('🔄 Atualizando produto:', id, data);
+      
       // FASE 2: Usar dados já sanitizados do Dialog
       const sanitizedData = data;
 
@@ -67,7 +69,7 @@ export const useUpdateProduto = () => {
         .select();
 
       if (error) {
-        console.error("Erro ao atualizar produto:", error);
+        console.error("❌ Erro ao atualizar produto:", error);
         
         // Tratamento específico para erro de duplicate key
         if (error.code === '23505') {
@@ -80,6 +82,8 @@ export const useUpdateProduto = () => {
         throw error;
       }
 
+      console.log('✅ Produto atualizado com sucesso:', resultData);
+
       // Log de auditoria
       try {
         await supabase.from('loja_audit_log').insert({
@@ -89,14 +93,22 @@ export const useUpdateProduto = () => {
           detalhes: sanitizedData,
         });
       } catch (auditError) {
-        console.warn("Erro ao criar log de auditoria:", auditError);
+        console.warn("⚠️ Erro ao criar log de auditoria:", auditError);
       }
+
+      return resultData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gerenciar-produtos'] });
+      queryClient.invalidateQueries({ queryKey: ['produtos'] });
     },
     onError: (error: any) => {
-      console.error("Erro na atualização:", error);
+      console.error("❌ Erro na mutation:", error);
+      toast({
+        title: "❌ Erro ao salvar",
+        description: error.message || "Erro ao atualizar produto",
+        variant: "destructive",
+      });
     },
   });
 };

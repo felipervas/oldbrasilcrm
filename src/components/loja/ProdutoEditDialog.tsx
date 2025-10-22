@@ -112,6 +112,7 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
           description: "O nome do produto é obrigatório",
           variant: "destructive",
         });
+        setIsSaving(false);
         return;
       }
 
@@ -122,23 +123,33 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
         nome_loja: formData.nome_loja?.trim() || null,
         descricao: formData.descricao?.trim() || null,
         categoria: formData.categoria?.trim() || null,
+        subcategoria: formData.subcategoria?.trim() || null,
       };
 
       console.log('📤 Dados sanitizados:', sanitizedData);
 
-      await updateProduto.mutateAsync({
+      const result = await updateProduto.mutateAsync({
         id: produto.id,
         data: sanitizedData,
       });
+
+      console.log('✅ Resultado da atualização:', result);
 
       toast({
         title: "✅ Produto atualizado",
         description: "As alterações foram salvas com sucesso",
       });
       
+      // Aguardar um pouco antes de fechar para garantir que a query foi invalidada
+      await new Promise(resolve => setTimeout(resolve, 500));
       onOpenChange(false);
     } catch (error: any) {
       console.error('❌ Erro ao salvar:', error);
+      toast({
+        title: "❌ Erro ao salvar",
+        description: error.message || "Ocorreu um erro ao salvar o produto",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
