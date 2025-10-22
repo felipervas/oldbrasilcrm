@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { Combobox } from "@/components/ui/combobox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import * as pdfjsLib from 'pdfjs-dist';
+import { isMarcaVolatil } from "@/lib/precosLoja";
 
 interface ProdutoItem {
   produto_id: string;
@@ -42,8 +43,7 @@ const LancarPedido = () => {
   const [responsavelOutro, setResponsavelOutro] = useState("");
   const [tabelasProduto, setTabelasProduto] = useState<any[]>([]);
   const [tabelaSelecionada, setTabelaSelecionada] = useState("");
-  const [tipoQuantidade, setTipoQuantidade] = useState<"unidades" | "kg">("unidades");
-  const [quantidadeKg, setQuantidadeKg] = useState(0);
+  const [isVendidoPorKg, setIsVendidoPorKg] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -135,34 +135,23 @@ const LancarPedido = () => {
     const produto = produtos.find(p => p.id === selectedProduto);
     if (!produto) return;
 
-    let qtdFinal = quantidade;
-    let precoFinal = precoUnitario || produto.preco_base || 0;
-    let obsTexto = observacoesProduto;
-
-    // Se for em kg, ajustar quantidade e adicionar observação
-    if (tipoQuantidade === "kg" && quantidadeKg > 0) {
-      qtdFinal = quantidadeKg;
-      obsTexto = `${quantidadeKg}kg${obsTexto ? ` - ${obsTexto}` : ''}`;
-    }
-
     const novoProduto: ProdutoItem = {
       produto_id: selectedProduto,
       nome: produto.nome,
-      quantidade: qtdFinal,
-      preco_unitario: precoFinal,
-      observacoes: obsTexto || undefined,
+      quantidade: quantidade,
+      preco_unitario: precoUnitario || produto.preco_base || 0,
+      observacoes: observacoesProduto || undefined,
       tabela_preco_id: tabelaSelecionada || undefined,
     };
 
     setProdutosEscolhidos([...produtosEscolhidos, novoProduto]);
     setSelectedProduto("");
     setQuantidade(1);
-    setQuantidadeKg(0);
     setPrecoUnitario(0);
     setObservacoesProduto("");
     setTabelasProduto([]);
     setTabelaSelecionada("");
-    setTipoQuantidade("unidades");
+    setIsVendidoPorKg(false);
   };
 
   const removerProduto = (index: number) => {
@@ -705,9 +694,10 @@ const LancarPedido = () => {
                               setSelectedProduto(v);
                               const prod = produtos.find(p => p.id === v);
                               
-                              // Reset tipo quantidade
-                              setTipoQuantidade("unidades");
-                              setQuantidadeKg(0);
+                              // Determinar se é vendido por kg automaticamente
+                              const marcaNome = (prod as any)?.marcas?.nome || '';
+                              const vendePorKg = isMarcaVolatil(marcaNome);
+                              setIsVendidoPorKg(vendePorKg);
                               
                               // Carregar tabelas deste produto
                               const { data: tabelas } = await supabase
@@ -719,11 +709,25 @@ const LancarPedido = () => {
                               
                               setTabelasProduto(tabelas || []);
                               
-                              // Auto-selecionar primeira tabela ou usar preco_base
+                              // Definir preço baseado no tipo de venda
                               if (tabelas && tabelas.length > 0) {
                                 setTabelaSelecionada(tabelas[0].id);
-                                const pesoEmb = prod?.peso_embalagem_kg || 25;
-                                setPrecoUnitario(tabelas[0].preco_por_kg * pesoEmb);
+                                if (vendePorKg) {
+                                  // Vendido por kg: usar preço por kg direto
+                                  setPrecoUnitario(tabelas[0].preco_por_kg);
+                                } else {
+                                  // Vendido por caixa: usar preço da caixa (kg * peso)
+                                  const pesoEmb = prod?.peso_embalagem_kg || 25;
+                                  setPrecoUnitario(tabelas[0].preco_por_kg * pesoEmb);
+                                }
+                              } else if (prod?.preco_por_kg) {
+                                setTabelaSelecionada("");
+                                if (vendePorKg) {
+                                  setPrecoUnitario(parseFloat(prod.preco_por_kg));
+                                } else {
+                                  const pesoEmb = prod?.peso_embalagem_kg || 25;
+                                  setPrecoUnitario(parseFloat(prod.preco_por_kg) * pesoEmb);
+                                }
                               } else if (prod?.preco_base) {
                                 setTabelaSelecionada("");
                                 setPrecoUnitario(parseFloat(prod.preco_base));
@@ -762,8 +766,14 @@ const LancarPedido = () => {
                                 const tabela = tabelasProduto.find(t => t.id === id);
                                 if (tabela) {
                                   const produto = produtos.find(p => p.id === selectedProduto);
-                                  const pesoEmb = produto?.peso_embalagem_kg || 25;
-                                  setPrecoUnitario(tabela.preco_por_kg * pesoEmb);
+                                  if (isVendidoPorKg) {
+                                    // Vendido por kg: usar preço por kg
+                                    setPrecoUnitario(tabela.preco_por_kg);
+                                  } else {
+                                    // Vendido por caixa: preço * peso
+                                    const pesoEmb = produto?.peso_embalagem_kg || 25;
+                                    setPrecoUnitario(tabela.preco_por_kg * pesoEmb);
+                                  }
                                 }
                               }}
                             >
@@ -781,48 +791,20 @@ const LancarPedido = () => {
                           </div>
                         )}
                       <div className="col-span-2">
-                        <Label className="text-xs">Tipo</Label>
-                        <Select 
-                          value={tipoQuantidade}
-                          onValueChange={(v: "unidades" | "kg") => {
-                            setTipoQuantidade(v);
-                            if (v === "kg") {
-                              const prod = produtos.find(p => p.id === selectedProduto);
-                              if (prod?.preco_por_kg) {
-                                const tabela = tabelasProduto.find(t => t.id === tabelaSelecionada);
-                                const precoKg = tabela?.preco_por_kg || parseFloat(prod.preco_por_kg);
-                                setPrecoUnitario(precoKg);
-                              }
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="unidades">Unidades</SelectItem>
-                            <SelectItem value="kg">Kg</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="col-span-2">
-                        <Label className="text-xs">{tipoQuantidade === "kg" ? "Kg" : "Qtd"}</Label>
+                        <Label className="text-xs">{isVendidoPorKg ? "Kg" : "Qtd"}</Label>
                         <Input 
                           type="number" 
                           min="0.1"
-                          step={tipoQuantidade === "kg" ? "0.1" : "1"}
-                          value={tipoQuantidade === "kg" ? quantidadeKg : quantidade}
+                          step={isVendidoPorKg ? "0.1" : "1"}
+                          value={quantidade}
                           onChange={(e) => {
-                            if (tipoQuantidade === "kg") {
-                              setQuantidadeKg(parseFloat(e.target.value) || 0);
-                            } else {
-                              setQuantidade(parseInt(e.target.value) || 1);
-                            }
+                            const valor = parseFloat(e.target.value) || 0;
+                            setQuantidade(valor);
                           }}
                         />
                       </div>
                       <div className="col-span-3">
-                        <Label className="text-xs">{tipoQuantidade === "kg" ? "R$/kg" : "Preço Unit."}</Label>
+                        <Label className="text-xs">{isVendidoPorKg ? "R$/kg" : "Preço Unit."}</Label>
                         <Input 
                           type="number" 
                           step="0.01"
@@ -831,10 +813,10 @@ const LancarPedido = () => {
                           placeholder="0.00"
                         />
                       </div>
-                      {tipoQuantidade === "kg" && quantidadeKg > 0 && (
+                      {quantidade > 0 && precoUnitario > 0 && (
                         <div className="col-span-3 flex items-end">
                           <div className="text-sm font-semibold text-primary p-2 bg-primary/5 rounded w-full text-center">
-                            Total: R$ {(quantidadeKg * precoUnitario).toFixed(2)}
+                            Total: R$ {(quantidade * precoUnitario).toFixed(2)}
                           </div>
                         </div>
                       )}
