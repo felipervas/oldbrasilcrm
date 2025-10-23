@@ -142,6 +142,16 @@ const LancarPedido = () => {
       return;
     }
 
+    if (quantidade <= 0) {
+      toast({ title: "Quantidade deve ser maior que zero", variant: "destructive" });
+      return;
+    }
+
+    if (precoUnitario <= 0) {
+      toast({ title: "Preço deve ser maior que zero", variant: "destructive" });
+      return;
+    }
+
     const produto = produtos.find(p => p.id === selectedProduto);
     if (!produto) return;
 
