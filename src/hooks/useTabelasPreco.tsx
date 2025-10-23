@@ -9,6 +9,7 @@ export interface TabelaPreco {
   preco_por_kg: number | null;
   ativo: boolean;
   usar_no_site: boolean;
+  unidade_medida: string;
   created_at: string;
   updated_at: string;
 }
@@ -21,7 +22,7 @@ export const useTabelasPreco = (produtoId?: string) => {
       
       const { data, error } = await supabase
         .from('produto_tabelas_preco')
-        .select('*')
+        .select('id, produto_id, nome_tabela, preco_por_kg, ativo, usar_no_site, unidade_medida, created_at, updated_at')
         .eq('produto_id', produtoId)
         .order('nome_tabela', { ascending: true });
 
@@ -42,6 +43,7 @@ export const useCreateTabelaPreco = () => {
       nome_tabela: string;
       preco_por_kg: number | null;
       usar_no_site?: boolean;
+      unidade_medida?: string;
     }) => {
       const { data: result, error } = await supabase
         .from('produto_tabelas_preco')
@@ -81,6 +83,7 @@ export const useUpdateTabelaPreco = () => {
       preco_por_kg?: number | null;
       ativo?: boolean;
       usar_no_site?: boolean;
+      unidade_medida?: string;
     }) => {
       const { id, produto_id, ...updateData } = data;
       

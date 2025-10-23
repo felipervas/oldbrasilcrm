@@ -27,7 +27,11 @@ interface ProdutoEditDialogProps {
 export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDialogProps) => {
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [localTables, setLocalTables] = useState<Record<string, { nome_tabela: string; preco_por_kg: string }>>({});
+  const [localTables, setLocalTables] = useState<Record<string, { 
+    nome_tabela: string; 
+    preco_por_kg: string;
+    unidade_medida: string;
+  }>>({});
   const [marcas, setMarcas] = useState<any[]>([]);
   
   const updateProduto = useUpdateProduto();
@@ -87,16 +91,20 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
   // Sincronizar localTables com tabelasPreco
   useEffect(() => {
     if (tabelasPreco.length > 0) {
-      const tables: Record<string, { nome_tabela: string; preco_por_kg: string }> = {};
+      const tables: Record<string, { nome_tabela: string; preco_por_kg: string; unidade_medida: string }> = {};
       tabelasPreco.forEach(t => {
         tables[t.id] = {
           nome_tabela: t.nome_tabela,
           preco_por_kg: t.preco_por_kg?.toString() || '',
+          unidade_medida: t.unidade_medida || (
+            produto?.tipo_venda === 'kg' ? 'kg' : 
+            produto?.tipo_embalagem === 'caixa' ? 'caixa' : 'unidade'
+          ),
         };
       });
       setLocalTables(tables);
     }
-  }, [tabelasPreco]);
+  }, [tabelasPreco, produto]);
 
   const handleSave = async () => {
     if (isSaving) return;
@@ -209,6 +217,9 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
             updates.preco_por_kg = preco;
           }
         }
+        if (values.unidade_medida !== original.unidade_medida) {
+          updates.unidade_medida = values.unidade_medida;
+        }
         
         if (Object.keys(updates).length > 0) {
           updateTabela.mutate({
@@ -221,7 +232,7 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
     }
   }, [debouncedTables]);
 
-  const handleTableChange = (id: string, field: 'nome_tabela' | 'preco_por_kg', value: string) => {
+  const handleTableChange = (id: string, field: 'nome_tabela' | 'preco_por_kg' | 'unidade_medida', value: string) => {
     setLocalTables(prev => ({
       ...prev,
       [id]: {
@@ -454,7 +465,7 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                     const tabelaId = t.id;
                     return (
                       <div key={tabelaId} className="border rounded-lg p-3 bg-background space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-3 gap-3">
                           <div>
                             <Label className="text-xs">Nome da Tabela</Label>
                             <Input
@@ -466,7 +477,23 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Preço (R$/kg)</Label>
+                            <Label className="text-xs">Unidade</Label>
+                            <Select
+                              value={localTables[tabelaId]?.unidade_medida || 'kg'}
+                              onValueChange={(value) => handleTableChange(tabelaId, 'unidade_medida', value)}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="kg">R$/kg</SelectItem>
+                                <SelectItem value="caixa">R$/caixa</SelectItem>
+                                <SelectItem value="unidade">R$/unidade</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-xs">Preço</Label>
                             <Input
                               type="number"
                               step="0.01"
@@ -544,10 +571,13 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
                 onClick={() => {
                   const precoAtual = formData.preco_por_kg || 0;
                   const proximoNumero = tabelasPreco.length + 1;
+                  const unidadePadrao = produto.tipo_venda === 'kg' ? 'kg' : 
+                    produto.tipo_embalagem === 'caixa' ? 'caixa' : 'unidade';
                   createTabela.mutate({
                     produto_id: produto.id,
                     nome_tabela: `Tabela ${String(proximoNumero).padStart(2, '0')}`,
                     preco_por_kg: precoAtual,
+                    unidade_medida: unidadePadrao,
                     usar_no_site: false,
                   });
                   toast({

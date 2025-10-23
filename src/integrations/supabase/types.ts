@@ -967,6 +967,7 @@ export type Database = {
           nome_tabela: string
           preco_por_kg: number | null
           produto_id: string
+          unidade_medida: string | null
           updated_at: string
           usar_no_site: boolean | null
         }
@@ -977,6 +978,7 @@ export type Database = {
           nome_tabela: string
           preco_por_kg?: number | null
           produto_id: string
+          unidade_medida?: string | null
           updated_at?: string
           usar_no_site?: boolean | null
         }
@@ -987,6 +989,7 @@ export type Database = {
           nome_tabela?: string
           preco_por_kg?: number | null
           produto_id?: string
+          unidade_medida?: string | null
           updated_at?: string
           usar_no_site?: boolean | null
         }

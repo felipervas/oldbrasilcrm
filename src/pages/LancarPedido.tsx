@@ -798,23 +798,8 @@ const LancarPedido = () => {
                                 setTabelaSelecionada(id);
                                 const tabela = tabelasProduto.find(t => t.id === id);
                                 if (tabela) {
-                                  const produto = produtos.find(p => p.id === selectedProduto);
-                                  
-                                  // Se produto não tem preco_por_kg e vende por unidade, 
-                                  // então o preço da tabela JÁ É o preço total
-                                  const precoJaETotal = !produto?.preco_por_kg && !isVendidoPorKg;
-                                  
-                                  if (isVendidoPorKg) {
-                                    // Vendido por kg: usar preço por kg
-                                    setPrecoUnitario(tabela.preco_por_kg);
-                                  } else if (precoJaETotal) {
-                                    // Preço da tabela já é o total da caixa
-                                    setPrecoUnitario(tabela.preco_por_kg);
-                                  } else {
-                                    // Vendido por caixa: calcular preço (kg * peso)
-                                    const pesoEmb = produto?.peso_embalagem_kg || 1;
-                                    setPrecoUnitario(tabela.preco_por_kg * pesoEmb);
-                                  }
+                                  // O preço da tabela já representa o valor correto para aquela unidade
+                                  setPrecoUnitario(tabela.preco_por_kg);
                                 }
                               }}
                             >
@@ -823,24 +808,12 @@ const LancarPedido = () => {
                               </SelectTrigger>
                               <SelectContent>
                                 {tabelasProduto.map(t => {
-                                  const produto = produtos.find(p => p.id === selectedProduto);
-                                  const vendePorKg = produto?.tipo_venda === 'kg';
-                                  
-                                  // Se produto não tem preco_por_kg e vende por unidade, 
-                                  // então o preço da tabela JÁ É o preço total
-                                  const precoJaETotal = !produto?.preco_por_kg && !vendePorKg;
-                                  
-                                  const precoExibicao = precoJaETotal
-                                    ? t.preco_por_kg.toFixed(2)  // Já é o preço total
-                                    : vendePorKg 
-                                      ? t.preco_por_kg.toFixed(2)  // Preço por kg
-                                      : (t.preco_por_kg * (produto?.peso_embalagem_kg || 1)).toFixed(2);  // Calcula total
-                                  
-                                  const unidade = vendePorKg ? '/kg' : '/caixa';
+                                  const unidade = t.unidade_medida || 'kg';
+                                  const precoExibicao = t.preco_por_kg.toFixed(2);
                                   
                                   return (
                                     <SelectItem key={t.id} value={t.id}>
-                                      {t.nome_tabela} - R$ {precoExibicao}{unidade}
+                                      {t.nome_tabela} - R$ {precoExibicao}/{unidade}
                                     </SelectItem>
                                   );
                                 })}
