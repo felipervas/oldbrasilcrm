@@ -9,12 +9,15 @@ interface MarcaSectionProps {
 }
 
 export const MarcaSection = ({ marca }: MarcaSectionProps) => {
-  const { nome, slug, linhas, primeiros5, produtos, imagem_banner, mostrar_texto_banner, banner_largura, banner_altura, banner_object_fit } = marca;
+  const { nome, slug, linhas, primeiros5, produtos, imagem_banner, mostrar_texto_banner, banner_largura, banner_altura, banner_object_fit, banner_cor } = marca;
   
   return (
     <section className="mb-16">
       {/* Banner da Marca */}
-      <div className="relative h-64 bg-gradient-to-r from-primary to-primary/80 rounded-xl mb-8 overflow-hidden shadow-lg">
+      <div 
+        className="relative h-64 rounded-xl mb-8 overflow-hidden shadow-lg"
+        style={{ backgroundColor: banner_cor || '#000000' }}
+      >
         {/* Imagem de fundo */}
         {imagem_banner ? (
           <img 

@@ -32,6 +32,7 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
     banner_largura: null,
     banner_altura: null,
     banner_object_fit: 'cover',
+    banner_cor: '#000000',
   });
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [contatos, setContatos] = useState<any[]>([]);
@@ -60,6 +61,7 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         banner_largura: marca.banner_largura || null,
         banner_altura: marca.banner_altura || null,
         banner_object_fit: marca.banner_object_fit || 'cover',
+        banner_cor: marca.banner_cor || '#000000',
       });
       loadContatos(marca.id);
     } else {
@@ -76,6 +78,7 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         banner_largura: null,
         banner_altura: null,
         banner_object_fit: 'cover',
+        banner_cor: '#000000',
       });
       setContatos([]);
     }
@@ -327,36 +330,57 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
                 </div>
                 
                 {/* Configurações de Dimensionamento */}
-                <div className="grid grid-cols-3 gap-3 p-3 bg-muted rounded-lg">
-                  <div>
-                    <Label className="text-xs">Largura (px)</Label>
-                    <Input
-                      type="number"
-                      placeholder="Auto"
-                      value={formData.banner_largura || ''}
-                      onChange={(e) => setFormData({ ...formData, banner_largura: e.target.value ? parseInt(e.target.value) : null })}
-                    />
+                <div className="space-y-3 p-3 bg-muted rounded-lg">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-xs">Largura (px)</Label>
+                      <Input
+                        type="number"
+                        placeholder="Auto"
+                        value={formData.banner_largura || ''}
+                        onChange={(e) => setFormData({ ...formData, banner_largura: e.target.value ? parseInt(e.target.value) : null })}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Altura (px)</Label>
+                      <Input
+                        type="number"
+                        placeholder="Auto"
+                        value={formData.banner_altura || ''}
+                        onChange={(e) => setFormData({ ...formData, banner_altura: e.target.value ? parseInt(e.target.value) : null })}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Ajuste</Label>
+                      <select
+                        className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                        value={formData.banner_object_fit || 'cover'}
+                        onChange={(e) => setFormData({ ...formData, banner_object_fit: e.target.value })}
+                      >
+                        <option value="cover">Preencher</option>
+                        <option value="contain">Caber</option>
+                        <option value="fill">Esticar</option>
+                      </select>
+                    </div>
                   </div>
+                  
                   <div>
-                    <Label className="text-xs">Altura (px)</Label>
-                    <Input
-                      type="number"
-                      placeholder="Auto"
-                      value={formData.banner_altura || ''}
-                      onChange={(e) => setFormData({ ...formData, banner_altura: e.target.value ? parseInt(e.target.value) : null })}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Ajuste</Label>
-                    <select
-                      className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
-                      value={formData.banner_object_fit || 'cover'}
-                      onChange={(e) => setFormData({ ...formData, banner_object_fit: e.target.value })}
-                    >
-                      <option value="cover">Preencher</option>
-                      <option value="contain">Caber</option>
-                      <option value="fill">Esticar</option>
-                    </select>
+                    <Label className="text-xs">Cor de Fundo</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="color"
+                        value={formData.banner_cor || '#000000'}
+                        onChange={(e) => setFormData({ ...formData, banner_cor: e.target.value })}
+                        className="w-20 h-9 p-1 cursor-pointer"
+                      />
+                      <Input
+                        type="text"
+                        value={formData.banner_cor || '#000000'}
+                        onChange={(e) => setFormData({ ...formData, banner_cor: e.target.value })}
+                        placeholder="#000000"
+                        className="flex-1"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

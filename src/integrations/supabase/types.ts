@@ -715,6 +715,7 @@ export type Database = {
         Row: {
           ativa: boolean
           banner_altura: number | null
+          banner_cor: string | null
           banner_largura: number | null
           banner_object_fit: string | null
           created_at: string
@@ -732,6 +733,7 @@ export type Database = {
         Insert: {
           ativa?: boolean
           banner_altura?: number | null
+          banner_cor?: string | null
           banner_largura?: number | null
           banner_object_fit?: string | null
           created_at?: string
@@ -749,6 +751,7 @@ export type Database = {
         Update: {
           ativa?: boolean
           banner_altura?: number | null
+          banner_cor?: string | null
           banner_largura?: number | null
           banner_object_fit?: string | null
           created_at?: string
