@@ -29,6 +29,9 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
     ativa: true,
     imagem_banner: '',
     mostrar_texto_banner: true,
+    banner_largura: null,
+    banner_altura: null,
+    banner_object_fit: 'cover',
   });
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [contatos, setContatos] = useState<any[]>([]);
@@ -54,6 +57,9 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         ativa: marca.ativa ?? true,
         imagem_banner: marca.imagem_banner || '',
         mostrar_texto_banner: marca.mostrar_texto_banner ?? true,
+        banner_largura: marca.banner_largura || null,
+        banner_altura: marca.banner_altura || null,
+        banner_object_fit: marca.banner_object_fit || 'cover',
       });
       loadContatos(marca.id);
     } else {
@@ -67,6 +73,9 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         ativa: true,
         imagem_banner: '',
         mostrar_texto_banner: true,
+        banner_largura: null,
+        banner_altura: null,
+        banner_object_fit: 'cover',
       });
       setContatos([]);
     }
@@ -315,6 +324,40 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
                   >
                     <X className="h-4 w-4" />
                   </Button>
+                </div>
+                
+                {/* Configurações de Dimensionamento */}
+                <div className="grid grid-cols-3 gap-3 p-3 bg-muted rounded-lg">
+                  <div>
+                    <Label className="text-xs">Largura (px)</Label>
+                    <Input
+                      type="number"
+                      placeholder="Auto"
+                      value={formData.banner_largura || ''}
+                      onChange={(e) => setFormData({ ...formData, banner_largura: e.target.value ? parseInt(e.target.value) : null })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Altura (px)</Label>
+                    <Input
+                      type="number"
+                      placeholder="Auto"
+                      value={formData.banner_altura || ''}
+                      onChange={(e) => setFormData({ ...formData, banner_altura: e.target.value ? parseInt(e.target.value) : null })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Ajuste</Label>
+                    <select
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                      value={formData.banner_object_fit || 'cover'}
+                      onChange={(e) => setFormData({ ...formData, banner_object_fit: e.target.value })}
+                    >
+                      <option value="cover">Preencher</option>
+                      <option value="contain">Caber</option>
+                      <option value="fill">Esticar</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             ) : (

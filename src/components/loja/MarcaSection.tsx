@@ -9,7 +9,7 @@ interface MarcaSectionProps {
 }
 
 export const MarcaSection = ({ marca }: MarcaSectionProps) => {
-  const { nome, slug, linhas, primeiros5, produtos, imagem_banner, mostrar_texto_banner } = marca;
+  const { nome, slug, linhas, primeiros5, produtos, imagem_banner, mostrar_texto_banner, banner_largura, banner_altura, banner_object_fit } = marca;
   
   return (
     <section className="mb-16">
@@ -19,12 +19,17 @@ export const MarcaSection = ({ marca }: MarcaSectionProps) => {
         {imagem_banner ? (
           <img 
             src={imagem_banner} 
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full"
+            style={{
+              objectFit: banner_object_fit || 'cover',
+              width: banner_largura ? `${banner_largura}px` : '100%',
+              height: banner_altura ? `${banner_altura}px` : '100%',
+            }}
             alt={nome}
             loading="lazy"
             decoding="async"
-            width={1200}
-            height={256}
+            width={banner_largura || 1200}
+            height={banner_altura || 256}
           />
         ) : null}
         

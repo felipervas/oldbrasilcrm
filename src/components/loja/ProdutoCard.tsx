@@ -17,12 +17,19 @@ interface ProdutoCardProps {
     tipo_calculo?: string;
     destaque_loja?: boolean;
     marcas?: { nome: string; slug: string };
-    produto_imagens?: Array<{ url: string; ordem: number }>;
+    produto_imagens?: Array<{ 
+      url: string; 
+      ordem: number;
+      largura?: number;
+      altura?: number;
+      object_fit?: string;
+    }>;
   };
 }
 
 export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
   const imagemPrincipal = produto.produto_imagens?.[0]?.url || "/placeholder.svg";
+  const imagemConfig = produto.produto_imagens?.[0];
   const marca = produto.marcas?.nome || "Sem marca";
   const corMarca = getCorMarca(marca);
 
@@ -32,12 +39,17 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
         <img
           src={imagemPrincipal}
           alt={produto.nome_loja || produto.nome}
-          className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
+          className="w-full h-full transition-transform duration-300 group-hover:scale-110"
+          style={{
+            objectFit: (imagemConfig?.object_fit || 'cover') as any,
+            width: imagemConfig?.largura ? `${imagemConfig.largura}px` : '100%',
+            height: imagemConfig?.altura ? `${imagemConfig.altura}px` : '100%',
+          }}
           loading="lazy"
           decoding="async"
           fetchPriority="low"
-          width={300}
-          height={300}
+          width={imagemConfig?.largura || 300}
+          height={imagemConfig?.altura || 300}
         />
         {produto.destaque_loja && (
           <Badge className="absolute top-2 right-2 bg-accent text-accent-foreground">

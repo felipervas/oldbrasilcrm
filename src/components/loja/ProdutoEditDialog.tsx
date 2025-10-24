@@ -345,6 +345,7 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
               images={produto?.produto_imagens || []}
               onUpload={handleUpload}
               onRemove={handleRemoveImage}
+              onUpdateDimensions={handleUpdateImageDimensions}
               maxImages={5}
             />
           </TabsContent>

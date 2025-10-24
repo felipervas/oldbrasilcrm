@@ -714,6 +714,9 @@ export type Database = {
       marcas: {
         Row: {
           ativa: boolean
+          banner_altura: number | null
+          banner_largura: number | null
+          banner_object_fit: string | null
           created_at: string
           descricao: string | null
           id: string
@@ -728,6 +731,9 @@ export type Database = {
         }
         Insert: {
           ativa?: boolean
+          banner_altura?: number | null
+          banner_largura?: number | null
+          banner_object_fit?: string | null
           created_at?: string
           descricao?: string | null
           id?: string
@@ -742,6 +748,9 @@ export type Database = {
         }
         Update: {
           ativa?: boolean
+          banner_altura?: number | null
+          banner_largura?: number | null
+          banner_object_fit?: string | null
           created_at?: string
           descricao?: string | null
           id?: string
@@ -929,22 +938,31 @@ export type Database = {
       }
       produto_imagens: {
         Row: {
+          altura: number | null
           created_at: string
           id: string
+          largura: number | null
+          object_fit: string | null
           ordem: number | null
           produto_id: string
           url: string
         }
         Insert: {
+          altura?: number | null
           created_at?: string
           id?: string
+          largura?: number | null
+          object_fit?: string | null
           ordem?: number | null
           produto_id: string
           url: string
         }
         Update: {
+          altura?: number | null
           created_at?: string
           id?: string
+          largura?: number | null
+          object_fit?: string | null
           ordem?: number | null
           produto_id?: string
           url?: string

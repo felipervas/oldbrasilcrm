@@ -19,7 +19,7 @@ export const useProdutosLoja = (filtros?: {
           preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo, tipo_venda,
           visivel_loja, destaque_loja, rendimento_dose_gramas, preco_atualizado_em,
           marcas(id, nome, slug),
-          produto_imagens(url, ordem)
+          produto_imagens(url, ordem, largura, altura, object_fit)
         `)
         .eq('ativo', true)
         .eq('visivel_loja', true);
@@ -74,7 +74,7 @@ export const useProdutosLoja = (filtros?: {
       const produtosComTabela = await Promise.all((data || []).map(async (produto: any) => {
         const { data: tabelaSite } = await supabase
           .from('produto_tabelas_preco')
-          .select('id, nome_tabela, preco_por_kg')
+          .select('id, nome_tabela, preco_por_kg, unidade_medida')
           .eq('produto_id', produto.id)
           .eq('usar_no_site', true)
           .maybeSingle();
@@ -104,7 +104,7 @@ export const useProdutoDetalhes = (id: string) => {
           preco_base, preco_por_kg, peso_embalagem_kg, tipo_calculo, tipo_venda,
           rendimento_dose_gramas, preco_atualizado_em,
           marcas(id, nome, site, slug),
-          produto_imagens(url, ordem)
+          produto_imagens(url, ordem, largura, altura, object_fit)
         `)
         .eq('id', id)
         .eq('visivel_loja', true)
@@ -115,7 +115,7 @@ export const useProdutoDetalhes = (id: string) => {
       // Buscar a tabela com usar_no_site = true
       const { data: tabelaSite } = await supabase
         .from('produto_tabelas_preco')
-        .select('id, nome_tabela, preco_por_kg')
+        .select('id, nome_tabela, preco_por_kg, unidade_medida')
         .eq('produto_id', id)
         .eq('usar_no_site', true)
         .maybeSingle();
@@ -143,7 +143,7 @@ export const useProdutosRelacionados = (marcaId: string, produtoAtualId: string)
           id, nome, nome_loja, preco_por_kg, peso_embalagem_kg, rendimento_dose_gramas,
           tipo_venda, destaque_loja,
           marcas(nome, slug),
-          produto_imagens(url, ordem)
+          produto_imagens(url, ordem, largura, altura, object_fit)
         `)
         .eq('marca_id', marcaId)
         .eq('ativo', true)

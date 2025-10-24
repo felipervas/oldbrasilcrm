@@ -13,7 +13,7 @@ export const useLojaAgrupada = () => {
           preco_por_kg, peso_embalagem_kg, rendimento_dose_gramas, tipo_calculo, tipo_venda,
           destaque_loja, ordem_exibicao,
           marca_id,
-          marcas(id, nome, slug, descricao, site, imagem_banner, mostrar_texto_banner)
+          marcas(id, nome, slug, descricao, site, imagem_banner, mostrar_texto_banner, banner_largura, banner_altura, banner_object_fit)
         `)
         .eq('ativo', true)
         .eq('visivel_loja', true)
@@ -35,20 +35,20 @@ export const useLojaAgrupada = () => {
       const produtoIds = produtos.map(p => p.id);
       const { data: imagens } = await supabase
         .from('produto_imagens')
-        .select('produto_id, url')
+        .select('produto_id, url, largura, altura, object_fit')
         .in('produto_id', produtoIds)
         .eq('ordem', 0);
 
       // Buscar tabelas de preço marcadas para usar no site
       const { data: tabelasPreco } = await supabase
         .from('produto_tabelas_preco')
-        .select('produto_id, id, nome_tabela, preco_por_kg')
+        .select('produto_id, id, nome_tabela, preco_por_kg, unidade_medida')
         .in('produto_id', produtoIds)
         .eq('usar_no_site', true);
 
-      // Criar map de imagens para lookup rápido
+      // Criar map de imagens para lookup rápido (incluindo dimensões)
       const imagensMap = new Map(
-        (imagens || []).map(img => [img.produto_id, img.url])
+        (imagens || []).map(img => [img.produto_id, img])
       );
 
       // Criar map de tabelas de preço para lookup rápido
@@ -85,6 +85,9 @@ export const useLojaAgrupada = () => {
             site: produto.marcas.site,
             imagem_banner: produto.marcas.imagem_banner,
             mostrar_texto_banner: produto.marcas.mostrar_texto_banner,
+            banner_largura: produto.marcas.banner_largura,
+            banner_altura: produto.marcas.banner_altura,
+            banner_object_fit: produto.marcas.banner_object_fit,
             produtos: [],
             primeiros5: []
           });
@@ -109,8 +112,11 @@ export const useLojaAgrupada = () => {
           marcas: produto.marcas || { id: 'sem-marca', nome: 'Outros Produtos', slug: 'outros' },
           tabela_site: tabelaPreco || null,
           produto_imagens: [{
-            url: imagensMap.get(produto.id) || '/placeholder.svg',
-            ordem: 0
+            url: imagensMap.get(produto.id)?.url || '/placeholder.svg',
+            ordem: 0,
+            largura: imagensMap.get(produto.id)?.largura,
+            altura: imagensMap.get(produto.id)?.altura,
+            object_fit: imagensMap.get(produto.id)?.object_fit
           }]
         };
         

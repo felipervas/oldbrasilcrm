@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import imageCompression from 'browser-image-compression';
 
 interface ImageUploadZoneProps {
-  images: Array<{ url: string; ordem: number; id?: string }>;
+  images: Array<{ url: string; ordem: number; id?: string; largura?: number; altura?: number; object_fit?: string }>;
   onUpload: (files: File[]) => void;
   onRemove: (index: number) => void;
   onReorder?: (images: Array<{ url: string; ordem: number; id?: string }>) => void;
+  onUpdateDimensions?: (index: number, dimensions: { largura?: number; altura?: number; object_fit?: string }) => void;
   maxImages?: number;
 }
 
@@ -17,6 +19,7 @@ export const ImageUploadZone = ({
   onUpload, 
   onRemove,
   onReorder,
+  onUpdateDimensions,
   maxImages = 5 
 }: ImageUploadZoneProps) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -72,25 +75,54 @@ export const ImageUploadZone = ({
       {images.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {images.map((image, index) => (
-            <div key={index} className="relative group aspect-square">
-              <img
-                src={image.url}
-                alt={`Imagem ${index + 1}`}
-                className="w-full h-full object-cover rounded-lg border"
-              />
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => onRemove(index)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+            <div key={index} className="relative group">
+              <div className="aspect-square">
+                <img
+                  src={image.url}
+                  alt={`Imagem ${index + 1}`}
+                  className="w-full h-full object-cover rounded-lg border"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => onRemove(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="absolute top-2 left-2 bg-background/80 px-2 py-1 rounded text-xs">
+                  #{index + 1}
+                </div>
               </div>
-              <div className="absolute top-2 left-2 bg-background/80 px-2 py-1 rounded text-xs">
-                #{index + 1}
-              </div>
+              {onUpdateDimensions && (
+                <div className="mt-2 grid grid-cols-3 gap-1">
+                  <Input
+                    type="number"
+                    placeholder="L"
+                    value={image.largura || ''}
+                    onChange={(e) => onUpdateDimensions(index, { ...image, largura: e.target.value ? parseInt(e.target.value) : undefined })}
+                    className="h-7 text-xs"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="A"
+                    value={image.altura || ''}
+                    onChange={(e) => onUpdateDimensions(index, { ...image, altura: e.target.value ? parseInt(e.target.value) : undefined })}
+                    className="h-7 text-xs"
+                  />
+                  <select
+                    className="h-7 text-xs rounded-md border"
+                    value={image.object_fit || 'cover'}
+                    onChange={(e) => onUpdateDimensions(index, { ...image, object_fit: e.target.value })}
+                  >
+                    <option value="cover">Cover</option>
+                    <option value="contain">Contain</option>
+                    <option value="fill">Fill</option>
+                  </select>
+                </div>
+              )}
             </div>
           ))}
         </div>
