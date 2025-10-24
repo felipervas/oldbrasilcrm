@@ -197,6 +197,31 @@ export const ProdutoEditDialog = ({ produto, open, onOpenChange }: ProdutoEditDi
     }
   };
 
+  const handleUpdateImageDimensions = async (index: number, dimensions: { largura?: number; altura?: number; object_fit?: string }) => {
+    const image = produto.produto_imagens[index];
+    if (image?.id) {
+      const { error } = await supabase
+        .from('produto_imagens')
+        .update({
+          largura: dimensions.largura,
+          altura: dimensions.altura,
+          object_fit: dimensions.object_fit
+        })
+        .eq('id', image.id);
+      
+      if (error) {
+        toast({ 
+          title: "Erro ao atualizar dimensões", 
+          description: error.message,
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: "Dimensões atualizadas com sucesso!" });
+        queryClient.invalidateQueries({ queryKey: ['produtos'] });
+      }
+    }
+  };
+
 
   // Debounce para atualização automática de tabelas
   const debouncedTables = useDebounce(localTables, 1000);
