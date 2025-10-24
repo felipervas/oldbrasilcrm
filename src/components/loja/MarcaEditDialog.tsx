@@ -33,8 +33,10 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
     banner_altura: null,
     banner_object_fit: 'cover',
     banner_cor: '#000000',
+    logo_url: '',
   });
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [contatos, setContatos] = useState<any[]>([]);
   const [novoContato, setNovoContato] = useState({
     nome: '',
@@ -62,6 +64,7 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         banner_altura: marca.banner_altura || null,
         banner_object_fit: marca.banner_object_fit || 'cover',
         banner_cor: marca.banner_cor || '#000000',
+        logo_url: marca.logo_url || '',
       });
       loadContatos(marca.id);
     } else {
@@ -79,6 +82,7 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
         banner_altura: null,
         banner_object_fit: 'cover',
         banner_cor: '#000000',
+        logo_url: '',
       });
       setContatos([]);
     }
@@ -218,6 +222,56 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
 
   const handleRemoveBanner = () => {
     setFormData({ ...formData, imagem_banner: '' });
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione uma imagem válida');
+      return;
+    }
+
+    // Validar tamanho (máx 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    try {
+      setUploadingLogo(true);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `logo-${formData.slug || 'temp'}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('marca-banners')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('marca-banners')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, logo_url: publicUrl });
+      toast.success('Logo enviado com sucesso!');
+    } catch (error: any) {
+      console.error('Erro ao fazer upload:', error);
+      toast.error('Erro ao enviar logo: ' + error.message);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData({ ...formData, logo_url: '' });
   };
 
   return (
@@ -398,6 +452,47 @@ export const MarcaEditDialog = ({ marca, open, onOpenChange }: MarcaEditDialogPr
                   accept="image/*"
                   onChange={handleBannerUpload}
                   disabled={uploadingBanner}
+                  className="cursor-pointer"
+                />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <Label>Logo da Marca (para carrossel)</Label>
+            {formData.logo_url ? (
+              <div className="space-y-2">
+                <div className="relative w-32 h-32 rounded-lg overflow-hidden border bg-background flex items-center justify-center">
+                  <img 
+                    src={formData.logo_url} 
+                    alt="Logo preview"
+                    className="max-w-full max-h-full object-contain"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={handleRemoveLogo}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-2">
+                  Clique para fazer upload da logo
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Recomendado: Logo quadrada (máx 5MB)
+                </p>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  disabled={uploadingLogo}
                   className="cursor-pointer"
                 />
               </div>

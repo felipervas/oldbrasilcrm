@@ -13,7 +13,7 @@ export const useLojaAgrupada = () => {
           preco_por_kg, peso_embalagem_kg, rendimento_dose_gramas, tipo_calculo, tipo_venda,
           destaque_loja, ordem_exibicao,
           marca_id,
-          marcas(id, nome, slug, descricao, site, imagem_banner, mostrar_texto_banner, banner_largura, banner_altura, banner_object_fit, banner_cor)
+          marcas(id, nome, slug, descricao, site, imagem_banner, mostrar_texto_banner, banner_largura, banner_altura, banner_object_fit, banner_cor, logo_url)
         `)
         .eq('ativo', true)
         .eq('visivel_loja', true)
@@ -89,6 +89,7 @@ export const useLojaAgrupada = () => {
             banner_altura: produto.marcas.banner_altura,
             banner_object_fit: produto.marcas.banner_object_fit,
             banner_cor: produto.marcas.banner_cor,
+            logo_url: produto.marcas.logo_url,
             produtos: [],
             primeiros5: []
           });

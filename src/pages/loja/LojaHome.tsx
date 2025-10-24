@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { MarcaSection } from "@/components/loja/MarcaSection";
+import { MarcasCarousel } from "@/components/loja/MarcasCarousel";
 import { ModalAtendimentoExclusivo } from "@/components/loja/ModalAtendimentoExclusivo";
 import { useLojaAgrupada } from "@/hooks/useLojaAgrupada";
 import { gerarLinkWhatsApp } from "@/lib/whatsapp";
@@ -28,6 +29,11 @@ export default function LojaHome() {
           </a>
         </div>
       </section>
+      
+      {/* Carrossel de Marcas */}
+      {marcas && marcas.length > 0 && (
+        <MarcasCarousel marcas={marcas} />
+      )}
       
       {/* Marcas e Produtos */}
       <div id="produtos" className="container mx-auto px-4 py-8 md:py-16">

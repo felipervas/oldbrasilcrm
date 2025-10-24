@@ -722,6 +722,7 @@ export type Database = {
           descricao: string | null
           id: string
           imagem_banner: string | null
+          logo_url: string | null
           mostrar_texto_banner: boolean | null
           nome: string
           site: string | null
@@ -740,6 +741,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           imagem_banner?: string | null
+          logo_url?: string | null
           mostrar_texto_banner?: boolean | null
           nome: string
           site?: string | null
@@ -758,6 +760,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           imagem_banner?: string | null
+          logo_url?: string | null
           mostrar_texto_banner?: boolean | null
           nome?: string
           site?: string | null
