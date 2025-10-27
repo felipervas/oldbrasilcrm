@@ -15,8 +15,13 @@ interface ProdutoCardProps {
     peso_embalagem_kg?: number;
     rendimento_dose_gramas?: number;
     tipo_calculo?: string;
+    tipo_venda?: string;
     destaque_loja?: boolean;
     marcas?: { nome: string; slug: string };
+    tabela_site?: {
+      preco_por_kg?: number;
+      nome_tabela?: string;
+    };
     produto_imagens?: Array<{ 
       url: string; 
       ordem: number;

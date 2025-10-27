@@ -142,13 +142,13 @@ const LancarPedido = () => {
       return;
     }
 
-    if (quantidade <= 0) {
-      toast({ title: "Quantidade deve ser maior que zero", variant: "destructive" });
+    if (quantidade < 0) {
+      toast({ title: "Quantidade não pode ser negativa", variant: "destructive" });
       return;
     }
 
-    if (precoUnitario <= 0) {
-      toast({ title: "Preço deve ser maior que zero", variant: "destructive" });
+    if (precoUnitario < 0) {
+      toast({ title: "Preço não pode ser negativo", variant: "destructive" });
       return;
     }
 
@@ -835,7 +835,6 @@ const LancarPedido = () => {
                         <Label className="text-xs">{isVendidoPorKg ? "Kg" : "Qtd"}</Label>
                         <Input 
                           type="number" 
-                          min="0.1"
                           step={isVendidoPorKg ? "0.1" : "1"}
                           value={quantidade}
                           onChange={(e) => {

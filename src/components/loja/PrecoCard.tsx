@@ -20,17 +20,17 @@ export const PrecoCard = ({
   produto,
   compact = false,
 }: PrecoCardProps) => {
-  // Usar preço da tabela selecionada se existir
+  // Usar preço da tabela_site se existir, senão usar preco_por_kg
   const produtoComPreco = {
     ...produto,
-    preco_por_kg: produto.tabela_loja?.preco_por_kg || produto.preco_por_kg
+    preco_por_kg: produto.tabela_site?.preco_por_kg || produto.preco_por_kg
   };
   
   const infoPreco = formatarInfoPreco(produtoComPreco);
   const tipoEmb = produto.tipo_embalagem || 'caixa';
   const iconEmb = getEmbalagemIcon(tipoEmb);
   const nomeEmb = tipoEmb.charAt(0).toUpperCase() + tipoEmb.slice(1);
-  const nomeTabela = produto.tabela_loja?.nome_tabela;
+  const nomeTabela = produto.tabela_site?.nome_tabela;
   
   if (!infoPreco) {
     if (compact) {
