@@ -192,11 +192,6 @@ const LancarPedido = () => {
       return;
     }
 
-    if (produtosEscolhidos.length === 0) {
-      toast({ title: "Adicione pelo menos um produto", variant: "destructive" });
-      return;
-    }
-
     setLoading(true);
 
     try {
