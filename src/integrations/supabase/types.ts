@@ -335,6 +335,8 @@ export type Database = {
       colaborador_eventos: {
         Row: {
           colaborador_id: string
+          comentario: string | null
+          concluido: boolean | null
           created_at: string
           data: string
           descricao: string | null
@@ -346,6 +348,8 @@ export type Database = {
         }
         Insert: {
           colaborador_id: string
+          comentario?: string | null
+          concluido?: boolean | null
           created_at?: string
           data: string
           descricao?: string | null
@@ -357,6 +361,8 @@ export type Database = {
         }
         Update: {
           colaborador_id?: string
+          comentario?: string | null
+          concluido?: boolean | null
           created_at?: string
           data?: string
           descricao?: string | null

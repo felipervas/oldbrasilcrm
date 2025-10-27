@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +15,9 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useColaboradorEventos } from "@/hooks/useColaboradorEventos";
 import { useHistoricoEquipe } from "@/hooks/useHistoricoEquipe";
 import { AgendasEquipe } from "@/components/AgendasEquipe";
-import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History, Trophy } from "lucide-react";
+import { useDebounce } from "@/hooks/useDebounce";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History, Trophy, List } from "lucide-react";
 import { format } from "date-fns";
 
 const MeuPerfil = () => {
@@ -29,6 +31,9 @@ const MeuPerfil = () => {
   const [eventoEditando, setEventoEditando] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [searchTerm, setSearchTerm] = useState('');
+  const [dialogMultiplosOpen, setDialogMultiplosOpen] = useState(false);
+  const [eventosTexto, setEventosTexto] = useState('');
+  const [comentarioEvento, setComentarioEvento] = useState<{[key: string]: string}>({});
   const [formEvento, setFormEvento] = useState({
     titulo: '',
     descricao: '',
@@ -37,8 +42,9 @@ const MeuPerfil = () => {
     tipo: 'evento'
   });
 
-  const { eventos, createEvento, updateEvento, deleteEvento } = useColaboradorEventos();
+  const { eventos, createEvento, updateEvento, deleteEvento, toggleConcluido, createMultipleEventos } = useColaboradorEventos();
   const { data: historico } = useHistoricoEquipe();
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
     loadProfile();
@@ -128,12 +134,14 @@ const MeuPerfil = () => {
   const tarefasPendentes = tarefas.filter(t => t.status === "pendente" || t.status === "em_andamento");
   const tarefasConcluidas = tarefas.filter(t => t.status === "concluida");
 
-  // Filtrar clientes por busca
-  const clientesFiltrados = clientes.filter(cliente => 
-    cliente.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cliente.cnpj_cpf?.includes(searchTerm) ||
-    cliente.cidade?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtrar clientes por busca com debounce para melhor performance
+  const clientesFiltrados = useMemo(() => {
+    return clientes.filter(cliente => 
+      cliente.nome_fantasia?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      cliente.cnpj_cpf?.includes(debouncedSearchTerm) ||
+      cliente.cidade?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+    );
+  }, [clientes, debouncedSearchTerm]);
 
   const handleSaveEvento = async () => {
     try {
@@ -174,12 +182,47 @@ const MeuPerfil = () => {
     }
   };
 
-  const eventosDoMes = eventos?.filter(e => {
-    if (!selectedDate) return false;
-    const eventoDate = new Date(e.data);
-    return eventoDate.getMonth() === selectedDate.getMonth() &&
-           eventoDate.getFullYear() === selectedDate.getFullYear();
-  }) || [];
+  const eventosDoMes = useMemo(() => {
+    return eventos?.filter(e => {
+      if (!selectedDate) return false;
+      const eventoDate = new Date(e.data);
+      return eventoDate.getMonth() === selectedDate.getMonth() &&
+             eventoDate.getFullYear() === selectedDate.getFullYear();
+    }) || [];
+  }, [eventos, selectedDate]);
+
+  const eventosPendentes = useMemo(() => {
+    return eventosDoMes.filter(e => !e.concluido);
+  }, [eventosDoMes]);
+
+  const eventosConcluidos = useMemo(() => {
+    return eventosDoMes.filter(e => e.concluido);
+  }, [eventosDoMes]);
+
+  const handleCriarMultiplosEventos = async () => {
+    const linhas = eventosTexto.split('\n').filter(l => l.trim());
+    if (linhas.length === 0) {
+      toast({ title: 'Digite ao menos um evento', variant: 'destructive' });
+      return;
+    }
+
+    await createMultipleEventos.mutateAsync({
+      titulos: linhas,
+      data: format(selectedDate || new Date(), 'yyyy-MM-dd'),
+      tipo: 'evento'
+    });
+
+    setEventosTexto('');
+    setDialogMultiplosOpen(false);
+  };
+
+  const handleToggleConcluido = async (evento: any) => {
+    await toggleConcluido.mutateAsync({
+      id: evento.id,
+      concluido: !evento.concluido,
+      comentario: comentarioEvento[evento.id] || evento.comentario
+    });
+  };
 
   const getAcaoLabel = (acao: string) => {
     const labels: Record<string, string> = {
@@ -466,65 +509,99 @@ const MeuPerfil = () => {
                   <CardTitle>Meus Compromissos</CardTitle>
                   <CardDescription>Gerencie seus eventos e compromissos</CardDescription>
                 </div>
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => {
-                      setEventoEditando(null);
-                      setFormEvento({
-                        titulo: '',
-                        descricao: '',
-                        data: format(selectedDate || new Date(), 'yyyy-MM-dd'),
-                        horario: '',
-                        tipo: 'evento'
-                      });
-                    }}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Novo Evento
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{eventoEditando ? 'Editar Evento' : 'Novo Evento'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Título</Label>
-                        <Input
-                          value={formEvento.titulo}
-                          onChange={(e) => setFormEvento({ ...formEvento, titulo: e.target.value })}
-                          placeholder="Ex: Visita em Botuvera"
-                        />
-                      </div>
-                      <div>
-                        <Label>Data</Label>
-                        <Input
-                          type="date"
-                          value={formEvento.data}
-                          onChange={(e) => setFormEvento({ ...formEvento, data: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label>Horário (opcional)</Label>
-                        <Input
-                          type="time"
-                          value={formEvento.horario}
-                          onChange={(e) => setFormEvento({ ...formEvento, horario: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label>Descrição / Observações</Label>
-                        <Textarea
-                          value={formEvento.descricao}
-                          onChange={(e) => setFormEvento({ ...formEvento, descricao: e.target.value })}
-                          placeholder="O que você vai fazer..."
-                        />
-                      </div>
-                      <Button onClick={handleSaveEvento} className="w-full">
-                        {eventoEditando ? 'Atualizar' : 'Criar'} Evento
+                <div className="flex gap-2">
+                  <Dialog open={dialogMultiplosOpen} onOpenChange={setDialogMultiplosOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        <List className="mr-2 h-4 w-4" />
+                        Criar Vários
                       </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Criar Múltiplos Eventos</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Lista de Eventos (um por linha)</Label>
+                          <Textarea
+                            value={eventosTexto}
+                            onChange={(e) => setEventosTexto(e.target.value)}
+                            placeholder="Calabria&#10;City Pops&#10;Tony"
+                            rows={8}
+                            className="font-mono"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Digite cada evento em uma linha. Data: {format(selectedDate || new Date(), 'dd/MM/yyyy')}
+                          </p>
+                        </div>
+                        <Button onClick={handleCriarMultiplosEventos} className="w-full" disabled={createMultipleEventos.isPending}>
+                          {createMultipleEventos.isPending ? 'Criando...' : 'Criar Eventos'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button onClick={() => {
+                        setEventoEditando(null);
+                        setFormEvento({
+                          titulo: '',
+                          descricao: '',
+                          data: format(selectedDate || new Date(), 'yyyy-MM-dd'),
+                          horario: '',
+                          tipo: 'evento'
+                        });
+                      }}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Novo Evento
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{eventoEditando ? 'Editar Evento' : 'Novo Evento'}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Título</Label>
+                          <Input
+                            value={formEvento.titulo}
+                            onChange={(e) => setFormEvento({ ...formEvento, titulo: e.target.value })}
+                            placeholder="Ex: Visita em Botuvera"
+                          />
+                        </div>
+                        <div>
+                          <Label>Data</Label>
+                          <Input
+                            type="date"
+                            value={formEvento.data}
+                            onChange={(e) => setFormEvento({ ...formEvento, data: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Horário (opcional)</Label>
+                          <Input
+                            type="time"
+                            value={formEvento.horario}
+                            onChange={(e) => setFormEvento({ ...formEvento, horario: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Descrição / Observações</Label>
+                          <Textarea
+                            value={formEvento.descricao}
+                            onChange={(e) => setFormEvento({ ...formEvento, descricao: e.target.value })}
+                            placeholder="O que você vai fazer..."
+                          />
+                        </div>
+                        <Button onClick={handleSaveEvento} className="w-full">
+                          {eventoEditando ? 'Atualizar' : 'Criar'} Evento
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -537,46 +614,108 @@ const MeuPerfil = () => {
                     className="rounded-md border"
                   />
                 </div>
-                <div className="space-y-3">
-                  <h3 className="font-semibold">
-                    Eventos de {format(selectedDate || new Date(), 'MM/yyyy')}
-                  </h3>
-                  {eventosDoMes.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Nenhum evento neste mês</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {eventosDoMes.map((evento) => (
-                        <div key={evento.id} className="border rounded-lg p-3 space-y-2">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-medium">{evento.titulo}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                {format(new Date(evento.data), "dd/MM/yyyy")}
-                                {evento.horario && ` às ${evento.horario}`}
-                              </p>
-                              {evento.descricao && (
-                                <p className="text-sm text-muted-foreground mt-1">{evento.descricao}</p>
-                              )}
+                <div className="space-y-4">
+                  {/* Eventos Pendentes */}
+                  <div>
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Pendentes ({eventosPendentes.length})
+                    </h3>
+                    {eventosPendentes.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Nenhum evento pendente</p>
+                    ) : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {eventosPendentes.map((evento) => (
+                          <div key={evento.id} className="border rounded-lg p-3 space-y-2 bg-background">
+                            <div className="flex items-start gap-2">
+                              <Checkbox 
+                                checked={false}
+                                onCheckedChange={() => handleToggleConcluido(evento)}
+                                className="mt-1"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium">{evento.titulo}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {format(new Date(evento.data), "dd/MM/yyyy")}
+                                  {evento.horario && ` às ${evento.horario}`}
+                                </p>
+                                {evento.descricao && (
+                                  <p className="text-sm text-muted-foreground mt-1">{evento.descricao}</p>
+                                )}
+                                <div className="mt-2">
+                                  <Input
+                                    placeholder="Adicionar comentário..."
+                                    value={comentarioEvento[evento.id] || evento.comentario || ''}
+                                    onChange={(e) => setComentarioEvento({
+                                      ...comentarioEvento,
+                                      [evento.id]: e.target.value
+                                    })}
+                                    className="text-sm h-8"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditEvento(evento)}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteEvento(evento.id)}
+                                >
+                                  <Trash className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditEvento(evento)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Eventos Concluídos */}
+                  {eventosConcluidos.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        Concluídos ({eventosConcluidos.length})
+                      </h3>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {eventosConcluidos.map((evento) => (
+                          <div key={evento.id} className="border rounded-lg p-3 space-y-2 bg-muted/30 opacity-75">
+                            <div className="flex items-start gap-2">
+                              <Checkbox 
+                                checked={true}
+                                onCheckedChange={() => handleToggleConcluido(evento)}
+                                className="mt-1"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium line-through">{evento.titulo}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {format(new Date(evento.data), "dd/MM/yyyy")}
+                                  {evento.horario && ` às ${evento.horario}`}
+                                </p>
+                                {evento.comentario && (
+                                  <p className="text-sm text-muted-foreground mt-1 italic">
+                                    💬 {evento.comentario}
+                                  </p>
+                                )}
+                              </div>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleDeleteEvento(evento.id)}
                               >
-                                <Trash className="h-4 w-4" />
+                                <Trash className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
