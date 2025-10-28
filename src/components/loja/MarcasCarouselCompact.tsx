@@ -25,27 +25,27 @@ export function MarcasCarouselCompact({ marcas }: MarcasCarouselCompactProps) {
   }
 
   return (
-    <div className="w-full bg-muted/20 border-b py-3">
+    <div className="w-full bg-muted/20 border-b py-2">
       <div className="container mx-auto px-4">
         <Carousel
           opts={{
-            align: "start",
+            align: "center",
             loop: true,
           }}
           plugins={[
             Autoplay({
-              delay: 3000,
+              delay: 2500,
               stopOnInteraction: false,
             }),
           ]}
-          className="w-full"
+          className="w-full max-w-md mx-auto"
         >
-          <CarouselContent className="-ml-2 md:-ml-4">
+          <CarouselContent className="-ml-2">
             {marcasComLogo.map((marca) => (
-              <CarouselItem key={marca.id} className="basis-1/3 sm:basis-1/4 md:basis-1/5 lg:basis-1/6 pl-2 md:pl-4">
+              <CarouselItem key={marca.id} className="basis-1/2 pl-2">
                 <Link 
                   to={`/loja/marca/${marca.slug}`}
-                  className="flex items-center justify-center h-16 rounded-md hover:bg-accent/50 transition-colors p-2"
+                  className="flex items-center justify-center h-12 rounded-md hover:bg-accent/50 transition-colors p-2"
                 >
                   <img
                     src={marca.logo_url!}
