@@ -10,7 +10,7 @@ interface Marca {
   id: string;
   nome: string;
   slug: string;
-  logo_url?: string | null;
+  imagem_banner?: string | null;
 }
 
 interface MarcasCarouselCompactProps {
@@ -18,9 +18,9 @@ interface MarcasCarouselCompactProps {
 }
 
 export function MarcasCarouselCompact({ marcas }: MarcasCarouselCompactProps) {
-  const marcasComLogo = marcas.filter(marca => marca.logo_url);
+  const marcasComBanner = marcas.filter(marca => marca.imagem_banner);
 
-  if (marcasComLogo.length === 0) {
+  if (marcasComBanner.length === 0) {
     return null;
   }
 
@@ -41,14 +41,14 @@ export function MarcasCarouselCompact({ marcas }: MarcasCarouselCompactProps) {
           className="w-full max-w-md mx-auto"
         >
           <CarouselContent className="-ml-2">
-            {marcasComLogo.map((marca) => (
+            {marcasComBanner.map((marca) => (
               <CarouselItem key={marca.id} className="basis-1/2 pl-2">
                 <Link 
                   to={`/loja/marca/${marca.slug}`}
                   className="flex items-center justify-center h-12 rounded-md hover:bg-accent/50 transition-colors p-2"
                 >
                   <img
-                    src={marca.logo_url!}
+                    src={marca.imagem_banner!}
                     alt={marca.nome}
                     className="max-w-full max-h-full object-contain grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100"
                   />

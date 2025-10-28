@@ -21,9 +21,9 @@ export const LojaHeader = () => {
   const loadMarcas = async () => {
     const { data } = await supabase
       .from('marcas')
-      .select('id, nome, slug, logo_url')
+      .select('id, nome, slug, imagem_banner')
       .eq('ativa', true)
-      .not('logo_url', 'is', null)
+      .not('imagem_banner', 'is', null)
       .order('nome');
     
     if (data) setMarcas(data);
