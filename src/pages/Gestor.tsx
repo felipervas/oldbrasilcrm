@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { FinanceiroBoletos } from "@/components/FinanceiroBoletos";
 import { GerenciarEquipe } from "@/components/GerenciarEquipe";
+import { ContasPagarReceber } from "@/components/ContasPagarReceber";
 
 type Transacao = {
   id: string;
@@ -180,9 +181,10 @@ const Financeiro = () => {
       </div>
 
       <Tabs defaultValue="calendario" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 max-w-3xl">
+        <TabsList className="grid w-full grid-cols-5 max-w-4xl">
           <TabsTrigger value="calendario">📅 Calendário</TabsTrigger>
           <TabsTrigger value="transacoes">💰 Transações</TabsTrigger>
+          <TabsTrigger value="contas">💳 Contas</TabsTrigger>
           <TabsTrigger value="boletos">
             <Receipt className="h-4 w-4 mr-2" />
             Boletos
@@ -456,6 +458,10 @@ const Financeiro = () => {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="contas">
+          <ContasPagarReceber />
         </TabsContent>
 
         <TabsContent value="boletos">
