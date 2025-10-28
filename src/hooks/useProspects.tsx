@@ -24,6 +24,7 @@ export interface Prospect {
   origem?: string;
   observacoes?: string;
   convertido_cliente_id?: string;
+  motivo_perda?: string;
   created_at: string;
   updated_at: string;
   profiles?: {

@@ -1238,6 +1238,7 @@ export type Database = {
           email: string | null
           estado: string | null
           id: string
+          motivo_perda: string | null
           nome_empresa: string
           observacoes: string | null
           origem: string | null
@@ -1259,6 +1260,7 @@ export type Database = {
           email?: string | null
           estado?: string | null
           id?: string
+          motivo_perda?: string | null
           nome_empresa: string
           observacoes?: string | null
           origem?: string | null
@@ -1280,6 +1282,7 @@ export type Database = {
           email?: string | null
           estado?: string | null
           id?: string
+          motivo_perda?: string | null
           nome_empresa?: string
           observacoes?: string | null
           origem?: string | null

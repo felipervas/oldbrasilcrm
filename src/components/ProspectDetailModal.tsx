@@ -114,6 +114,38 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
           </TabsList>
 
           <TabsContent value="info" className="space-y-4">
+            {/* Resumo de Datas */}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+              <div>
+                <p className="text-xs text-muted-foreground">Cadastrado em</p>
+                <p className="text-sm font-medium">
+                  {format(new Date(prospect.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+              </div>
+              {prospect.data_ultimo_contato && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Último contato</p>
+                  <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                    {format(new Date(prospect.data_ultimo_contato), "dd/MM/yyyy", { locale: ptBR })}
+                  </p>
+                </div>
+              )}
+              {prospect.data_proximo_contato && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Próximo contato</p>
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                    {format(new Date(prospect.data_proximo_contato), "dd/MM/yyyy", { locale: ptBR })}
+                  </p>
+                </div>
+              )}
+              {prospect.profiles?.nome && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Responsável</p>
+                  <p className="text-sm font-medium">{prospect.profiles.nome}</p>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Status</Label>
@@ -131,8 +163,8 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
                     <SelectItem value="aguardando_retorno">Aguardando Retorno</SelectItem>
                     <SelectItem value="em_negociacao">Em Negociação</SelectItem>
                     <SelectItem value="proposta_enviada">Proposta Enviada</SelectItem>
-                    <SelectItem value="ganho">Ganho</SelectItem>
-                    <SelectItem value="perdido">Perdido</SelectItem>
+                    <SelectItem value="ganho">Ganho ✓</SelectItem>
+                    <SelectItem value="perdido">Não Deu Certo ✗</SelectItem>
                     <SelectItem value="futuro">Futuro</SelectItem>
                   </SelectContent>
                 </Select>
@@ -285,9 +317,12 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
                           <Badge>{interacao.tipo_interacao}</Badge>
                           {getResultadoIcon(interacao.resultado)}
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(interacao.data_interacao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </span>
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(interacao.data_interacao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Por: {interacao.profiles?.nome}</p>
+                        </div>
                       </div>
                       <p className="text-sm">{interacao.descricao}</p>
                       {interacao.proximo_passo && (
@@ -295,7 +330,6 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
                           <strong>Próximo passo:</strong> {interacao.proximo_passo}
                         </p>
                       )}
-                      <p className="text-xs text-muted-foreground">Por: {interacao.profiles?.nome}</p>
                     </div>
                   ))
                 ) : (
@@ -311,7 +345,14 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
                 <Label>Alterar Status</Label>
                 <Select
                   value={prospect.status}
-                  onValueChange={(value) => updateProspect.mutate({ id: prospect.id, status: value as any })}
+                  onValueChange={(value) => {
+                    if (value === 'perdido') {
+                      // Vai pedir motivo depois
+                      updateProspect.mutate({ id: prospect.id, status: value as any });
+                    } else {
+                      updateProspect.mutate({ id: prospect.id, status: value as any, motivo_perda: null });
+                    }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -323,11 +364,23 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
                     <SelectItem value="em_negociacao">Em Negociação</SelectItem>
                     <SelectItem value="proposta_enviada">Proposta Enviada</SelectItem>
                     <SelectItem value="ganho">Ganho ✓</SelectItem>
-                    <SelectItem value="perdido">Perdido ✗</SelectItem>
+                    <SelectItem value="perdido">Não Deu Certo ✗</SelectItem>
                     <SelectItem value="futuro">Futuro</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {prospect.status === 'perdido' && (
+                <div>
+                  <Label>Motivo (Por que não deu certo?)</Label>
+                  <Textarea
+                    value={prospect.motivo_perda || ''}
+                    onChange={(e) => updateProspect.mutate({ id: prospect.id, motivo_perda: e.target.value })}
+                    placeholder="Ex: Preço alto, já tem fornecedor, não tem interesse..."
+                    rows={3}
+                  />
+                </div>
+              )}
 
               <div>
                 <Label>Agendar Próximo Contato</Label>

@@ -137,89 +137,80 @@ export default function Prospects() {
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label>Nome da Empresa *</Label>
+                    <Label>Nome da Empresa * (Rápido!)</Label>
                     <Input
                       value={novoProspect.nome_empresa}
                       onChange={(e) => setNovoProspect({ ...novoProspect, nome_empresa: e.target.value })}
-                      placeholder="Nome da empresa"
+                      placeholder="Digite apenas o nome da empresa"
+                      autoFocus
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Cidade</Label>
-                      <Input
-                        value={novoProspect.cidade}
-                        onChange={(e) => setNovoProspect({ ...novoProspect, cidade: e.target.value })}
-                      />
+                  
+                  <details className="border rounded p-2">
+                    <summary className="cursor-pointer text-sm text-muted-foreground">+ Informações adicionais (opcional)</summary>
+                    <div className="mt-3 space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Cidade</Label>
+                          <Input
+                            value={novoProspect.cidade}
+                            onChange={(e) => setNovoProspect({ ...novoProspect, cidade: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Estado</Label>
+                          <Input
+                            value={novoProspect.estado}
+                            onChange={(e) => setNovoProspect({ ...novoProspect, estado: e.target.value })}
+                            placeholder="UF"
+                            maxLength={2}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Porte</Label>
+                          <Select value={novoProspect.porte} onValueChange={(value: any) => setNovoProspect({ ...novoProspect, porte: value })}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Grande">Grande</SelectItem>
+                              <SelectItem value="Médio">Médio</SelectItem>
+                              <SelectItem value="Pequeno">Pequeno</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Prioridade</Label>
+                          <Select value={novoProspect.prioridade} onValueChange={(value: any) => setNovoProspect({ ...novoProspect, prioridade: value })}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="alta">Alta</SelectItem>
+                              <SelectItem value="media">Média</SelectItem>
+                              <SelectItem value="baixa">Baixa</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Telefone</Label>
+                        <Input
+                          value={novoProspect.telefone}
+                          onChange={(e) => setNovoProspect({ ...novoProspect, telefone: e.target.value })}
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label>Estado</Label>
-                      <Input
-                        value={novoProspect.estado}
-                        onChange={(e) => setNovoProspect({ ...novoProspect, estado: e.target.value })}
-                        placeholder="UF"
-                        maxLength={2}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Porte</Label>
-                      <Select value={novoProspect.porte} onValueChange={(value: any) => setNovoProspect({ ...novoProspect, porte: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Grande">Grande</SelectItem>
-                          <SelectItem value="Médio">Médio</SelectItem>
-                          <SelectItem value="Pequeno">Pequeno</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Prioridade</Label>
-                      <Select value={novoProspect.prioridade} onValueChange={(value: any) => setNovoProspect({ ...novoProspect, prioridade: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="alta">Alta</SelectItem>
-                          <SelectItem value="media">Média</SelectItem>
-                          <SelectItem value="baixa">Baixa</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Produto Utilizado</Label>
-                    <Input
-                      value={novoProspect.produto_utilizado}
-                      onChange={(e) => setNovoProspect({ ...novoProspect, produto_utilizado: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Telefone</Label>
-                      <Input
-                        value={novoProspect.telefone}
-                        onChange={(e) => setNovoProspect({ ...novoProspect, telefone: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>E-mail</Label>
-                      <Input
-                        type="email"
-                        value={novoProspect.email}
-                        onChange={(e) => setNovoProspect({ ...novoProspect, email: e.target.value })}
-                      />
-                    </div>
-                  </div>
+                  </details>
+
                   <div className="flex gap-2 justify-end">
                     <Button variant="outline" onClick={() => setNewProspectModalOpen(false)}>
                       Cancelar
                     </Button>
                     <Button onClick={handleCreateProspect} disabled={!novoProspect.nome_empresa}>
-                      Criar Prospect
+                      Cadastrar Rápido
                     </Button>
                   </div>
                 </div>

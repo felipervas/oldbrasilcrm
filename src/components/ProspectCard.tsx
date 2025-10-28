@@ -41,9 +41,6 @@ export const ProspectCard = ({ prospect, onClick }: ProspectCardProps) => {
             <Building2 className="h-4 w-4 mt-1 text-muted-foreground shrink-0" />
             <h4 className="font-semibold text-sm line-clamp-2">{prospect.nome_empresa}</h4>
           </div>
-          <Badge variant="outline" className={getPrioridadeColor(prospect.prioridade)}>
-            {prospect.prioridade}
-          </Badge>
         </div>
 
         {(prospect.cidade || prospect.estado) && (
@@ -59,25 +56,37 @@ export const ProspectCard = ({ prospect, onClick }: ProspectCardProps) => {
           </Badge>
         )}
 
-        {prospect.produto_utilizado && (
-          <p className="text-xs text-muted-foreground line-clamp-1">
-            Produto: {prospect.produto_utilizado}
-          </p>
+        {/* Data de cadastro */}
+        <div className="text-xs text-muted-foreground">
+          <span className="font-medium">Cadastrado:</span> {format(new Date(prospect.created_at), "dd/MM/yyyy", { locale: ptBR })}
+        </div>
+
+        {/* Último contato */}
+        {prospect.data_ultimo_contato && (
+          <div className="text-xs font-medium text-green-600 dark:text-green-400">
+            ✓ Último contato: {format(new Date(prospect.data_ultimo_contato), "dd/MM/yyyy", { locale: ptBR })}
+          </div>
         )}
 
+        {/* Próximo contato agendado */}
+        {prospect.data_proximo_contato && (
+          <div className="text-xs font-medium text-blue-600 dark:text-blue-400">
+            📅 Próximo: {format(new Date(prospect.data_proximo_contato), "dd/MM/yyyy", { locale: ptBR })}
+          </div>
+        )}
+
+        {/* Responsável */}
         {prospect.profiles?.nome && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
             <User className="h-3 w-3" />
             <span>{prospect.profiles.nome}</span>
           </div>
         )}
 
-        {prospect.data_ultimo_contato && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3" />
-            <span>
-              Último contato: {format(new Date(prospect.data_ultimo_contato), "dd/MM/yyyy", { locale: ptBR })}
-            </span>
+        {/* Motivo de perda */}
+        {prospect.status === 'perdido' && prospect.motivo_perda && (
+          <div className="text-xs text-red-600 dark:text-red-400 italic pt-2 border-t">
+            ✗ {prospect.motivo_perda}
           </div>
         )}
       </CardContent>
