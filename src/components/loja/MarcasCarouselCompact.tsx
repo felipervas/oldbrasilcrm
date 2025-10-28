@@ -25,8 +25,8 @@ export function MarcasCarouselCompact({ marcas }: MarcasCarouselCompactProps) {
   }
 
   return (
-    <div className="w-full bg-muted/20 border-b py-2">
-      <div className="container mx-auto px-4">
+    <div className="w-full bg-gradient-to-r from-background via-muted/30 to-background border-b py-3">
+      <div className="w-full px-4">
         <Carousel
           opts={{
             align: "center",
@@ -38,19 +38,19 @@ export function MarcasCarouselCompact({ marcas }: MarcasCarouselCompactProps) {
               stopOnInteraction: false,
             }),
           ]}
-          className="w-full max-w-md mx-auto"
+          className="w-full"
         >
-          <CarouselContent className="-ml-2">
+          <CarouselContent className="-ml-4">
             {marcasComBanner.map((marca) => (
-              <CarouselItem key={marca.id} className="basis-1/2 pl-2">
+              <CarouselItem key={marca.id} className="basis-1/2 pl-4">
                 <Link 
                   to={`/loja/marca/${marca.slug}`}
-                  className="flex items-center justify-center h-12 rounded-md hover:bg-accent/50 transition-colors p-2"
+                  className="flex items-center justify-center h-16 rounded-lg hover:bg-accent/30 transition-all hover:scale-105 p-3"
                 >
                   <img
                     src={marca.imagem_banner!}
                     alt={marca.nome}
-                    className="max-w-full max-h-full object-contain grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100"
+                    className="max-w-full max-h-full object-contain transition-all opacity-90 hover:opacity-100"
                   />
                 </Link>
               </CarouselItem>
