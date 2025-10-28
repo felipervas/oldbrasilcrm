@@ -793,10 +793,11 @@ const Clientes = () => {
             <DialogTitle>Editar Cliente</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="info">Informações</TabsTrigger>
               <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
               <TabsTrigger value="contatos">Contatos</TabsTrigger>
+              <TabsTrigger value="historico">Histórico</TabsTrigger>
             </TabsList>
 
             <TabsContent value="info">
@@ -1007,7 +1008,7 @@ const Clientes = () => {
                               toast({ title: "Erro ao excluir contato", variant: "destructive" });
                             } else {
                               toast({ title: "Contato excluído com sucesso!" });
-                              loadContatos(clienteSelecionado.id);
+                              if (clienteSelecionado) loadContatos(clienteSelecionado.id);
                             }
                           }}
                         >
@@ -1021,10 +1022,12 @@ const Clientes = () => {
               </TabsContent>
               
               <TabsContent value="historico">
-                <ClienteProdutosHistorico 
-                  clienteId={clienteSelecionado.id}
-                  clienteNome={clienteSelecionado.nome_fantasia}
-                />
+                {clienteSelecionado && (
+                  <ClienteProdutosHistorico 
+                    clienteId={clienteSelecionado.id}
+                    clienteNome={clienteSelecionado.nome_fantasia}
+                  />
+                )}
               </TabsContent>
             </Tabs>
         </DialogContent>
