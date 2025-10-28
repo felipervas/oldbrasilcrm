@@ -30,6 +30,7 @@ const MarcaDetalhes = lazy(() => import("./pages/MarcaDetalhes"));
 const EstoqueAmostras = lazy(() => import("./pages/EstoqueAmostras"));
 const GerenciarLoja = lazy(() => import("./pages/GerenciarLoja"));
 const GerenciarEquipe = lazy(() => import("./pages/GerenciarEquipe"));
+const Prospects = lazy(() => import("./pages/Prospects"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Páginas Públicas da Loja
@@ -296,6 +297,14 @@ const App = () => (
               <ProtectedAdminRoute>
                 <GerenciarEquipe />
               </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/prospects"
+            element={
+              <AppLayout>
+                <Prospects />
+              </AppLayout>
             }
           />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

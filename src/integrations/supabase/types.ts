@@ -1177,6 +1177,138 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_interacoes: {
+        Row: {
+          created_at: string
+          data_interacao: string
+          descricao: string
+          id: string
+          prospect_id: string
+          proximo_passo: string | null
+          resultado: string | null
+          tipo_interacao: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_interacao?: string
+          descricao: string
+          id?: string
+          prospect_id: string
+          proximo_passo?: string | null
+          resultado?: string | null
+          tipo_interacao: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          data_interacao?: string
+          descricao?: string
+          id?: string
+          prospect_id?: string
+          proximo_passo?: string | null
+          resultado?: string | null
+          tipo_interacao?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_interacoes_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_interacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospects: {
+        Row: {
+          cidade: string | null
+          convertido_cliente_id: string | null
+          created_at: string
+          data_proximo_contato: string | null
+          data_ultimo_contato: string | null
+          email: string | null
+          estado: string | null
+          id: string
+          nome_empresa: string
+          observacoes: string | null
+          origem: string | null
+          porte: string | null
+          prioridade: string
+          produto_utilizado: string | null
+          responsavel_id: string | null
+          site: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cidade?: string | null
+          convertido_cliente_id?: string | null
+          created_at?: string
+          data_proximo_contato?: string | null
+          data_ultimo_contato?: string | null
+          email?: string | null
+          estado?: string | null
+          id?: string
+          nome_empresa: string
+          observacoes?: string | null
+          origem?: string | null
+          porte?: string | null
+          prioridade?: string
+          produto_utilizado?: string | null
+          responsavel_id?: string | null
+          site?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cidade?: string | null
+          convertido_cliente_id?: string | null
+          created_at?: string
+          data_proximo_contato?: string | null
+          data_ultimo_contato?: string | null
+          email?: string | null
+          estado?: string | null
+          id?: string
+          nome_empresa?: string
+          observacoes?: string | null
+          origem?: string | null
+          porte?: string | null
+          prioridade?: string
+          produto_utilizado?: string | null
+          responsavel_id?: string | null
+          site?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospects_convertido_cliente_id_fkey"
+            columns: ["convertido_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospects_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       receitas: {
         Row: {
           arquivo_nome: string

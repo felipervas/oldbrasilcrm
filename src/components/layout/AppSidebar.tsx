@@ -31,6 +31,7 @@ import {
   ShoppingBag,
   Store,
   Shield,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -59,6 +60,7 @@ const defaultMenuItems = [
   { id: "meu-perfil", title: "Meu Perfil", url: "/meu-perfil", icon: User },
   { id: "loja-online", title: "Ver Loja Online", url: "/", icon: ShoppingBag },
   { id: "clientes", title: "Clientes", url: "/clientes", icon: Users },
+  { id: "prospects", title: "Pipeline de Vendas", url: "/prospects", icon: Target },
   { id: "tarefas", title: "Tarefas", url: "/tarefas", icon: CheckSquare },
   
   
