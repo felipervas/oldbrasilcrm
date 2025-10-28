@@ -821,12 +821,15 @@ export type Database = {
           arquivo_url: string | null
           cliente_id: string
           created_at: string | null
+          data_entrega_realizada: string | null
           data_pedido: string | null
+          data_previsao_entrega: string | null
           dias_pagamento: string | null
           forma_pagamento: string | null
           id: string
           numero_pedido: string | null
           observacoes: string | null
+          observacoes_entrega: string | null
           observacoes_internas: string | null
           parcelas: number | null
           responsavel_venda_id: string | null
@@ -841,12 +844,15 @@ export type Database = {
           arquivo_url?: string | null
           cliente_id: string
           created_at?: string | null
+          data_entrega_realizada?: string | null
           data_pedido?: string | null
+          data_previsao_entrega?: string | null
           dias_pagamento?: string | null
           forma_pagamento?: string | null
           id?: string
           numero_pedido?: string | null
           observacoes?: string | null
+          observacoes_entrega?: string | null
           observacoes_internas?: string | null
           parcelas?: number | null
           responsavel_venda_id?: string | null
@@ -861,12 +867,15 @@ export type Database = {
           arquivo_url?: string | null
           cliente_id?: string
           created_at?: string | null
+          data_entrega_realizada?: string | null
           data_pedido?: string | null
+          data_previsao_entrega?: string | null
           dias_pagamento?: string | null
           forma_pagamento?: string | null
           id?: string
           numero_pedido?: string | null
           observacoes?: string | null
+          observacoes_entrega?: string | null
           observacoes_internas?: string | null
           parcelas?: number | null
           responsavel_venda_id?: string | null
@@ -1321,6 +1330,19 @@ export type Database = {
         Returns: {
           compra_mensal_media: number
           total_comprado: number
+        }[]
+      }
+      get_cliente_produtos_historico: {
+        Args: { cliente_uuid: string }
+        Returns: {
+          dias_desde_ultima_compra: number
+          primeira_compra: string
+          produto_id: string
+          produto_nome: string
+          status: string
+          total_pedidos: number
+          total_quantidade: number
+          ultima_compra: string
         }[]
       }
       get_loja_home_otimizada: {

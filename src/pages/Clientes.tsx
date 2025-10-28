@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ClienteProdutosHistorico } from "@/components/ClienteProdutosHistorico";
 
 const Clientes = () => {
   const [open, setOpen] = useState(false);
@@ -1017,8 +1018,15 @@ const Clientes = () => {
                   ))}
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
+              </TabsContent>
+              
+              <TabsContent value="historico">
+                <ClienteProdutosHistorico 
+                  clienteId={clienteSelecionado.id}
+                  clienteNome={clienteSelecionado.nome_fantasia}
+                />
+              </TabsContent>
+            </Tabs>
         </DialogContent>
       </Dialog>
 

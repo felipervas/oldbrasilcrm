@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Users, CheckSquare, MessageSquare, TrendingUp, Clock, AlertCircle, Package, Boxes } from "lucide-react";
+import { Users, CheckSquare, MessageSquare, TrendingUp, Clock, AlertCircle, Package, Boxes, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { EntregaStatusBadge } from "@/components/EntregaStatusBadge";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface DashboardStats {
   totalClientes: number;
@@ -13,6 +16,7 @@ interface DashboardStats {
   tarefasAtrasadas: number;
   amostrasEnviadas: number;
   totalProdutos: number;
+  entregasPendentes: number;
 }
 
 const Dashboard = () => {
@@ -25,8 +29,10 @@ const Dashboard = () => {
     tarefasAtrasadas: 0,
     amostrasEnviadas: 0,
     totalProdutos: 0,
+    entregasPendentes: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [entregas, setEntregas] = useState<any[]>([]);
 
   useEffect(() => {
     loadStats();
@@ -37,13 +43,15 @@ const Dashboard = () => {
       const hoje = new Date().toISOString().split('T')[0];
 
       // Super otimizado: apenas contagens sem carregar dados
-      const [clientesRes, tarefasRes, interacoesRes, tarefasAtrasadasRes, amostrasRes, produtosRes] = await Promise.all([
+      const [clientesRes, tarefasRes, interacoesRes, tarefasAtrasadasRes, amostrasRes, produtosRes, entregasRes, entregasListRes] = await Promise.all([
         supabase.from('clientes').select('id', { count: 'exact', head: true }).eq('ativo', true),
         supabase.from('tarefas').select('id', { count: 'exact', head: true }).eq('status', 'pendente'),
         supabase.from('interacoes').select('id', { count: 'exact', head: true }).gte('data_hora', `${hoje}T00:00:00`),
         supabase.from('tarefas').select('id', { count: 'exact', head: true }).eq('status', 'pendente').lt('data_prevista', hoje),
         supabase.from('amostras').select('id', { count: 'exact', head: true }),
         supabase.from('produtos').select('id', { count: 'exact', head: true }).eq('ativo', true),
+        supabase.from('pedidos').select('id', { count: 'exact', head: true }).not('data_previsao_entrega', 'is', null).not('status', 'in', '(cancelado,entregue)'),
+        supabase.from('pedidos').select('id, numero_pedido, data_previsao_entrega, status, clientes(nome_fantasia)').not('data_previsao_entrega', 'is', null).not('status', 'in', '(cancelado,entregue)').order('data_previsao_entrega', { ascending: true }).limit(5),
       ]);
 
       setStats({
@@ -53,7 +61,10 @@ const Dashboard = () => {
         tarefasAtrasadas: tarefasAtrasadasRes.count || 0,
         amostrasEnviadas: amostrasRes.count || 0,
         totalProdutos: produtosRes.count || 0,
+        entregasPendentes: entregasRes.count || 0,
       });
+
+      setEntregas(entregasListRes.data || []);
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
       toast({
@@ -121,6 +132,15 @@ const Dashboard = () => {
       bgColor: "bg-destructive/10",
       link: "/tarefas",
     },
+    {
+      title: "Entregas Pendentes",
+      value: stats.entregasPendentes,
+      icon: Truck,
+      description: "Pedidos p/ entregar",
+      color: "text-info",
+      bgColor: "bg-info/10",
+      link: "/pedidos",
+    },
   ];
 
   return (
@@ -170,6 +190,47 @@ const Dashboard = () => {
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              Entregas Pendentes
+            </CardTitle>
+            <CardDescription>
+              Próximas entregas previstas
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {entregas.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center py-8">
+                Nenhuma entrega pendente
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {entregas.map((entrega) => (
+                  <div 
+                    key={entrega.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/pedidos/${entrega.id}/editar`)}
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{entrega.clientes?.nome_fantasia}</p>
+                      <p className="text-xs text-muted-foreground">Pedido {entrega.numero_pedido}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {format(new Date(entrega.data_previsao_entrega + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })}
+                      </p>
+                    </div>
+                    <EntregaStatusBadge 
+                      dataPrevisao={entrega.data_previsao_entrega}
+                      status={entrega.status}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
               Atividade Recente
             </CardTitle>
@@ -183,24 +244,24 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
-
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-warning" />
-              Próximas Tarefas
-            </CardTitle>
-            <CardDescription>
-              Agenda dos próximos dias
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground text-center py-8">
-              Nenhuma tarefa agendada
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-warning" />
+            Próximas Tarefas
+          </CardTitle>
+          <CardDescription>
+            Agenda dos próximos dias
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-muted-foreground text-center py-8">
+            Nenhuma tarefa agendada
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

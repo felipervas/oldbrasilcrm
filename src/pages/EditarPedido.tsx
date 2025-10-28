@@ -31,6 +31,8 @@ const EditarPedido = () => {
     responsavel_venda_id: "",
     tipo_frete: "",
     transportadora: "",
+    data_previsao_entrega: "",
+    observacoes_entrega: "",
   });
 
   useEffect(() => {
@@ -79,6 +81,8 @@ const EditarPedido = () => {
       responsavel_venda_id: data.responsavel_venda_id || "",
       tipo_frete: data.tipo_frete || "",
       transportadora: data.transportadora || "",
+      data_previsao_entrega: data.data_previsao_entrega || "",
+      observacoes_entrega: data.observacoes_entrega || "",
     });
     setLoading(false);
   };
@@ -102,6 +106,8 @@ const EditarPedido = () => {
         responsavel_venda_id: formData.responsavel_venda_id || null,
         tipo_frete: formData.tipo_frete || null,
         transportadora: formData.transportadora || null,
+        data_previsao_entrega: formData.data_previsao_entrega || null,
+        observacoes_entrega: formData.observacoes_entrega || null,
       })
       .eq("id", id);
 
@@ -288,6 +294,28 @@ const EditarPedido = () => {
                   value={formData.transportadora}
                   onChange={(e) => setFormData({ ...formData, transportadora: e.target.value })}
                   placeholder="Nome da transportadora"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="data_previsao_entrega">Previsão de Entrega</Label>
+                <Input
+                  id="data_previsao_entrega"
+                  type="date"
+                  value={formData.data_previsao_entrega}
+                  onChange={(e) => setFormData({ ...formData, data_previsao_entrega: e.target.value })}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div>
+                <Label htmlFor="observacoes_entrega">Observações de Entrega</Label>
+                <Input
+                  id="observacoes_entrega"
+                  value={formData.observacoes_entrega}
+                  onChange={(e) => setFormData({ ...formData, observacoes_entrega: e.target.value })}
+                  placeholder="Ex: Entregar pela manhã"
                 />
               </div>
             </div>
