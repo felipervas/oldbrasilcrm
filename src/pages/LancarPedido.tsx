@@ -251,6 +251,7 @@ const LancarPedido = () => {
           observacoes: formData.get("observacoes") as string || null,
           observacoes_internas: observacoesInternas || null,
           responsavel_venda_id: responsavelFinal || null,
+          prazo_entrega: formData.get("prazo_entrega") as string || null,
           data_previsao_entrega: formData.get("data_previsao_entrega") as string || null,
           observacoes_entrega: formData.get("observacoes_entrega") as string || null,
         })
@@ -703,6 +704,24 @@ const LancarPedido = () => {
                     <div>
                       <Label>Dias para Pagamento</Label>
                       <Input name="dias_pagamento" placeholder="Ex: 30, 60, 90" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h3 className="font-semibold mb-3">Informações de Entrega</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Prazo de Entrega (opcional)</Label>
+                      <Input name="prazo_entrega" placeholder="Ex: 5 dias úteis, 2 semanas..." />
+                    </div>
+                    <div>
+                      <Label>Previsão de Entrega (opcional)</Label>
+                      <Input type="date" name="data_previsao_entrega" />
+                    </div>
+                    <div className="col-span-2">
+                      <Label>Observações de Entrega (opcional)</Label>
+                      <Input name="observacoes_entrega" placeholder="Ex: Entregar pela manhã, avisar com antecedência..." />
                     </div>
                   </div>
                 </div>
