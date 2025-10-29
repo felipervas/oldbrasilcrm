@@ -43,18 +43,24 @@ export const ProspectCard = ({ prospect, onClick }: ProspectCardProps) => {
           </div>
         </div>
 
-        {(prospect.cidade || prospect.estado) && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <MapPin className="h-3 w-3" />
-            <span>{[prospect.cidade, prospect.estado].filter(Boolean).join(', ')}</span>
-          </div>
-        )}
-
-        {prospect.porte && (
-          <Badge variant="outline" className={getPorteColor(prospect.porte)}>
-            {prospect.porte}
-          </Badge>
-        )}
+        <div className="space-y-1">
+          {(prospect.cidade || prospect.estado) && (
+            <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+              <MapPin className="h-3 w-3" />
+              <span>📍 {[prospect.cidade, prospect.estado].filter(Boolean).join(', ')}</span>
+            </div>
+          )}
+          {prospect.segmento && (
+            <div className="text-xs text-muted-foreground">
+              🏢 {prospect.segmento}
+            </div>
+          )}
+          {prospect.porte && (
+            <Badge variant="outline" className={getPorteColor(prospect.porte)}>
+              {prospect.porte}
+            </Badge>
+          )}
+        </div>
 
         {/* Data de cadastro */}
         <div className="text-xs text-muted-foreground">

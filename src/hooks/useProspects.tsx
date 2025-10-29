@@ -12,6 +12,7 @@ export interface Prospect {
   cidade?: string;
   estado?: string;
   porte?: ProspectPorte;
+  segmento?: string;
   produto_utilizado?: string;
   telefone?: string;
   email?: string;

@@ -33,6 +33,7 @@ export default function Prospects() {
   const [newProspectModalOpen, setNewProspectModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState('todos');
+  const [filterCidade, setFilterCidade] = useState('todos');
   const [filterPorte, setFilterPorte] = useState('todos');
   const [filterPrioridade, setFilterPrioridade] = useState('todos');
 
@@ -41,6 +42,7 @@ export default function Prospects() {
     cidade: '',
     estado: '',
     porte: 'Médio' as 'Grande' | 'Médio' | 'Pequeno',
+    segmento: '',
     produto_utilizado: '',
     telefone: '',
     email: '',
@@ -55,12 +57,13 @@ export default function Prospects() {
       const matchSearch = p.nome_empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.cidade?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchEstado = filterEstado === 'todos' || p.estado === filterEstado;
+      const matchCidade = filterCidade === 'todos' || p.cidade === filterCidade;
       const matchPorte = filterPorte === 'todos' || p.porte === filterPorte;
       const matchPrioridade = filterPrioridade === 'todos' || p.prioridade === filterPrioridade;
 
-      return matchSearch && matchEstado && matchPorte && matchPrioridade;
+      return matchSearch && matchEstado && matchCidade && matchPorte && matchPrioridade;
     });
-  }, [prospects, searchTerm, filterEstado, filterPorte, filterPrioridade]);
+  }, [prospects, searchTerm, filterEstado, filterCidade, filterPorte, filterPrioridade]);
 
   const prospectsByStatus = useMemo(() => {
     const grouped: Record<ProspectStatus, Prospect[]> = {
@@ -86,6 +89,11 @@ export default function Prospects() {
     return Array.from(new Set(prospects.map((p) => p.estado).filter(Boolean)));
   }, [prospects]);
 
+  const cidades = useMemo(() => {
+    if (!prospects) return [];
+    return Array.from(new Set(prospects.map((p) => p.cidade).filter(Boolean))).sort();
+  }, [prospects]);
+
   const handleCreateProspect = () => {
     createProspect.mutate(novoProspect);
     setNewProspectModalOpen(false);
@@ -94,6 +102,7 @@ export default function Prospects() {
       cidade: '',
       estado: '',
       porte: 'Médio',
+      segmento: '',
       produto_utilizado: '',
       telefone: '',
       email: '',
@@ -195,6 +204,14 @@ export default function Prospects() {
                           </Select>
                         </div>
                       </div>
+                       <div>
+                        <Label>Segmento</Label>
+                        <Input
+                          value={novoProspect.segmento}
+                          onChange={(e) => setNovoProspect({ ...novoProspect, segmento: e.target.value })}
+                          placeholder="Ex: Confeitaria, Padaria, Sorveteria"
+                        />
+                      </div>
                       <div>
                         <Label>Telefone</Label>
                         <Input
@@ -241,6 +258,19 @@ export default function Prospects() {
               {estados.map((estado) => (
                 <SelectItem key={estado} value={estado!}>
                   {estado}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterCidade} onValueChange={setFilterCidade}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Cidade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas Cidades</SelectItem>
+              {cidades.map((cidade) => (
+                <SelectItem key={cidade} value={cidade!}>
+                  {cidade}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -32,6 +32,7 @@ export const ImportarProspects = () => {
         cidade: row['CIDADE'] || row['cidade'] || row['Cidade'],
         estado: row['ESTADO'] || row['estado'] || row['UF'] || row['uf'],
         porte: row['PORTE'] || row['porte'] || row['Porte'],
+        segmento: row['SEGMENTO'] || row['segmento'] || row['Segmento'] || row['Setor'] || row['setor'],
         produto_utilizado: row['PRODUTO'] || row['produto'] || row['Produto Utilizado'],
         status: 'novo' as const,
         prioridade: 'media' as const,
@@ -60,6 +61,7 @@ export const ImportarProspects = () => {
         cidade: row['CIDADE'] || row['cidade'] || row['Cidade'],
         estado: row['ESTADO'] || row['estado'] || row['UF'] || row['uf'],
         porte: row['PORTE'] || row['porte'] || row['Porte'],
+        segmento: row['SEGMENTO'] || row['segmento'] || row['Segmento'] || row['Setor'] || row['setor'],
         produto_utilizado: row['PRODUTO'] || row['produto'] || row['Produto Utilizado'],
         status: 'novo' as const,
         prioridade: 'media' as const,
@@ -110,6 +112,7 @@ export const ImportarProspects = () => {
                       <th className="p-2 text-left">Cidade</th>
                       <th className="p-2 text-left">Estado</th>
                       <th className="p-2 text-left">Porte</th>
+                      <th className="p-2 text-left">Segmento</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -119,6 +122,7 @@ export const ImportarProspects = () => {
                         <td className="p-2">{p.cidade}</td>
                         <td className="p-2">{p.estado}</td>
                         <td className="p-2">{p.porte}</td>
+                        <td className="p-2">{p.segmento}</td>
                       </tr>
                     ))}
                   </tbody>

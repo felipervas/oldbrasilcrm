@@ -189,45 +189,72 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                {prospect.telefone && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4" />
-                    <span>{prospect.telefone}</span>
-                  </div>
-                )}
-                {prospect.email && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="h-4 w-4" />
-                    <span>{prospect.email}</span>
-                  </div>
-                )}
-                {prospect.site && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Globe className="h-4 w-4" />
-                    <span>{prospect.site}</span>
-                  </div>
-                )}
-                {(prospect.cidade || prospect.estado) && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-4 w-4" />
-                    <span>{[prospect.cidade, prospect.estado].filter(Boolean).join(', ')}</span>
-                  </div>
-                )}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Cidade</Label>
+                  <Input
+                    value={editMode ? (formData.cidade ?? prospect.cidade) : prospect.cidade}
+                    onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                    disabled={!editMode}
+                  />
+                </div>
+                <div>
+                  <Label>Estado</Label>
+                  <Input
+                    value={editMode ? (formData.estado ?? prospect.estado) : prospect.estado}
+                    onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                    placeholder="UF"
+                    maxLength={2}
+                    disabled={!editMode}
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Porte:</span>
-                  <Badge>{prospect.porte || 'Não informado'}</Badge>
+              <div>
+                <Label>Segmento</Label>
+                <Input
+                  value={editMode ? (formData.segmento ?? prospect.segmento) : prospect.segmento}
+                  onChange={(e) => setFormData({ ...formData, segmento: e.target.value })}
+                  placeholder="Ex: Confeitaria, Padaria, Sorveteria"
+                  disabled={!editMode}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  {prospect.telefone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4" />
+                      <span>{prospect.telefone}</span>
+                    </div>
+                  )}
+                  {prospect.email && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4" />
+                      <span>{prospect.email}</span>
+                    </div>
+                  )}
+                  {prospect.site && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Globe className="h-4 w-4" />
+                      <span>{prospect.site}</span>
+                    </div>
+                  )}
                 </div>
-                {prospect.produto_utilizado && (
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Produto: </span>
-                    {prospect.produto_utilizado}
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Porte:</span>
+                    <Badge>{prospect.porte || 'Não informado'}</Badge>
                   </div>
-                )}
+                  {prospect.produto_utilizado && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Produto: </span>
+                      {prospect.produto_utilizado}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

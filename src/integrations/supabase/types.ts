@@ -1246,6 +1246,7 @@ export type Database = {
           prioridade: string
           produto_utilizado: string | null
           responsavel_id: string | null
+          segmento: string | null
           site: string | null
           status: string
           telefone: string | null
@@ -1268,6 +1269,7 @@ export type Database = {
           prioridade?: string
           produto_utilizado?: string | null
           responsavel_id?: string | null
+          segmento?: string | null
           site?: string | null
           status?: string
           telefone?: string | null
@@ -1290,6 +1292,7 @@ export type Database = {
           prioridade?: string
           produto_utilizado?: string | null
           responsavel_id?: string | null
+          segmento?: string | null
           site?: string | null
           status?: string
           telefone?: string | null
