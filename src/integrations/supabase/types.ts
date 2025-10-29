@@ -1177,6 +1177,47 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_ia_insights: {
+        Row: {
+          dicas_abordagem: string[] | null
+          gerado_em: string | null
+          id: string
+          informacoes_publicas: string | null
+          produtos_recomendados: string[] | null
+          prospect_id: string | null
+          resumo_empresa: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          dicas_abordagem?: string[] | null
+          gerado_em?: string | null
+          id?: string
+          informacoes_publicas?: string | null
+          produtos_recomendados?: string[] | null
+          prospect_id?: string | null
+          resumo_empresa?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          dicas_abordagem?: string[] | null
+          gerado_em?: string | null
+          id?: string
+          informacoes_publicas?: string | null
+          produtos_recomendados?: string[] | null
+          prospect_id?: string | null
+          resumo_empresa?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_ia_insights_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: true
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospect_interacoes: {
         Row: {
           created_at: string

@@ -31,6 +31,8 @@ const EstoqueAmostras = lazy(() => import("./pages/EstoqueAmostras"));
 const GerenciarLoja = lazy(() => import("./pages/GerenciarLoja"));
 const GerenciarEquipe = lazy(() => import("./pages/GerenciarEquipe"));
 const Prospects = lazy(() => import("./pages/Prospects"));
+const ColaboradorRelatorioDiario = lazy(() => import("./pages/ColaboradorRelatorioDiario"));
+const RotasPlanejar = lazy(() => import("./pages/RotasPlanejar"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Páginas Públicas da Loja
@@ -304,6 +306,22 @@ const App = () => (
             element={
               <AppLayout>
                 <Prospects />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/meu-dia"
+            element={
+              <AppLayout>
+                <ColaboradorRelatorioDiario />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/rotas/planejar"
+            element={
+              <AppLayout>
+                <RotasPlanejar />
               </AppLayout>
             }
           />

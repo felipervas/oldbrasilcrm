@@ -1,1 +1,4 @@
 project_id = "uwbzrkqtwmykniijbwik"
+
+[functions.gerar-insights-prospect]
+verify_jwt = false
