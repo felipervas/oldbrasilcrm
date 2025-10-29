@@ -37,8 +37,13 @@ Analise a seguinte empresa e forneça informações úteis para um vendedor:
 - Segmento: ${segmento || 'Não especificado'}
 - Localização: ${cidade || 'Brasil'}
 
+VALIDAÇÃO DE SEGMENTO:
+Primeiro, analise se o segmento "${segmento || 'não informado'}" é coerente com o nome "${nomeEmpresa}".
+
 Retorne APENAS um JSON válido com esta estrutura exata (sem markdown, sem formatação):
 {
+  "segmento_validado": true,
+  "segmento_sugerido": null,
   "resumo_empresa": "Breve descrição do tipo de empresa e seu porte estimado (1-2 frases)",
   "produtos_recomendados": ["produto1", "produto2", "produto3"],
   "dicas_abordagem": ["dica1", "dica2", "dica3"],

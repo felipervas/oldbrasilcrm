@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Users, CheckSquare, MessageSquare, TrendingUp, Clock, AlertCircle, Package, Boxes, Truck, Calendar } from "lucide-react";
+import { Users, CheckSquare, MessageSquare, TrendingUp, Clock, AlertCircle, Package, Boxes, Truck, CalendarDays } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { EntregaStatusBadge } from "@/components/EntregaStatusBadge";
@@ -232,7 +232,7 @@ const Dashboard = () => {
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
+              <CalendarDays className="h-5 w-5 text-primary" />
               Meu Dia Hoje
             </CardTitle>
             <CardDescription>
