@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { useProspects, useCreateProspect, Prospect, ProspectStatus } from '@/hooks/useProspects';
+import { useProspects, useCreateProspect, useBulkCreateProspects, Prospect, ProspectStatus } from '@/hooks/useProspects';
 import { ProspectCard } from '@/components/ProspectCard';
 import { ProspectDetailModal } from '@/components/ProspectDetailModal';
 import { ImportarProspects } from '@/components/ImportarProspects';
@@ -9,8 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Users } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const statusLabels: Record<ProspectStatus, string> = {
   novo: 'Novo',
@@ -28,14 +31,19 @@ const statusColumns: ProspectStatus[] = ['novo', 'em_contato', 'aguardando_retor
 export default function Prospects() {
   const { data: prospects, isLoading } = useProspects();
   const createProspect = useCreateProspect();
+  const bulkCreateProspects = useBulkCreateProspects();
   const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [newProspectModalOpen, setNewProspectModalOpen] = useState(false);
+  const [bulkProspectModalOpen, setBulkProspectModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState('todos');
   const [filterCidade, setFilterCidade] = useState('todos');
   const [filterPorte, setFilterPorte] = useState('todos');
   const [filterPrioridade, setFilterPrioridade] = useState('todos');
+  const [colaboradores, setColaboradores] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const { toast } = useToast();
 
   const [novoProspect, setNovoProspect] = useState({
     nome_empresa: '',
@@ -48,6 +56,29 @@ export default function Prospects() {
     email: '',
     prioridade: 'media' as 'alta' | 'media' | 'baixa',
     observacoes: '',
+    responsavel_id: '',
+  });
+
+  const [bulkProspects, setBulkProspects] = useState('');
+  const [bulkResponsavel, setBulkResponsavel] = useState('');
+
+  // Carregar colaboradores e usuário atual
+  useState(() => {
+    const loadData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+        setNovoProspect(prev => ({ ...prev, responsavel_id: user.id }));
+        setBulkResponsavel(user.id);
+      }
+
+      const { data: colabs } = await supabase
+        .from('profiles')
+        .select('id, nome')
+        .order('nome');
+      setColaboradores(colabs || []);
+    };
+    loadData();
   });
 
   const filteredProspects = useMemo(() => {
@@ -108,6 +139,29 @@ export default function Prospects() {
       email: '',
       prioridade: 'media',
       observacoes: '',
+      responsavel_id: currentUserId,
+    });
+  };
+
+  const handleBulkCreate = () => {
+    const lines = bulkProspects.split('\n').filter(line => line.trim());
+    const prospectsToCreate = lines.map(line => ({
+      nome_empresa: line.trim(),
+      prioridade: 'media' as const,
+      responsavel_id: bulkResponsavel || currentUserId,
+    }));
+
+    if (prospectsToCreate.length === 0) {
+      toast({ title: 'Digite ao menos um nome de empresa', variant: 'destructive' });
+      return;
+    }
+
+    bulkCreateProspects.mutate(prospectsToCreate, {
+      onSuccess: () => {
+        setBulkProspectModalOpen(false);
+        setBulkProspects('');
+        setBulkResponsavel(currentUserId);
+      }
     });
   };
 
@@ -133,6 +187,57 @@ export default function Prospects() {
           </div>
           <div className="flex gap-2">
             <ImportarProspects />
+            <Dialog open={bulkProspectModalOpen} onOpenChange={setBulkProspectModalOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Users className="h-4 w-4 mr-2" />
+                  Adicionar Vários
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Adicionar Vários Prospects</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Empresas (uma por linha)</Label>
+                    <Textarea
+                      value={bulkProspects}
+                      onChange={(e) => setBulkProspects(e.target.value)}
+                      placeholder="Digite um nome de empresa por linha:&#10;Empresa A&#10;Empresa B&#10;Empresa C"
+                      rows={10}
+                      autoFocus
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {bulkProspects.split('\n').filter(l => l.trim()).length} empresas
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Quem Prospectou</Label>
+                    <Select value={bulkResponsavel} onValueChange={setBulkResponsavel}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o responsável" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {colaboradores.map((colab) => (
+                          <SelectItem key={colab.id} value={colab.id}>
+                            {colab.nome} {colab.id === currentUserId && '(Você)'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={() => setBulkProspectModalOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleBulkCreate}>
+                      Adicionar {bulkProspects.split('\n').filter(l => l.trim()).length} Prospects
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Dialog open={newProspectModalOpen} onOpenChange={setNewProspectModalOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -153,6 +258,22 @@ export default function Prospects() {
                       placeholder="Digite apenas o nome da empresa"
                       autoFocus
                     />
+                  </div>
+                  
+                  <div>
+                    <Label>Quem Prospectou</Label>
+                    <Select value={novoProspect.responsavel_id} onValueChange={(value) => setNovoProspect({ ...novoProspect, responsavel_id: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o responsável" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {colaboradores.map((colab) => (
+                          <SelectItem key={colab.id} value={colab.id}>
+                            {colab.nome} {colab.id === currentUserId && '(Você)'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   
                   <details className="border rounded p-2">
@@ -299,18 +420,18 @@ export default function Prospects() {
           </Select>
         </div>
 
-        {/* Kanban Board */}
-        <div className="grid grid-cols-6 gap-4 min-h-[600px]">
+        {/* Kanban Board - Layout otimizado para tela cheia */}
+        <div className="flex gap-3 min-h-[calc(100vh-300px)] overflow-x-auto">
           {statusColumns.map((status) => (
-            <div key={status} className="flex flex-col">
-              <div className="bg-muted rounded-t-lg p-3 sticky top-0 z-10">
-                <h3 className="font-semibold text-sm">{statusLabels[status]}</h3>
+            <div key={status} className="flex flex-col min-w-[280px] flex-1">
+              <div className="bg-muted rounded-t-lg p-4 sticky top-0 z-10">
+                <h3 className="font-semibold">{statusLabels[status]}</h3>
                 <p className="text-xs text-muted-foreground">
                   {prospectsByStatus[status].length} {prospectsByStatus[status].length === 1 ? 'prospect' : 'prospects'}
                 </p>
               </div>
-              <ScrollArea className="flex-1 border border-t-0 rounded-b-lg p-2">
-                <div className="space-y-2">
+              <ScrollArea className="flex-1 border border-t-0 rounded-b-lg p-3">
+                <div className="space-y-3">
                   {prospectsByStatus[status].map((prospect) => (
                     <ProspectCard
                       key={prospect.id}

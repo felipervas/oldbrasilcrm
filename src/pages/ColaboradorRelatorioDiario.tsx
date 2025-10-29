@@ -153,14 +153,19 @@ export default function ColaboradorRelatorioDiario() {
       return (
         <Card key={evento.id} className="p-4">
           <div className="flex items-start justify-between">
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 flex-1">
               {evento.tarefa.tipo === 'ligacao' ? (
                 <Phone className="h-5 w-5 text-blue-500 mt-0.5" />
               ) : (
                 <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
               )}
-              <div>
+              <div className="flex-1">
                 <h4 className="font-semibold">{evento.tarefa.titulo}</h4>
+                {evento.tarefa.cliente_nome && (
+                  <p className="text-sm text-muted-foreground">
+                    Cliente: {evento.tarefa.cliente_nome}
+                  </p>
+                )}
                 {evento.horario_inicio && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                     <Clock className="h-3 w-3" />
@@ -170,6 +175,12 @@ export default function ColaboradorRelatorioDiario() {
                 {evento.tarefa.descricao && (
                   <p className="text-sm text-muted-foreground mt-2">{evento.tarefa.descricao}</p>
                 )}
+                {evento.endereco_completo && (
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                    <Navigation className="h-3 w-3" />
+                    {evento.endereco_completo}
+                  </p>
+                )}
               </div>
             </div>
             <Badge variant={evento.tarefa.prioridade === 'alta' ? 'destructive' : 'secondary'}>
@@ -177,16 +188,31 @@ export default function ColaboradorRelatorioDiario() {
             </Badge>
           </div>
           {evento.status === 'pendente' && isHoje && (
-            <Button size="sm" className="w-full mt-3">
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Marcar como Concluída
-            </Button>
+            <div className="flex gap-2 mt-3">
+              <Button size="sm" className="flex-1">
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Marcar como Concluída
+              </Button>
+              {evento.endereco_completo && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    const endereco = encodeURIComponent(evento.endereco_completo || '');
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${endereco}`, '_blank');
+                  }}
+                >
+                  <Navigation className="h-4 w-4 mr-2" />
+                  Navegação
+                </Button>
+              )}
+            </div>
           )}
-        </Card>
-      );
-    }
+         </Card>
+       );
+     }
 
-    return (
+     return (
       <Card key={evento.id} className="p-4">
         <div className="flex items-center gap-2">
           <CalendarDays className="h-5 w-5 text-muted-foreground" />

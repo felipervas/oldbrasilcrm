@@ -10,6 +10,7 @@ export interface EventoDia {
   horario_fim?: string;
   data: Date;
   status?: string;
+  endereco_completo?: string;
   prospect?: {
     id: string;
     nome_empresa: string;
@@ -28,6 +29,7 @@ export interface EventoDia {
     descricao?: string;
     prioridade?: string;
     tipo?: string;
+    cliente_nome?: string;
   };
 }
 
@@ -119,7 +121,12 @@ export const useRelatorioDiario = (data: Date) => {
       // Buscar tarefas do dia
       const { data: tarefas, error: tarefasError } = await supabase
         .from('tarefas')
-        .select('*')
+        .select(`
+          *,
+          clientes (
+            nome_fantasia
+          )
+        `)
         .eq('responsavel_id', user.id)
         .eq('data_prevista', format(data, 'yyyy-MM-dd'))
         .in('status', ['pendente', 'em_andamento'])
@@ -136,12 +143,14 @@ export const useRelatorioDiario = (data: Date) => {
             horario_inicio: tarefa.horario,
             data: new Date(tarefa.data_prevista),
             status: tarefa.status,
+            endereco_completo: tarefa.endereco_completo,
             tarefa: {
               id: tarefa.id,
               titulo: tarefa.titulo,
               descricao: tarefa.descricao,
               prioridade: tarefa.prioridade,
               tipo: tarefa.tipo,
+              cliente_nome: tarefa.clientes?.nome_fantasia,
             }
           });
         });

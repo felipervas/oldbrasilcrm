@@ -1495,8 +1495,11 @@ export type Database = {
           data_conclusao: string | null
           data_prevista: string | null
           descricao: string | null
+          endereco_completo: string | null
           horario: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           notificacao_enviada: boolean | null
           origem: string | null
           prioridade: Database["public"]["Enums"]["priority_type"]
@@ -1514,8 +1517,11 @@ export type Database = {
           data_conclusao?: string | null
           data_prevista?: string | null
           descricao?: string | null
+          endereco_completo?: string | null
           horario?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           notificacao_enviada?: boolean | null
           origem?: string | null
           prioridade?: Database["public"]["Enums"]["priority_type"]
@@ -1533,8 +1539,11 @@ export type Database = {
           data_conclusao?: string | null
           data_prevista?: string | null
           descricao?: string | null
+          endereco_completo?: string | null
           horario?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           notificacao_enviada?: boolean | null
           origem?: string | null
           prioridade?: Database["public"]["Enums"]["priority_type"]

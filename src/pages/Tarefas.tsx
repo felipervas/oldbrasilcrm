@@ -75,6 +75,7 @@ const Tarefas = () => {
     data_prevista: "",
     horario: "",
     prioridade: "media" as "baixa" | "media" | "alta",
+    endereco_completo: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,6 +106,7 @@ const Tarefas = () => {
         prioridade: formTarefa.prioridade,
         responsavel_id: responsavelIdFinal,
         visibilidade: 'individual',
+        endereco_completo: formTarefa.endereco_completo || null,
       }]);
 
       if (error) throw error;
@@ -120,6 +122,7 @@ const Tarefas = () => {
         data_prevista: "",
         horario: "",
         prioridade: "media",
+        endereco_completo: "",
       });
       loadTarefas();
     } catch (error: any) {
@@ -189,6 +192,7 @@ const Tarefas = () => {
       data_prevista: tarefa.data_prevista || "",
       horario: tarefa.horario || "",
       prioridade: tarefa.prioridade,
+      endereco_completo: tarefa.endereco_completo || "",
     });
     setClienteSelecionado(tarefa.cliente_id);
     setColaboradorSelecionado(tarefa.responsavel_id);
@@ -221,6 +225,7 @@ const Tarefas = () => {
         cliente_id: clienteIdFinal,
         responsavel_id: responsavelIdFinal,
         tipo: tipoTarefa as "visitar" | "ligar",
+        endereco_completo: editFormData.endereco_completo || null,
       })
       .eq("id", tarefaSelecionada.id);
 
@@ -367,6 +372,19 @@ const Tarefas = () => {
                   onChange={(e) => setFormTarefa({ ...formTarefa, descricao: e.target.value })}
                   placeholder="Ex: Apresentar novo produto Invento Cacau" 
                 />
+              </div>
+              <div>
+                <Label htmlFor="endereco">Endereço (para integração com rotas)</Label>
+                <Textarea 
+                  id="endereco" 
+                  value={formTarefa.endereco_completo}
+                  onChange={(e) => setFormTarefa({ ...formTarefa, endereco_completo: e.target.value })}
+                  placeholder="Rua, número, bairro, cidade - opcional"
+                  rows={2}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Adicione o endereço para usar no planejamento de rotas
+                </p>
               </div>
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Salvando..." : "Criar Tarefa"}
@@ -622,6 +640,19 @@ const Tarefas = () => {
                 value={editFormData.descricao || ""}
                 onChange={(e) => setEditFormData({ ...editFormData, descricao: e.target.value })}
               />
+            </div>
+            <div>
+              <Label htmlFor="edit_endereco">Endereço (para integração com rotas)</Label>
+              <Textarea 
+                id="edit_endereco" 
+                value={editFormData.endereco_completo || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, endereco_completo: e.target.value })}
+                placeholder="Rua, número, bairro, cidade - opcional"
+                rows={2}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Adicione o endereço para usar no planejamento de rotas
+              </p>
             </div>
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
