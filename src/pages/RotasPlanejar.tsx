@@ -224,17 +224,26 @@ export default function RotasPlanejar() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex-1">
                   <Label>Filtrar por Cidade</Label>
-                  <Select value={cidadeFiltro} onValueChange={setCidadeFiltro}>
+                  <Select value={cidadeFiltro || undefined} onValueChange={(value) => setCidadeFiltro(value || '')}>
                     <SelectTrigger>
                       <SelectValue placeholder="Todas as cidades" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as cidades</SelectItem>
                       {cidades.map(cidade => (
                         <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {cidadeFiltro && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCidadeFiltro('')}
+                      className="mt-1 text-xs"
+                    >
+                      Limpar filtro
+                    </Button>
+                  )}
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Selecionados</Label>
