@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, CheckSquare, Calendar, CheckCircle2, XCircle, Clock, Edit } from "lucide-react";
+import { Plus, CheckSquare, Calendar, CheckCircle2, XCircle, Clock, Edit, Search, User } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,19 +25,31 @@ const Tarefas = () => {
   const [colaboradorSelecionado, setColaboradorSelecionado] = useState("");
   const [tipoTarefa, setTipoTarefa] = useState("");
   const [editFormData, setEditFormData] = useState<any>({});
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
   const loadTarefas = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    // Carregar apenas tarefas pendentes para otimizar
+    // Carregar TODAS as tarefas pendentes (visíveis para todos)
     const { data, error } = await supabase
       .from("tarefas")
-      .select("id, titulo, descricao, tipo, prioridade, data_prevista, horario, status, created_at, cliente_id, clientes(nome_fantasia), profiles(nome)")
+      .select(`
+        id, 
+        titulo, 
+        descricao, 
+        tipo, 
+        prioridade, 
+        data_prevista, 
+        horario, 
+        status, 
+        created_at, 
+        responsavel_id,
+        cliente_id, 
+        clientes(nome_fantasia), 
+        profiles:responsavel_id(nome)
+      `)
       .eq("status", "pendente")
       .order("data_prevista", { ascending: true })
-      .limit(50);
+      .limit(100);
 
     if (error) {
       toast({ title: "Erro ao carregar tarefas", variant: "destructive" });
@@ -239,6 +252,17 @@ const Tarefas = () => {
     }
   };
 
+  // Filtrar tarefas com base na pesquisa
+  const tarefasFiltradas = tarefas.filter(tarefa => {
+    const termoBusca = searchTerm.toLowerCase();
+    return (
+      tarefa.titulo?.toLowerCase().includes(termoBusca) ||
+      tarefa.descricao?.toLowerCase().includes(termoBusca) ||
+      tarefa.clientes?.nome_fantasia?.toLowerCase().includes(termoBusca) ||
+      tarefa.profiles?.nome?.toLowerCase().includes(termoBusca)
+    );
+  });
+
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8">
       <div className="flex items-center justify-between">
@@ -249,7 +273,7 @@ const Tarefas = () => {
               Tarefas
             </h1>
             <p className="text-muted-foreground">
-              Organize suas visitas e ligações
+              Organize suas visitas e ligações - {tarefasFiltradas.length} tarefa(s)
             </p>
           </div>
         </div>
@@ -394,6 +418,19 @@ const Tarefas = () => {
         </Dialog>
       </div>
 
+      {/* Campo de Pesquisa */}
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Pesquisar tarefas por título, descrição, cliente ou responsável..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
       <Card className="shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -405,20 +442,35 @@ const Tarefas = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {tarefas.length === 0 ? (
+          {tarefasFiltradas.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <CheckSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">Nenhuma tarefa pendente</p>
-              <p className="text-sm">Crie tarefas para organizar suas atividades</p>
+              <p className="text-lg font-medium mb-2">
+                {searchTerm ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa pendente"}
+              </p>
+              <p className="text-sm">
+                {searchTerm ? "Tente outra pesquisa" : "Crie tarefas para organizar suas atividades"}
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {tarefas.map((tarefa) => (
+              {tarefasFiltradas.map((tarefa) => (
                 <div key={tarefa.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="font-semibold">{tarefa.titulo}</h3>
                       <p className="text-sm text-muted-foreground">Cliente: {tarefa.clientes?.nome_fantasia}</p>
+                      
+                      {/* Responsável - destaque visual */}
+                      {tarefa.profiles?.nome && (
+                        <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg">
+                          <User className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-semibold text-primary">
+                            Responsável: {tarefa.profiles.nome}
+                          </span>
+                        </div>
+                      )}
+                      
                       <div className="flex gap-2 mt-2 text-xs flex-wrap">
                         <span className="px-2 py-1 bg-secondary rounded">{tarefa.tipo}</span>
                         <span className={`px-2 py-1 rounded ${

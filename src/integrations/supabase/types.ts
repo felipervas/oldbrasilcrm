@@ -1348,6 +1348,7 @@ export type Database = {
           cidade: string | null
           convertido_cliente_id: string | null
           created_at: string
+          criado_por_id: string | null
           data_proximo_contato: string | null
           data_ultimo_contato: string | null
           email: string | null
@@ -1375,6 +1376,7 @@ export type Database = {
           cidade?: string | null
           convertido_cliente_id?: string | null
           created_at?: string
+          criado_por_id?: string | null
           data_proximo_contato?: string | null
           data_ultimo_contato?: string | null
           email?: string | null
@@ -1402,6 +1404,7 @@ export type Database = {
           cidade?: string | null
           convertido_cliente_id?: string | null
           created_at?: string
+          criado_por_id?: string | null
           data_proximo_contato?: string | null
           data_ultimo_contato?: string | null
           email?: string | null

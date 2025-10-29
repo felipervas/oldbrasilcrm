@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Building2, MapPin, User, Calendar } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Building2, MapPin, User, Calendar, UserPlus } from 'lucide-react';
 import { Prospect } from '@/hooks/useProspects';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -8,9 +9,11 @@ import { ptBR } from 'date-fns/locale';
 interface ProspectCardProps {
   prospect: Prospect;
   onClick: () => void;
+  isSelected?: boolean;
+  onSelectChange?: (selected: boolean) => void;
 }
 
-export const ProspectCard = ({ prospect, onClick }: ProspectCardProps) => {
+export const ProspectCard = ({ prospect, onClick, isSelected, onSelectChange }: ProspectCardProps) => {
   const getPrioridadeColor = (prioridade: string) => {
     switch (prioridade) {
       case 'alta': return 'bg-red-500/10 text-red-500 border-red-500/20';
@@ -31,13 +34,20 @@ export const ProspectCard = ({ prospect, onClick }: ProspectCardProps) => {
 
   return (
     <Card 
-      className="cursor-pointer hover:shadow-md transition-shadow border-l-4"
+      className={`hover:shadow-md transition-all border-l-4 ${isSelected ? 'ring-2 ring-primary shadow-lg' : ''}`}
       style={{ borderLeftColor: prospect.prioridade === 'alta' ? '#ef4444' : prospect.prioridade === 'media' ? '#eab308' : '#22c55e' }}
-      onClick={onClick}
     >
       <CardContent className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-2 flex-1">
+          {onSelectChange && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={onSelectChange}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-1"
+            />
+          )}
+          <div className="flex items-start gap-2 flex-1 cursor-pointer" onClick={onClick}>
             <Building2 className="h-4 w-4 mt-1 text-muted-foreground shrink-0" />
             <h4 className="font-semibold text-sm line-clamp-2">{prospect.nome_empresa}</h4>
           </div>
@@ -81,13 +91,23 @@ export const ProspectCard = ({ prospect, onClick }: ProspectCardProps) => {
           </div>
         )}
 
-        {/* Responsável */}
-        {prospect.profiles?.nome && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
-            <User className="h-3 w-3" />
-            <span>{prospect.profiles.nome}</span>
-          </div>
-        )}
+        {/* Responsável e Criador */}
+        <div className="pt-2 border-t space-y-1">
+          {prospect.profiles?.nome && (
+            <div className="flex items-center gap-2 text-xs">
+              <User className="h-3 w-3 text-primary" />
+              <span className="font-medium text-primary">Responsável:</span>
+              <span className="font-semibold">{prospect.profiles.nome}</span>
+            </div>
+          )}
+          {prospect.criador?.nome && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <UserPlus className="h-3 w-3" />
+              <span>Criado por:</span>
+              <span>{prospect.criador.nome}</span>
+            </div>
+          )}
+        </div>
 
         {/* Motivo de perda */}
         {prospect.status === 'perdido' && prospect.motivo_perda && (

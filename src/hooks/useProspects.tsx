@@ -18,6 +18,7 @@ export interface Prospect {
   email?: string;
   site?: string;
   responsavel_id?: string;
+  criado_por_id?: string;
   status: ProspectStatus;
   prioridade: ProspectPrioridade;
   data_ultimo_contato?: string;
@@ -32,6 +33,9 @@ export interface Prospect {
   created_at: string;
   updated_at: string;
   profiles?: {
+    nome: string;
+  };
+  criador?: {
     nome: string;
   };
 }
@@ -57,11 +61,30 @@ export const useProspects = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('prospects')
-        .select('*, profiles(nome)')
+        .select(`
+          *,
+          profiles:responsavel_id(nome)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Prospect[];
+      
+      // Buscar criadores separadamente para evitar erro de relação
+      const prospectsComCriador = await Promise.all(
+        (data || []).map(async (prospect) => {
+          if (prospect.criado_por_id) {
+            const { data: criador } = await supabase
+              .from('profiles')
+              .select('nome')
+              .eq('id', prospect.criado_por_id)
+              .single();
+            return { ...prospect, criador };
+          }
+          return prospect;
+        })
+      );
+      
+      return prospectsComCriador as Prospect[];
     },
   });
 };
@@ -87,10 +110,16 @@ export const useCreateProspect = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (prospect: { nome_empresa: string } & Omit<Partial<Prospect>, 'id' | 'created_at' | 'updated_at' | 'profiles' | 'nome_empresa'>) => {
+    mutationFn: async (prospect: { nome_empresa: string } & Omit<Partial<Prospect>, 'id' | 'created_at' | 'updated_at' | 'profiles' | 'criador' | 'nome_empresa'>) => {
+      // Pegar usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('prospects')
-        .insert([prospect as any])
+        .insert([{
+          ...prospect,
+          criado_por_id: user?.id,
+        } as any])
         .select()
         .single();
 
@@ -190,10 +219,16 @@ export const useBulkCreateProspects = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (prospects: Omit<Partial<Prospect>, 'id' | 'created_at' | 'updated_at' | 'profiles'>[]) => {
+    mutationFn: async (prospects: Omit<Partial<Prospect>, 'id' | 'created_at' | 'updated_at' | 'profiles' | 'criador'>[]) => {
+      // Pegar usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('prospects')
-        .insert(prospects as any)
+        .insert(prospects.map(p => ({
+          ...p,
+          criado_por_id: user?.id,
+        })) as any)
         .select();
 
       if (error) throw error;

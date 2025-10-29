@@ -16,8 +16,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProspectQuickActions } from '@/components/prospects/ProspectQuickActions';
 import { AgendamentoRapidoModal } from '@/components/prospects/AgendamentoRapidoModal';
+import { CriarTarefaModal } from '@/components/prospects/CriarTarefaModal';
 import { useIAInsights } from '@/hooks/useIAInsights';
 import { useNavigate } from 'react-router-dom';
+import { CheckSquare } from 'lucide-react';
 
 const statusLabels: Record<ProspectStatus, string> = {
   novo: 'Novo',
@@ -50,6 +52,8 @@ export default function Prospects() {
   const [filterPrioridade, setFilterPrioridade] = useState('todos');
   const [colaboradores, setColaboradores] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
+  const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
   const { toast } = useToast();
   const { generateInsights } = useIAInsights();
 
@@ -202,6 +206,26 @@ export default function Prospects() {
       const endereco = encodeURIComponent(prospect.endereco_completo);
       window.open(`https://www.google.com/maps/search/?api=1&query=${endereco}`, '_blank');
     }
+  };
+
+  const handleSelectProspect = (prospectId: string, selected: boolean) => {
+    setSelectedProspects(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(prospectId);
+      } else {
+        newSet.delete(prospectId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleOpenTarefaModal = () => {
+    if (selectedProspects.size === 0) {
+      toast({ title: "Selecione pelo menos um prospect", variant: "destructive" });
+      return;
+    }
+    setTarefaModalOpen(true);
   };
 
   if (isLoading) {
