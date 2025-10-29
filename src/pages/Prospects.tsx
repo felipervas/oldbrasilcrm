@@ -9,11 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Users } from 'lucide-react';
+import { Plus, Search, Users, MapIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ProspectQuickActions } from '@/components/prospects/ProspectQuickActions';
+import { AgendamentoRapidoModal } from '@/components/prospects/AgendamentoRapidoModal';
+import { useIAInsights } from '@/hooks/useIAInsights';
+import { useNavigate } from 'react-router-dom';
 
 const statusLabels: Record<ProspectStatus, string> = {
   novo: 'Novo',
@@ -32,10 +36,13 @@ export default function Prospects() {
   const { data: prospects, isLoading } = useProspects();
   const createProspect = useCreateProspect();
   const bulkCreateProspects = useBulkCreateProspects();
+  const navigate = useNavigate();
   const [selectedProspect, setSelectedProspect] = useState<Prospect | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [newProspectModalOpen, setNewProspectModalOpen] = useState(false);
   const [bulkProspectModalOpen, setBulkProspectModalOpen] = useState(false);
+  const [agendamentoModalOpen, setAgendamentoModalOpen] = useState(false);
+  const [prospectToSchedule, setProspectToSchedule] = useState<Prospect | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState('todos');
   const [filterCidade, setFilterCidade] = useState('todos');
@@ -44,6 +51,7 @@ export default function Prospects() {
   const [colaboradores, setColaboradores] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const { toast } = useToast();
+  const { generateInsights } = useIAInsights();
 
   const [novoProspect, setNovoProspect] = useState({
     nome_empresa: '',
@@ -170,6 +178,32 @@ export default function Prospects() {
     setDetailModalOpen(true);
   };
 
+  const handleAgendarVisita = (prospect: Prospect) => {
+    setProspectToSchedule(prospect);
+    setAgendamentoModalOpen(true);
+  };
+
+  const handleGerarInsights = (prospect: Prospect) => {
+    generateInsights({
+      prospectId: prospect.id,
+      nomeEmpresa: prospect.nome_empresa,
+      segmento: prospect.segmento,
+      cidade: prospect.cidade,
+    });
+  };
+
+  const handleRegistrarInteracao = (prospect: Prospect) => {
+    setSelectedProspect(prospect);
+    setDetailModalOpen(true);
+  };
+
+  const handleVerMapa = (prospect: Prospect) => {
+    if (prospect.endereco_completo) {
+      const endereco = encodeURIComponent(prospect.endereco_completo);
+      window.open(`https://www.google.com/maps/search/?api=1&query=${endereco}`, '_blank');
+    }
+  };
+
   if (isLoading) {
     return <AppLayout><div className="p-8">Carregando...</div></AppLayout>;
   }
@@ -186,6 +220,10 @@ export default function Prospects() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/rotas/planejar')}>
+              <MapIcon className="h-4 w-4 mr-2" />
+              Planejar Rotas
+            </Button>
             <ImportarProspects />
             <Dialog open={bulkProspectModalOpen} onOpenChange={setBulkProspectModalOpen}>
               <DialogTrigger asChild>
@@ -421,9 +459,9 @@ export default function Prospects() {
         </div>
 
         {/* Kanban Board - Layout otimizado para tela cheia */}
-        <div className="flex gap-3 min-h-[calc(100vh-300px)] overflow-x-auto">
+        <div className="flex gap-3 min-h-[calc(100vh-300px)] overflow-x-auto pb-4">
           {statusColumns.map((status) => (
-            <div key={status} className="flex flex-col min-w-[280px] flex-1">
+            <div key={status} className="flex flex-col min-w-[300px] flex-1 max-w-[400px]">
               <div className="bg-muted rounded-t-lg p-4 sticky top-0 z-10">
                 <h3 className="font-semibold">{statusLabels[status]}</h3>
                 <p className="text-xs text-muted-foreground">
@@ -433,11 +471,20 @@ export default function Prospects() {
               <ScrollArea className="flex-1 border border-t-0 rounded-b-lg p-3">
                 <div className="space-y-3">
                   {prospectsByStatus[status].map((prospect) => (
-                    <ProspectCard
-                      key={prospect.id}
-                      prospect={prospect}
-                      onClick={() => handleCardClick(prospect)}
-                    />
+                    <div key={prospect.id} className="relative group">
+                      <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ProspectQuickActions
+                          prospect={prospect}
+                          onAgendarVisita={handleAgendarVisita}
+                          onGerarInsights={handleGerarInsights}
+                          onRegistrarInteracao={handleRegistrarInteracao}
+                          onVerMapa={handleVerMapa}
+                        />
+                      </div>
+                      <div onClick={() => handleCardClick(prospect)}>
+                        <ProspectCard prospect={prospect} onClick={() => {}} />
+                      </div>
+                    </div>
                   ))}
                 </div>
               </ScrollArea>
@@ -450,6 +497,15 @@ export default function Prospects() {
         prospect={selectedProspect}
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
+      />
+
+      <AgendamentoRapidoModal
+        prospect={prospectToSchedule}
+        open={agendamentoModalOpen}
+        onOpenChange={setAgendamentoModalOpen}
+        onSuccess={() => {
+          window.location.reload();
+        }}
       />
     </AppLayout>
   );

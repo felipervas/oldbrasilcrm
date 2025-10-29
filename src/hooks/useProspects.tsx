@@ -26,6 +26,9 @@ export interface Prospect {
   observacoes?: string;
   convertido_cliente_id?: string;
   motivo_perda?: string;
+  endereco_completo?: string;
+  latitude?: number;
+  longitude?: number;
   created_at: string;
   updated_at: string;
   profiles?: {

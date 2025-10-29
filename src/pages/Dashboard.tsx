@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Users, CheckSquare, MessageSquare, TrendingUp, Clock, AlertCircle, Package, Boxes, Truck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, CheckSquare, MessageSquare, TrendingUp, Clock, AlertCircle, Package, Boxes, Truck, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { EntregaStatusBadge } from "@/components/EntregaStatusBadge";
@@ -231,17 +232,24 @@ const Dashboard = () => {
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Atividade Recente
+              <Calendar className="h-5 w-5 text-primary" />
+              Meu Dia Hoje
             </CardTitle>
             <CardDescription>
-              Últimas interações e tarefas
+              Próximas atividades do dia
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-sm text-muted-foreground text-center py-8">
-              Sistema pronto para registrar suas atividades
+              Nenhuma atividade agendada para hoje
             </div>
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={() => navigate('/meu-dia')}
+            >
+              Ver Relatório Completo
+            </Button>
           </CardContent>
         </Card>
       </div>

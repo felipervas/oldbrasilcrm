@@ -34,6 +34,7 @@ const ColaboradorPerfil = () => {
     tarefasPendentes: 0,
     pedidosLancados: 0,
   });
+  const [proximasVisitas, setProximasVisitas] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     titulo: "",
@@ -103,6 +104,28 @@ const ColaboradorPerfil = () => {
         .limit(100);
       
       setAtividades(atividadesData || []);
+
+      // Carregar próximas visitas
+      const { data: visitasData } = await supabase
+        .from('prospect_visitas')
+        .select(`
+          *,
+          prospects (
+            nome_empresa,
+            endereco_completo
+          ),
+          prospect_ia_insights (
+            resumo_empresa,
+            produtos_recomendados,
+            dicas_abordagem
+          )
+        `)
+        .eq('responsavel_id', id)
+        .gte('data_visita', format(new Date(), 'yyyy-MM-dd'))
+        .order('data_visita', { ascending: true })
+        .limit(5);
+      
+      setProximasVisitas(visitasData || []);
 
     } catch (error: any) {
       console.error("Erro ao carregar dados:", error);
@@ -489,6 +512,78 @@ const ColaboradorPerfil = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Próximas Visitas */}
+      {proximasVisitas.length > 0 && (
+        <Card className="border-primary/20 shadow-elegant">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              📍 Próximas Visitas
+            </CardTitle>
+            <CardDescription>
+              Suas visitas agendadas nos próximos dias
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {proximasVisitas.map((visita: any) => (
+                <div key={visita.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h4 className="font-semibold">{visita.prospects?.nome_empresa}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        📅 {format(new Date(visita.data_visita), "dd/MM/yyyy")}
+                        {visita.horario_inicio && ` • ${visita.horario_inicio}`}
+                      </p>
+                    </div>
+                    <Badge variant="outline">
+                      {visita.status === 'agendada' && '📅 Agendada'}
+                      {visita.status === 'realizada' && '✅ Realizada'}
+                    </Badge>
+                  </div>
+                  {visita.prospects?.endereco_completo && (
+                    <p className="text-sm text-muted-foreground mb-2">
+                      📍 {visita.prospects.endereco_completo}
+                    </p>
+                  )}
+                  {visita.prospect_ia_insights && (
+                    <div className="mt-3 p-2 bg-accent/20 rounded text-xs">
+                      <p className="font-medium mb-1">🧠 Insights disponíveis</p>
+                      {visita.prospect_ia_insights.resumo_empresa && (
+                        <p className="text-muted-foreground line-clamp-2">
+                          {visita.prospect_ia_insights.resumo_empresa}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex gap-2 mt-3">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => navigate('/meu-dia')}
+                    >
+                      Ver em Meu Dia
+                    </Button>
+                    {visita.prospects?.endereco_completo && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const endereco = encodeURIComponent(visita.prospects.endereco_completo);
+                          window.open(`https://www.google.com/maps/search/?api=1&query=${endereco}`, '_blank');
+                        }}
+                      >
+                        🗺️ Navegação
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Calendário de Eventos */}
       <Card className="border-primary/20 shadow-elegant">
