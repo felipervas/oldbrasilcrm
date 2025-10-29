@@ -1228,16 +1228,93 @@ export type Database = {
           },
         ]
       }
+      prospect_visitas: {
+        Row: {
+          created_at: string
+          data_visita: string
+          distancia_km: number | null
+          evento_id: string | null
+          horario_fim: string | null
+          horario_inicio: string | null
+          id: string
+          observacoes: string | null
+          ordem_rota: number | null
+          prospect_id: string
+          responsavel_id: string
+          status: string
+          tempo_trajeto_min: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_visita: string
+          distancia_km?: number | null
+          evento_id?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          observacoes?: string | null
+          ordem_rota?: number | null
+          prospect_id: string
+          responsavel_id: string
+          status?: string
+          tempo_trajeto_min?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_visita?: string
+          distancia_km?: number | null
+          evento_id?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          observacoes?: string | null
+          ordem_rota?: number | null
+          prospect_id?: string
+          responsavel_id?: string
+          status?: string
+          tempo_trajeto_min?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_visitas_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "colaborador_eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_visitas_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_visitas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospects: {
         Row: {
+          cep: string | null
           cidade: string | null
           convertido_cliente_id: string | null
           created_at: string
           data_proximo_contato: string | null
           data_ultimo_contato: string | null
           email: string | null
+          endereco_completo: string | null
           estado: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           motivo_perda: string | null
           nome_empresa: string
           observacoes: string | null
@@ -1253,14 +1330,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cep?: string | null
           cidade?: string | null
           convertido_cliente_id?: string | null
           created_at?: string
           data_proximo_contato?: string | null
           data_ultimo_contato?: string | null
           email?: string | null
+          endereco_completo?: string | null
           estado?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           motivo_perda?: string | null
           nome_empresa: string
           observacoes?: string | null
@@ -1276,14 +1357,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cep?: string | null
           cidade?: string | null
           convertido_cliente_id?: string | null
           created_at?: string
           data_proximo_contato?: string | null
           data_ultimo_contato?: string | null
           email?: string | null
+          endereco_completo?: string | null
           estado?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           motivo_perda?: string | null
           nome_empresa?: string
           observacoes?: string | null
