@@ -376,9 +376,11 @@ const MeuPerfil = () => {
           .insert({
             colaborador_id: vendedorId,
             titulo: `Visita: ${prospect.nome_empresa}`,
+            descricao: `Rota planejada - ${prospect.cidade}`,
             data: dataRota,
             horario: horarioAtual,
-            tipo: 'evento',
+            tipo: 'visita',
+            concluido: false,
           });
 
         if (eventoError) throw eventoError;

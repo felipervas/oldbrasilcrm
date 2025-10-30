@@ -101,6 +101,7 @@ export const AgendamentoRapidoModal = ({
           data: formData.data_visita,
           horario: formData.horario_inicio || null,
           tipo: 'visita',
+          concluido: false,
         });
 
       if (eventoError) {

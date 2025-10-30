@@ -95,13 +95,12 @@ export const useRelatorioDiario = (data: Date) => {
         });
       }
 
-      // Buscar eventos do colaborador do dia
+      // Buscar eventos do colaborador do dia (todos os tipos)
       const { data: eventosColab, error: eventosError } = await supabase
         .from('colaborador_eventos')
         .select('*')
         .eq('colaborador_id', user.id)
         .eq('data', format(data, 'yyyy-MM-dd'))
-        .eq('tipo', 'evento')
         .order('horario', { ascending: true });
 
       if (eventosError) throw eventosError;
