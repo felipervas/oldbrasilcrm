@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Sparkles } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Sparkles, Building2, Users } from 'lucide-react';
 import { Prospect, useProspects } from '@/hooks/useProspects';
+import { useClientes } from '@/hooks/useClientes';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIAInsights } from '@/hooks/useIAInsights';
@@ -27,8 +29,12 @@ export const AgendamentoRapidoModal = ({
   const { toast } = useToast();
   const { generateInsights } = useIAInsights();
   const { data: prospects = [] } = useProspects();
+  const { data: clientesData } = useClientes();
+  const clientes = clientesData?.data || [];
   const [loading, setLoading] = useState(false);
+  const [tipoVisita, setTipoVisita] = useState<'prospect' | 'cliente'>('prospect');
   const [selectedProspectId, setSelectedProspectId] = useState<string>('');
+  const [selectedClienteId, setSelectedClienteId] = useState<string>('');
   const [formData, setFormData] = useState({
     data_visita: '',
     horario_inicio: '',
@@ -39,17 +45,20 @@ export const AgendamentoRapidoModal = ({
   useEffect(() => {
     if (prospectProp) {
       setSelectedProspectId(prospectProp.id);
+      setTipoVisita('prospect');
     }
   }, [prospectProp]);
 
   const selectedProspect = prospectProp || prospects.find(p => p.id === selectedProspectId);
+  const selectedCliente = clientes.find(c => c.id === selectedClienteId);
+  const entidadeSelecionada = tipoVisita === 'prospect' ? selectedProspect : selectedCliente;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProspect) {
+    if (!entidadeSelecionada) {
       toast({
         title: 'Erro',
-        description: 'Selecione um prospect',
+        description: `Selecione ${tipoVisita === 'prospect' ? 'um prospect' : 'um cliente'}`,
         variant: 'destructive',
       });
       return;
@@ -69,35 +78,41 @@ export const AgendamentoRapidoModal = ({
         return;
       }
 
-      console.log('🚀 Iniciando agendamento para:', selectedProspect.nome_empresa);
+      const nomeEntidade = tipoVisita === 'prospect' 
+        ? (selectedProspect as any).nome_empresa 
+        : (selectedCliente as any).nome_fantasia;
 
-      // 1. Criar visita no banco
-      const { error: visitaError } = await supabase
-        .from('prospect_visitas')
-        .insert({
-          prospect_id: selectedProspect.id,
-          responsavel_id: user.id,
-          data_visita: formData.data_visita,
-          horario_inicio: formData.horario_inicio || null,
-          horario_fim: formData.horario_fim || null,
-          observacoes: formData.observacoes || null,
-          status: 'agendada',
-        });
+      console.log('🚀 Iniciando agendamento para:', nomeEntidade);
 
-      if (visitaError) {
-        console.error('❌ Erro ao criar visita:', visitaError);
-        throw new Error(`Erro ao criar visita: ${visitaError.message}`);
+      // 1. Criar visita no banco (apenas se for prospect)
+      if (tipoVisita === 'prospect' && selectedProspect) {
+        const { error: visitaError } = await supabase
+          .from('prospect_visitas')
+          .insert({
+            prospect_id: selectedProspect.id,
+            responsavel_id: user.id,
+            data_visita: formData.data_visita,
+            horario_inicio: formData.horario_inicio || null,
+            horario_fim: formData.horario_fim || null,
+            observacoes: formData.observacoes || null,
+            status: 'agendada',
+          });
+
+        if (visitaError) {
+          console.error('❌ Erro ao criar visita:', visitaError);
+          throw new Error(`Erro ao criar visita: ${visitaError.message}`);
+        }
+
+        console.log('✅ Visita criada com sucesso');
       }
-
-      console.log('✅ Visita criada com sucesso');
 
       // 2. Criar evento no calendário do colaborador
       const { error: eventoError } = await supabase
         .from('colaborador_eventos')
         .insert({
           colaborador_id: user.id,
-          titulo: `Visita: ${selectedProspect.nome_empresa}`,
-          descricao: `Visita agendada ao prospect ${selectedProspect.nome_empresa}${formData.observacoes ? ` - ${formData.observacoes}` : ''}`,
+          titulo: `Visita: ${nomeEntidade}`,
+          descricao: `Visita agendada ${tipoVisita === 'prospect' ? 'ao prospect' : 'ao cliente'} ${nomeEntidade}${formData.observacoes ? ` - ${formData.observacoes}` : ''}`,
           data: formData.data_visita,
           horario: formData.horario_inicio || null,
           tipo: 'visita',
@@ -117,19 +132,21 @@ export const AgendamentoRapidoModal = ({
         description: `Visita marcada para ${new Date(formData.data_visita).toLocaleDateString('pt-BR')}`,
       });
 
-      // 3. Tentar gerar insights em background (não bloqueia)
-      console.log('🧠 Tentando gerar insights...');
-      try {
-        await generateInsights({
-          prospectId: selectedProspect.id,
-          nomeEmpresa: selectedProspect.nome_empresa,
-          segmento: selectedProspect.segmento || '',
-          cidade: selectedProspect.cidade || '',
-        });
-        console.log('✅ Insights gerados com sucesso');
-      } catch (insightError) {
-        console.log('⚠️ Insights não puderam ser gerados (não crítico):', insightError);
-        // Não mostra erro ao usuário pois insights são opcionais
+      // 3. Tentar gerar insights em background apenas para prospects (não bloqueia)
+      if (tipoVisita === 'prospect' && selectedProspect) {
+        console.log('🧠 Tentando gerar insights...');
+        try {
+          await generateInsights({
+            prospectId: selectedProspect.id,
+            nomeEmpresa: selectedProspect.nome_empresa,
+            segmento: selectedProspect.segmento || '',
+            cidade: selectedProspect.cidade || '',
+          });
+          console.log('✅ Insights gerados com sucesso');
+        } catch (insightError) {
+          console.log('⚠️ Insights não puderam ser gerados (não crítico):', insightError);
+          // Não mostra erro ao usuário pois insights são opcionais
+        }
       }
 
       // Resetar formulário e fechar
@@ -140,6 +157,7 @@ export const AgendamentoRapidoModal = ({
         observacoes: '',
       });
       setSelectedProspectId('');
+      setSelectedClienteId('');
       onOpenChange(false);
       onSuccess();
 
@@ -169,25 +187,58 @@ export const AgendamentoRapidoModal = ({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {!prospectProp && (
-            <div>
-              <Label>Prospect *</Label>
-              <Select value={selectedProspectId} onValueChange={setSelectedProspectId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o prospect" />
-                </SelectTrigger>
-                <SelectContent>
-                  {prospects.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.nome_empresa} - {p.cidade || 'Sem cidade'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Tabs value={tipoVisita} onValueChange={(v) => setTipoVisita(v as 'prospect' | 'cliente')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="prospect" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Prospects
+                </TabsTrigger>
+                <TabsTrigger value="cliente" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Clientes
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="prospect" className="mt-4">
+                <Label>Prospect *</Label>
+                <Select value={selectedProspectId} onValueChange={setSelectedProspectId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o prospect" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {prospects.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nome_empresa} - {p.cidade || 'Sem cidade'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </TabsContent>
+              
+              <TabsContent value="cliente" className="mt-4">
+                <Label>Cliente *</Label>
+                <Select value={selectedClienteId} onValueChange={setSelectedClienteId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientes.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome_fantasia} - {c.cidade || 'Sem cidade'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </TabsContent>
+            </Tabs>
           )}
           
           {prospectProp && (
             <div className="p-3 bg-muted rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Prospect</span>
+              </div>
               <p className="text-sm font-medium">{prospectProp.nome_empresa}</p>
               <p className="text-xs text-muted-foreground">{prospectProp.cidade}</p>
             </div>
@@ -234,7 +285,7 @@ export const AgendamentoRapidoModal = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading || !selectedProspect}>
+            <Button type="submit" disabled={loading || !entidadeSelecionada}>
               <Calendar className="h-4 w-4 mr-2" />
               {loading ? 'Agendando...' : 'Agendar Visita'}
             </Button>

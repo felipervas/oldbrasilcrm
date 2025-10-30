@@ -56,11 +56,6 @@ export const useRelatorioDiario = (data: Date) => {
             endereco_completo,
             segmento,
             cidade
-          ),
-          prospect_ia_insights (
-            resumo_empresa,
-            produtos_recomendados,
-            dicas_abordagem
           )
         `)
         .eq('responsavel_id', user.id)
@@ -70,7 +65,26 @@ export const useRelatorioDiario = (data: Date) => {
       if (visitasError) throw visitasError;
 
       if (visitas) {
+        // Buscar insights para os prospects das visitas
+        const prospectIds = visitas
+          .filter((v: any) => v.prospects?.id)
+          .map((v: any) => v.prospects.id);
+
+        const { data: insights } = prospectIds.length > 0 
+          ? await supabase
+              .from('prospect_ia_insights')
+              .select('*')
+              .in('prospect_id', prospectIds)
+          : { data: [] };
+
+        const insightsMap = (insights || []).reduce((acc: any, insight: any) => {
+          acc[insight.prospect_id] = insight;
+          return acc;
+        }, {});
+
         visitas.forEach((visita: any) => {
+          const insight = visita.prospects?.id ? insightsMap[visita.prospects.id] : null;
+          
           eventos.push({
             id: visita.id,
             tipo: 'visita',
@@ -86,10 +100,10 @@ export const useRelatorioDiario = (data: Date) => {
               segmento: visita.prospects.segmento,
               cidade: visita.prospects.cidade,
             } : undefined,
-            insights: visita.prospect_ia_insights ? {
-              resumo_empresa: visita.prospect_ia_insights.resumo_empresa,
-              produtos_recomendados: visita.prospect_ia_insights.produtos_recomendados,
-              dicas_abordagem: visita.prospect_ia_insights.dicas_abordagem,
+            insights: insight ? {
+              resumo_empresa: insight.resumo_empresa,
+              produtos_recomendados: insight.produtos_recomendados,
+              dicas_abordagem: insight.dicas_abordagem,
             } : undefined,
           });
         });
