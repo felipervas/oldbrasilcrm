@@ -17,8 +17,16 @@ import { useHistoricoEquipe } from "@/hooks/useHistoricoEquipe";
 import { AgendasEquipe } from "@/components/AgendasEquipe";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History, Trophy, List } from "lucide-react";
-import { format } from "date-fns";
+import { useRelatorioDiario, EventoDia } from '@/hooks/useRelatorioDiario';
+import { useMapboxRotaOtimizada } from '@/hooks/useMapboxRotaOtimizada';
+import { useIAInsights } from '@/hooks/useIAInsights';
+import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History, Trophy, List, CalendarDays, Lightbulb, Package, Navigation, ExternalLink, Route, Loader2 } from "lucide-react";
+import { format, isSameDay } from "date-fns";
+import { ptBR } from 'date-fns/locale';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
 
 const MeuPerfil = () => {
   const navigate = useNavigate();
@@ -42,13 +50,70 @@ const MeuPerfil = () => {
     tipo: 'evento'
   });
 
+  // Estados para Planejar Rotas
+  const [cidadeFiltro, setCidadeFiltro] = useState<string>('');
+  const [prospectsSelecionados, setProspectsSelecionados] = useState<any[]>([]);
+  const [dataRota, setDataRota] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [horarioInicio, setHorarioInicio] = useState<string>('09:00');
+  const [duracaoVisita, setDuracaoVisita] = useState<number>(30);
+  const [vendedorId, setVendedorId] = useState<string>('');
+  const [rotaCalculada, setRotaCalculada] = useState<any>(null);
+
   const { eventos, createEvento, updateEvento, deleteEvento, toggleConcluido, createMultipleEventos } = useColaboradorEventos();
   const { data: historico } = useHistoricoEquipe();
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const { data: eventosRelatorioDiario, isLoading: loadingRelatorioDiario } = useRelatorioDiario(selectedDate || new Date());
+  const { calcularRotaOtimizada, isCalculating } = useMapboxRotaOtimizada();
+
+  // Buscar prospects com endereço para Planejar Rotas
+  const { data: prospects, isLoading: loadingProspects } = useQuery({
+    queryKey: ['prospects-com-endereco', cidadeFiltro],
+    queryFn: async () => {
+      let query = supabase
+        .from('prospects')
+        .select('*')
+        .not('endereco_completo', 'is', null)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null);
+
+      if (cidadeFiltro) {
+        query = query.ilike('cidade', `%${cidadeFiltro}%`);
+      }
+
+      const { data, error } = await query.order('nome_empresa');
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Buscar vendedores para Planejar Rotas
+  const { data: vendedores } = useQuery({
+    queryKey: ['vendedores'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, nome')
+        .order('nome');
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   useEffect(() => {
     loadProfile();
   }, []);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && !vendedorId) {
+        setVendedorId(user.id);
+      }
+    };
+    loadUser();
+  }, [vendedorId]);
 
   const loadProfile = async () => {
     try {
@@ -64,7 +129,6 @@ const MeuPerfil = () => {
         return;
       }
 
-      // Carregar perfil
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
@@ -73,7 +137,6 @@ const MeuPerfil = () => {
 
       setProfile(profileData);
 
-      // Carregar clientes onde o usuário é responsável
       const { data: clientesData } = await supabase
         .from("clientes")
         .select("*")
@@ -82,7 +145,6 @@ const MeuPerfil = () => {
 
       setClientes(clientesData || []);
 
-      // Carregar tarefas do usuário
       const { data: tarefasData } = await supabase
         .from("tarefas")
         .select("*, clientes(nome_fantasia)")
@@ -134,7 +196,6 @@ const MeuPerfil = () => {
   const tarefasPendentes = tarefas.filter(t => t.status === "pendente" || t.status === "em_andamento");
   const tarefasConcluidas = tarefas.filter(t => t.status === "concluida");
 
-  // Filtrar clientes por busca com debounce para melhor performance
   const clientesFiltrados = useMemo(() => {
     return clientes.filter(cliente => 
       cliente.nome_fantasia?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -237,6 +298,305 @@ const MeuPerfil = () => {
     return labels[acao] || acao;
   };
 
+  // Funções para Planejar Rotas
+  const cidades = Array.from(new Set(prospects?.map(p => p.cidade).filter(Boolean))) as string[];
+
+  const toggleProspect = (prospect: any) => {
+    if (prospectsSelecionados.find(p => p.id === prospect.id)) {
+      setProspectsSelecionados(prospectsSelecionados.filter(p => p.id !== prospect.id));
+    } else {
+      setProspectsSelecionados([...prospectsSelecionados, prospect]);
+    }
+  };
+
+  const handleCalcularRota = async () => {
+    if (prospectsSelecionados.length < 2) {
+      toast({
+        title: 'Selecione ao menos 2 prospects',
+        description: 'É necessário pelo menos 2 endereços para calcular uma rota.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const waypoints = prospectsSelecionados
+      .filter(p => p.latitude && p.longitude)
+      .map(p => ({ lat: p.latitude!, lng: p.longitude! }));
+
+    const rota = await calcularRotaOtimizada(waypoints);
+    
+    if (rota) {
+      setRotaCalculada(rota);
+      toast({
+        title: '✅ Rota calculada!',
+        description: `Distância total: ${rota.distancia_total_km}km | Tempo estimado: ${Math.round(rota.tempo_total_min)}min`
+      });
+    }
+  };
+
+  const handleAgendarVisitas = async () => {
+    if (!vendedorId || !dataRota || prospectsSelecionados.length === 0) {
+      toast({
+        title: 'Preencha todos os campos',
+        description: 'Selecione vendedor, data e pelo menos um prospect.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      const ordem = rotaCalculada?.ordem_otimizada || prospectsSelecionados.map((_, i) => i);
+      let horarioAtual = horarioInicio;
+
+      for (let i = 0; i < prospectsSelecionados.length; i++) {
+        const prospect = prospectsSelecionados[ordem[i]];
+        const [hora, minuto] = horarioAtual.split(':').map(Number);
+        const horarioFim = `${String(hora + Math.floor((minuto + duracaoVisita) / 60)).padStart(2, '0')}:${String((minuto + duracaoVisita) % 60).padStart(2, '0')}`;
+
+        const { error: visitaError } = await supabase
+          .from('prospect_visitas')
+          .insert({
+            prospect_id: prospect.id,
+            responsavel_id: vendedorId,
+            data_visita: dataRota,
+            horario_inicio: horarioAtual,
+            horario_fim: horarioFim,
+            status: 'agendada',
+            ordem_rota: i + 1,
+            distancia_km: rotaCalculada?.segmentos[i]?.distancia_km || 0,
+            tempo_trajeto_min: rotaCalculada?.segmentos[i]?.tempo_min || 0,
+          });
+
+        if (visitaError) throw visitaError;
+
+        const { error: eventoError } = await supabase
+          .from('colaborador_eventos')
+          .insert({
+            colaborador_id: vendedorId,
+            titulo: `Visita: ${prospect.nome_empresa}`,
+            data: dataRota,
+            horario: horarioAtual,
+            tipo: 'evento',
+          });
+
+        if (eventoError) throw eventoError;
+
+        const tempoTrajeto = rotaCalculada?.segmentos[i]?.tempo_min || 15;
+        const minutosTotal = hora * 60 + minuto + duracaoVisita + tempoTrajeto;
+        horarioAtual = `${String(Math.floor(minutosTotal / 60)).padStart(2, '0')}:${String(minutosTotal % 60).padStart(2, '0')}`;
+      }
+
+      toast({
+        title: '🎉 Rota agendada com sucesso!',
+        description: `${prospectsSelecionados.length} visitas foram criadas.`
+      });
+
+      setProspectsSelecionados([]);
+      setRotaCalculada(null);
+
+    } catch (error) {
+      console.error('Erro ao agendar visitas:', error);
+      toast({
+        title: 'Erro ao agendar visitas',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // Renderizar evento do Meu Dia
+  const renderEvento = (evento: EventoDia) => {
+    if (evento.tipo === 'visita' && evento.prospect) {
+      return (
+        <Card key={evento.id} className="p-4 bg-gradient-to-br from-primary/5 to-background">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              <div>
+                <h4 className="font-semibold text-lg">{evento.prospect.nome_empresa}</h4>
+                {evento.horario_inicio && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {evento.horario_inicio} {evento.horario_fim && `- ${evento.horario_fim}`}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Badge variant={evento.status === 'realizada' ? 'default' : 'secondary'}>
+              {evento.status === 'agendada' && '📅 Agendada'}
+              {evento.status === 'realizada' && '✅ Realizada'}
+              {evento.status === 'cancelada' && '❌ Cancelada'}
+            </Badge>
+          </div>
+
+          {evento.prospect.endereco_completo && (
+            <div className="flex items-start gap-2 mb-3 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <span>{evento.prospect.endereco_completo}</span>
+            </div>
+          )}
+
+          {evento.insights && (
+            <div className="space-y-3 mt-4">
+              {evento.insights.resumo_empresa && (
+                <div className="bg-background/60 rounded-lg p-3">
+                  <p className="text-sm font-medium flex items-center gap-2 mb-1">
+                    <Lightbulb className="h-4 w-4 text-yellow-500" />
+                    Sobre a empresa
+                  </p>
+                  <p className="text-sm text-muted-foreground">{evento.insights.resumo_empresa}</p>
+                </div>
+              )}
+
+              {evento.insights.produtos_recomendados && evento.insights.produtos_recomendados.length > 0 && (
+                <div className="bg-background/60 rounded-lg p-3">
+                  <p className="text-sm font-medium flex items-center gap-2 mb-2">
+                    <Package className="h-4 w-4 text-blue-500" />
+                    Produtos Recomendados
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {evento.insights.produtos_recomendados.map((produto, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs">
+                        {produto}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {evento.insights.dicas_abordagem && evento.insights.dicas_abordagem.length > 0 && (
+                <div className="bg-background/60 rounded-lg p-3">
+                  <p className="text-sm font-medium flex items-center gap-2 mb-2">
+                    <AlertCircle className="h-4 w-4 text-green-500" />
+                    Dicas de Abordagem
+                  </p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    {evento.insights.dicas_abordagem.map((dica, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>{dica}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2 mt-4">
+            {evento.prospect.endereco_completo && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  const endereco = encodeURIComponent(evento.prospect?.endereco_completo || '');
+                  window.open(`https://www.google.com/maps/search/?api=1&query=${endereco}`, '_blank');
+                }}
+              >
+                <Navigation className="h-4 w-4 mr-2" />
+                Navegação
+              </Button>
+            )}
+          </div>
+        </Card>
+      );
+    }
+
+    if (evento.tipo === 'tarefa' && evento.tarefa) {
+      return (
+        <Card key={evento.id} className="p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-2 flex-1">
+              {evento.tarefa.tipo === 'ligacao' ? (
+                <Phone className="h-5 w-5 text-blue-500 mt-0.5" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
+              )}
+              <div className="flex-1">
+                <h4 className="font-semibold">{evento.tarefa.titulo}</h4>
+                {evento.tarefa.cliente_nome && (
+                  <p className="text-sm text-muted-foreground">
+                    Cliente: {evento.tarefa.cliente_nome}
+                  </p>
+                )}
+                {evento.horario_inicio && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                    <Clock className="h-3 w-3" />
+                    {evento.horario_inicio}
+                  </p>
+                )}
+                {evento.tarefa.descricao && (
+                  <p className="text-sm text-muted-foreground mt-2">{evento.tarefa.descricao}</p>
+                )}
+                {evento.endereco_completo && (
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                    <Navigation className="h-3 w-3" />
+                    {evento.endereco_completo}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Badge variant={evento.tarefa.prioridade === 'alta' ? 'destructive' : 'secondary'}>
+              {evento.tarefa.prioridade}
+            </Badge>
+          </div>
+          {evento.endereco_completo && (
+            <div className="flex gap-2 mt-3">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  const endereco = encodeURIComponent(evento.endereco_completo || '');
+                  window.open(`https://www.google.com/maps/search/?api=1&query=${endereco}`, '_blank');
+                }}
+              >
+                <Navigation className="h-4 w-4 mr-2" />
+                Navegação
+              </Button>
+            </div>
+          )}
+         </Card>
+       );
+     }
+
+     return (
+      <Card key={evento.id} className="p-4">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-5 w-5 text-muted-foreground" />
+          <div>
+            <h4 className="font-semibold">{evento.titulo}</h4>
+            {evento.horario_inicio && (
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {evento.horario_inicio}
+              </p>
+            )}
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
+  const agruparEventosPorPeriodo = (eventos: EventoDia[]) => {
+    const manha = eventos.filter(e => {
+      const hora = e.horario_inicio ? parseInt(e.horario_inicio.split(':')[0]) : 12;
+      return hora >= 6 && hora < 12;
+    });
+    const tarde = eventos.filter(e => {
+      const hora = e.horario_inicio ? parseInt(e.horario_inicio.split(':')[0]) : 14;
+      return hora >= 12 && hora < 18;
+    });
+    const noite = eventos.filter(e => {
+      const hora = e.horario_inicio ? parseInt(e.horario_inicio.split(':')[0]) : 20;
+      return hora >= 18 || hora < 6;
+    });
+    const semHorario = eventos.filter(e => !e.horario_inicio);
+
+    return { manha, tarde, noite, semHorario };
+  };
+
+  const isHoje = selectedDate ? isSameDay(selectedDate, new Date()) : false;
+
   if (loading) {
     return (
       <div className="flex-1 p-8">
@@ -259,7 +619,6 @@ const MeuPerfil = () => {
         </div>
       </div>
 
-      {/* Cards de Resumo */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card 
           className="cursor-pointer hover:shadow-lg transition-shadow"
@@ -319,15 +678,323 @@ const MeuPerfil = () => {
         </Card>
       </div>
 
-      {/* Tabs de Conteúdo */}
-          <Tabs defaultValue="clientes" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="clientes" id="clientes-tab">Meus Clientes</TabsTrigger>
-              <TabsTrigger value="tarefas" id="tarefas-tab">Minhas Tarefas</TabsTrigger>
-              <TabsTrigger value="calendario" id="calendario-tab">Calendário</TabsTrigger>
-              <TabsTrigger value="agendas" id="agendas-tab">Agendas da Equipe</TabsTrigger>
-              <TabsTrigger value="historico" id="historico-tab">Histórico</TabsTrigger>
-            </TabsList>
+      <Tabs defaultValue="meudia" className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="meudia" id="meudia-tab">Meu Dia</TabsTrigger>
+          <TabsTrigger value="clientes" id="clientes-tab">Meus Clientes</TabsTrigger>
+          <TabsTrigger value="tarefas" id="tarefas-tab">Minhas Tarefas</TabsTrigger>
+          <TabsTrigger value="calendario" id="calendario-tab">Calendário</TabsTrigger>
+          <TabsTrigger value="agendas" id="agendas-tab">Agendas da Equipe</TabsTrigger>
+          <TabsTrigger value="historico" id="historico-tab">Histórico</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="meudia" className="space-y-6">
+          <div className="grid md:grid-cols-[300px_1fr] gap-6">
+            <div className="space-y-4">
+              <Card className="p-4">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  locale={ptBR}
+                  className="rounded-md"
+                />
+              </Card>
+              
+              {eventosRelatorioDiario && (
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-3">Resumo do Dia</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Visitas:</span>
+                      <span className="font-medium">
+                        {eventosRelatorioDiario.filter(e => e.tipo === 'visita').length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tarefas:</span>
+                      <span className="font-medium">
+                        {eventosRelatorioDiario.filter(e => e.tipo === 'tarefa').length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Eventos:</span>
+                      <span className="font-medium">
+                        {eventosRelatorioDiario.filter(e => e.tipo === 'evento').length}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <CalendarDays className="h-6 w-6" />
+                  {selectedDate && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </h2>
+                {isHoje && (
+                  <p className="text-muted-foreground mt-1">
+                    Aqui está o seu relatório de hoje. Organize suas atividades e tenha um ótimo dia! 🚀
+                  </p>
+                )}
+              </div>
+
+              {loadingRelatorioDiario ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-32 w-full" />
+                  ))}
+                </div>
+              ) : eventosRelatorioDiario && eventosRelatorioDiario.length > 0 ? (
+                <div className="space-y-6">
+                  {(() => {
+                    const { manha, tarde, noite, semHorario } = agruparEventosPorPeriodo(eventosRelatorioDiario);
+
+                    return (
+                      <>
+                        {manha.length > 0 && (
+                          <div>
+                            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                              🌅 Manhã (6h - 12h)
+                            </h3>
+                            <div className="space-y-3">
+                              {manha.map(renderEvento)}
+                            </div>
+                          </div>
+                        )}
+
+                        {tarde.length > 0 && (
+                          <div>
+                            {manha.length > 0 && <Separator className="my-6" />}
+                            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                              ☀️ Tarde (12h - 18h)
+                            </h3>
+                            <div className="space-y-3">
+                              {tarde.map(renderEvento)}
+                            </div>
+                          </div>
+                        )}
+
+                        {noite.length > 0 && (
+                          <div>
+                            {(manha.length > 0 || tarde.length > 0) && <Separator className="my-6" />}
+                            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                              🌙 Noite (18h - 6h)
+                            </h3>
+                            <div className="space-y-3">
+                              {noite.map(renderEvento)}
+                            </div>
+                          </div>
+                        )}
+
+                        {semHorario.length > 0 && (
+                          <div>
+                            {(manha.length > 0 || tarde.length > 0 || noite.length > 0) && (
+                              <Separator className="my-6" />
+                            )}
+                            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                              📋 Sem Horário Definido
+                            </h3>
+                            <div className="space-y-3">
+                              {semHorario.map(renderEvento)}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <Card className="p-12 text-center">
+                  <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Nenhuma atividade agendada</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {isHoje 
+                      ? 'Você não tem atividades agendadas para hoje.'
+                      : 'Não há atividades agendadas para esta data.'}
+                  </p>
+                </Card>
+              )}
+
+              <Separator className="my-8" />
+
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
+                  <Route className="h-6 w-6" />
+                  Planejar Rotas
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  Selecione prospects e crie visitas otimizadas
+                </p>
+
+                <div className="grid lg:grid-cols-[1fr_350px] gap-6">
+                  <div className="space-y-4">
+                    <Card className="p-4">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="flex-1">
+                          <Label>Filtrar por Cidade</Label>
+                          <Select value={cidadeFiltro || undefined} onValueChange={(value) => setCidadeFiltro(value || '')}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Todas as cidades" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {cidades.map(cidade => (
+                                <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Selecionados</Label>
+                          <Badge variant="secondary" className="text-lg px-4 py-2">
+                            {prospectsSelecionados.length}
+                          </Badge>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {loadingProspects ? (
+                        [1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full" />)
+                      ) : prospects && prospects.length > 0 ? (
+                        prospects.map((prospect) => {
+                          const isSelected = !!prospectsSelecionados.find(p => p.id === prospect.id);
+                          return (
+                            <Card 
+                              key={prospect.id}
+                              className={`p-4 cursor-pointer transition-all hover:shadow-md ${
+                                isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
+                              }`}
+                              onClick={() => toggleProspect(prospect)}
+                            >
+                              <div className="flex items-start gap-3">
+                                <Checkbox checked={isSelected} />
+                                <div className="flex-1">
+                                  <h4 className="font-semibold">{prospect.nome_empresa}</h4>
+                                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {prospect.endereco_completo}
+                                  </p>
+                                </div>
+                              </div>
+                            </Card>
+                          );
+                        })
+                      ) : (
+                        <Card className="p-8 text-center">
+                          <MapPin className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">Nenhum prospect com endereço</p>
+                        </Card>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {prospectsSelecionados.length > 0 && (
+                      <Card className="p-4">
+                        <h3 className="font-semibold mb-4">Calcular Rota</h3>
+                        <Button 
+                          className="w-full"
+                          onClick={handleCalcularRota}
+                          disabled={isCalculating || prospectsSelecionados.length < 2}
+                        >
+                          {isCalculating ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Calculando...
+                            </>
+                          ) : (
+                            <>
+                              <Navigation className="h-4 w-4 mr-2" />
+                              Calcular Rota
+                            </>
+                          )}
+                        </Button>
+
+                        {rotaCalculada && (
+                          <div className="mt-4 p-3 bg-primary/10 rounded-lg space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Distância Total:</span>
+                              <span className="font-semibold">{rotaCalculada.distancia_total_km} km</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Tempo de Trajeto:</span>
+                              <span className="font-semibold">{Math.round(rotaCalculada.tempo_total_min)} min</span>
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+                    )}
+
+                    <Card className="p-4">
+                      <h3 className="font-semibold mb-4">Agendar Visitas</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="vendedor">Vendedor</Label>
+                          <Select value={vendedorId} onValueChange={setVendedorId}>
+                            <SelectTrigger id="vendedor">
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {vendedores?.map(v => (
+                                <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="data">Data</Label>
+                          <Input
+                            id="data"
+                            type="date"
+                            value={dataRota}
+                            onChange={(e) => setDataRota(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="horario">Horário Início</Label>
+                          <Input
+                            id="horario"
+                            type="time"
+                            value={horarioInicio}
+                            onChange={(e) => setHorarioInicio(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="duracao">Duração (min)</Label>
+                          <Input
+                            id="duracao"
+                            type="number"
+                            min="15"
+                            max="180"
+                            step="15"
+                            value={duracaoVisita}
+                            onChange={(e) => setDuracaoVisita(Number(e.target.value))}
+                          />
+                        </div>
+
+                        <Button 
+                          className="w-full"
+                          size="lg"
+                          onClick={handleAgendarVisitas}
+                          disabled={prospectsSelecionados.length === 0}
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Agendar Visitas
+                        </Button>
+                      </div>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
 
         <TabsContent value="clientes" className="space-y-4">
           <Card>
@@ -549,7 +1216,7 @@ const MeuPerfil = () => {
                         setFormEvento({
                           titulo: '',
                           descricao: '',
-                          data: format(selectedDate || new Date(), 'yyyy-MM-dd'),
+                          data: format(new Date(), 'yyyy-MM-dd'),
                           horario: '',
                           tipo: 'evento'
                         });
@@ -564,36 +1231,42 @@ const MeuPerfil = () => {
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <Label>Título</Label>
+                          <Label htmlFor="titulo">Título *</Label>
                           <Input
+                            id="titulo"
                             value={formEvento.titulo}
-                            onChange={(e) => setFormEvento({ ...formEvento, titulo: e.target.value })}
-                            placeholder="Ex: Visita em Botuvera"
+                            onChange={(e) => setFormEvento({...formEvento, titulo: e.target.value})}
+                            placeholder="Ex: Reunião com cliente"
                           />
                         </div>
                         <div>
-                          <Label>Data</Label>
-                          <Input
-                            type="date"
-                            value={formEvento.data}
-                            onChange={(e) => setFormEvento({ ...formEvento, data: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <Label>Horário (opcional)</Label>
-                          <Input
-                            type="time"
-                            value={formEvento.horario}
-                            onChange={(e) => setFormEvento({ ...formEvento, horario: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <Label>Descrição / Observações</Label>
+                          <Label htmlFor="descricao">Descrição</Label>
                           <Textarea
+                            id="descricao"
                             value={formEvento.descricao}
-                            onChange={(e) => setFormEvento({ ...formEvento, descricao: e.target.value })}
-                            placeholder="O que você vai fazer..."
+                            onChange={(e) => setFormEvento({...formEvento, descricao: e.target.value})}
+                            placeholder="Detalhes do evento"
                           />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="data">Data *</Label>
+                            <Input
+                              id="data"
+                              type="date"
+                              value={formEvento.data}
+                              onChange={(e) => setFormEvento({...formEvento, data: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="horario">Horário</Label>
+                            <Input
+                              id="horario"
+                              type="time"
+                              value={formEvento.horario}
+                              onChange={(e) => setFormEvento({...formEvento, horario: e.target.value})}
+                            />
+                          </div>
                         </div>
                         <Button onClick={handleSaveEvento} className="w-full">
                           {eventoEditando ? 'Atualizar' : 'Criar'} Evento
@@ -605,112 +1278,117 @@ const MeuPerfil = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-[300px_1fr] gap-6">
                 <div>
                   <CalendarComponent
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
+                    locale={ptBR}
                     className="rounded-md border"
                   />
+                  <div className="mt-4 space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Total do mês:</span>
+                      <Badge variant="secondary">{eventosDoMes.length}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Pendentes:</span>
+                      <Badge variant="outline">{eventosPendentes.length}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Concluídos:</span>
+                      <Badge variant="default">{eventosConcluidos.length}</Badge>
+                    </div>
+                  </div>
                 </div>
+
                 <div className="space-y-4">
-                  {/* Eventos Pendentes */}
                   <div>
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Pendentes ({eventosPendentes.length})
-                    </h3>
+                    <h3 className="font-semibold mb-3">Eventos Pendentes</h3>
                     {eventosPendentes.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">Nenhum evento pendente</p>
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>Nenhum evento pendente neste mês</p>
+                      </div>
                     ) : (
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                      <div className="space-y-2">
                         {eventosPendentes.map((evento) => (
-                          <div key={evento.id} className="border rounded-lg p-3 space-y-2 bg-background">
-                            <div className="flex items-start gap-2">
-                              <Checkbox 
-                                checked={false}
-                                onCheckedChange={() => handleToggleConcluido(evento)}
-                                className="mt-1"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium">{evento.titulo}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {format(new Date(evento.data), "dd/MM/yyyy")}
-                                  {evento.horario && ` às ${evento.horario}`}
-                                </p>
+                          <div key={evento.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <h4 className="font-semibold">{evento.titulo}</h4>
                                 {evento.descricao && (
                                   <p className="text-sm text-muted-foreground mt-1">{evento.descricao}</p>
                                 )}
-                                <div className="mt-2">
-                                  <Input
-                                    placeholder="Adicionar comentário..."
-                                    value={comentarioEvento[evento.id] || evento.comentario || ''}
-                                    onChange={(e) => setComentarioEvento({
-                                      ...comentarioEvento,
-                                      [evento.id]: e.target.value
-                                    })}
-                                    className="text-sm h-8"
-                                  />
+                                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {format(new Date(evento.data), 'dd/MM/yyyy')}
+                                  </div>
+                                  {evento.horario && (
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      {evento.horario}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                              <div className="flex gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleEditEvento(evento)}
-                                >
-                                  <Edit className="h-3 w-3" />
+                              <div className="flex gap-2">
+                                <Button variant="ghost" size="icon" onClick={() => handleEditEvento(evento)}>
+                                  <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeleteEvento(evento.id)}
-                                >
-                                  <Trash className="h-3 w-3" />
+                                <Button variant="ghost" size="icon" onClick={() => handleDeleteEvento(evento.id)}>
+                                  <Trash className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>
+                            <div className="flex items-center gap-2 mt-3">
+                              <Checkbox
+                                checked={evento.concluido}
+                                onCheckedChange={() => handleToggleConcluido(evento)}
+                              />
+                              <Label className="text-sm cursor-pointer">Marcar como concluído</Label>
+                            </div>
+                            {!evento.concluido && (
+                              <div className="mt-2">
+                                <Textarea
+                                  placeholder="Adicionar comentário (opcional)"
+                                  value={comentarioEvento[evento.id] || ''}
+                                  onChange={(e) => setComentarioEvento({...comentarioEvento, [evento.id]: e.target.value})}
+                                  rows={2}
+                                  className="text-sm"
+                                />
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
 
-                  {/* Eventos Concluídos */}
                   {eventosConcluidos.length > 0 && (
                     <div>
-                      <h3 className="font-semibold mb-3 flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        Concluídos ({eventosConcluidos.length})
-                      </h3>
+                      <h3 className="font-semibold mb-3">Eventos Concluídos</h3>
                       <div className="space-y-2 max-h-64 overflow-y-auto">
                         {eventosConcluidos.map((evento) => (
-                          <div key={evento.id} className="border rounded-lg p-3 space-y-2 bg-muted/30 opacity-75">
-                            <div className="flex items-start gap-2">
-                              <Checkbox 
-                                checked={true}
-                                onCheckedChange={() => handleToggleConcluido(evento)}
-                                className="mt-1"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium line-through">{evento.titulo}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {format(new Date(evento.data), "dd/MM/yyyy")}
-                                  {evento.horario && ` às ${evento.horario}`}
-                                </p>
-                                {evento.comentario && (
-                                  <p className="text-sm text-muted-foreground mt-1 italic">
-                                    💬 {evento.comentario}
-                                  </p>
-                                )}
+                          <div key={evento.id} className="border rounded-lg p-3 opacity-60">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" />
+                                <div>
+                                  <h4 className="font-semibold text-sm">{evento.titulo}</h4>
+                                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                    <span>{format(new Date(evento.data), 'dd/MM/yyyy')}</span>
+                                    {evento.horario && <span>• {evento.horario}</span>}
+                                  </div>
+                                  {evento.comentario && (
+                                    <p className="text-xs text-muted-foreground mt-2 italic">"{evento.comentario}"</p>
+                                  )}
+                                </div>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteEvento(evento.id)}
-                              >
-                                <Trash className="h-3 w-3" />
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteEvento(evento.id)}>
+                                <Trash className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>
@@ -739,8 +1417,11 @@ const MeuPerfil = () => {
         <TabsContent value="historico" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Histórico de Atividades</CardTitle>
-              <CardDescription>Acompanhe todas as ações da equipe</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Histórico de Atividades
+              </CardTitle>
+              <CardDescription>Últimas 50 atividades da equipe</CardDescription>
             </CardHeader>
             <CardContent>
               {!historico || historico.length === 0 ? (
@@ -749,23 +1430,24 @@ const MeuPerfil = () => {
                   <p>Nenhuma atividade registrada</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                <div className="space-y-3">
                   {historico.map((item: any) => (
-                    <div key={item.id} className="border-l-2 border-primary pl-4 py-2">
+                    <div key={item.id} className="border rounded-lg p-4">
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="font-medium">
-                            {item.profiles?.nome || 'Usuário'} - {getAcaoLabel(item.acao)}
-                          </p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline">{getAcaoLabel(item.acao)}</Badge>
+                            <span className="text-sm text-muted-foreground">
+                              por {item.profiles?.nome || 'Desconhecido'}
+                            </span>
+                          </div>
                           {item.detalhes && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {JSON.stringify(item.detalhes)}
-                            </p>
+                            <p className="text-sm text-muted-foreground">{item.detalhes}</p>
                           )}
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(item.created_at), "dd/MM/yyyy HH:mm")}
-                        </span>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(item.created_at).toLocaleString('pt-BR')}
+                        </div>
                       </div>
                     </div>
                   ))}

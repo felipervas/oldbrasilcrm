@@ -73,17 +73,23 @@ export const AgendamentoRapidoModal = ({
 
       if (eventoError) throw eventoError;
 
-      // 3. Disparar IA automaticamente
-      toast({
-        title: '✅ Visita agendada!',
-        description: 'Gerando insights sobre o prospect...',
-      });
+      // 3. Disparar IA automaticamente (não bloqueia o agendamento)
+      setTimeout(() => {
+        try {
+          generateInsights({
+            prospectId: prospect.id,
+            nomeEmpresa: prospect.nome_empresa,
+            segmento: prospect.segmento,
+            cidade: prospect.cidade,
+          });
+        } catch (err) {
+          console.log('Insights serão gerados em segundo plano');
+        }
+      }, 100);
 
-      generateInsights({
-        prospectId: prospect.id,
-        nomeEmpresa: prospect.nome_empresa,
-        segmento: prospect.segmento,
-        cidade: prospect.cidade,
+      toast({
+        title: '✅ Visita agendada com sucesso!',
+        description: 'Insights serão gerados automaticamente.',
       });
 
       onOpenChange(false);
@@ -94,6 +100,7 @@ export const AgendamentoRapidoModal = ({
         observacoes: '',
       });
       onSuccess();
+      setLoading(false);
     } catch (error: any) {
       console.error('Erro ao agendar visita:', error);
       toast({
