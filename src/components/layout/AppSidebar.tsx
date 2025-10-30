@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import {
@@ -116,8 +116,9 @@ function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; op
 }
 
 export function AppSidebar() {
-  const { open } = useSidebar();
+  const { open, setOpen } = useSidebar();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { data: isAdmin } = useIsAdmin();
   const [menuItems, setMenuItems] = useState(defaultMenuItems);
@@ -146,6 +147,13 @@ export function AppSidebar() {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Auto-minimizar sidebar ao navegar
+  useEffect(() => {
+    if (open && setOpen) {
+      setOpen(false);
+    }
+  }, [location.pathname]);
 
   const checkFinanceiroAccess = async () => {
     try {

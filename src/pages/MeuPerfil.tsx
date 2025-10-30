@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useRelatorioDiario, EventoDia } from '@/hooks/useRelatorioDiario';
 import { useMapboxRotaOtimizada } from '@/hooks/useMapboxRotaOtimizada';
 import { useIAInsights } from '@/hooks/useIAInsights';
+import { AgendamentoRapidoModal } from '@/components/prospects/AgendamentoRapidoModal';
 import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History, Trophy, List, CalendarDays, Lightbulb, Package, Navigation, ExternalLink, Route, Loader2 } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { ptBR } from 'date-fns/locale';
@@ -42,6 +43,7 @@ const MeuPerfil = () => {
   const [dialogMultiplosOpen, setDialogMultiplosOpen] = useState(false);
   const [eventosTexto, setEventosTexto] = useState('');
   const [comentarioEvento, setComentarioEvento] = useState<{[key: string]: string}>({});
+  const [agendamentoModalOpen, setAgendamentoModalOpen] = useState(false);
   const [formEvento, setFormEvento] = useState({
     titulo: '',
     descricao: '',
@@ -729,16 +731,26 @@ const MeuPerfil = () => {
             </div>
 
             <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                  <CalendarDays className="h-6 w-6" />
-                  {selectedDate && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                </h2>
-                {isHoje && (
-                  <p className="text-muted-foreground mt-1">
-                    Aqui está o seu relatório de hoje. Organize suas atividades e tenha um ótimo dia! 🚀
-                  </p>
-                )}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    <CalendarDays className="h-6 w-6" />
+                    {selectedDate && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </h2>
+                  {isHoje && (
+                    <p className="text-muted-foreground mt-1">
+                      Aqui está o seu relatório de hoje. Organize suas atividades e tenha um ótimo dia! 🚀
+                    </p>
+                  )}
+                </div>
+                <Button
+                  onClick={() => setAgendamentoModalOpen(true)}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Agendar Visita
+                </Button>
               </div>
 
               {loadingRelatorioDiario ? (
@@ -1457,6 +1469,18 @@ const MeuPerfil = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Agendamento Rápido */}
+      <AgendamentoRapidoModal
+        open={agendamentoModalOpen}
+        onOpenChange={setAgendamentoModalOpen}
+        onSuccess={() => {
+          // Recarregar eventos do dia
+          if (selectedDate) {
+            setSelectedDate(new Date(selectedDate));
+          }
+        }}
+      />
     </div>
   );
 };
