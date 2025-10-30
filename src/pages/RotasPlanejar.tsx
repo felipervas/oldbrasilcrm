@@ -57,25 +57,30 @@ export default function RotasPlanejar() {
     queryFn: async () => {
       let query = supabase
         .from('prospects')
-        .select('*')
+        .select('id, nome_empresa, endereco_completo, latitude, longitude, cidade, segmento')
         .not('endereco_completo', 'is', null)
         .not('latitude', 'is', null)
         .not('longitude', 'is', null);
 
-      if (cidadeFiltro) {
-        query = query.ilike('cidade', `%${cidadeFiltro}%`);
+      if (cidadeFiltro && cidadeFiltro.trim()) {
+        query = query.ilike('cidade', `%${cidadeFiltro.trim()}%`);
       }
 
-      const { data, error } = await query.order('nome_empresa');
+      const { data, error } = await query
+        .order('cidade')
+        .order('nome_empresa')
+        .limit(100);
       
       if (error) throw error;
       return data || [];
     },
+    staleTime: 60000, // Cache por 1 minuto
   });
 
   // Buscar vendedores (profiles)
   const { data: vendedores } = useQuery({
     queryKey: ['vendedores'],
+    staleTime: 300000, // Cache por 5 minutos
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')

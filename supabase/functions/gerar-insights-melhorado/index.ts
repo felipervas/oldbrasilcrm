@@ -57,17 +57,18 @@ ${listaProdutos}
 
 Retorne APENAS um JSON válido com esta estrutura exata (sem markdown):
 {
-  "resumo_empresa": "Descrição REAL da empresa baseada em pesquisa (tipo de negócio, porte, especialidade)",
-  "produtos_recomendados": ["nome exato do produto 1 da lista acima", "nome exato do produto 2"],
-  "dicas_abordagem": ["dica prática 1", "dica prática 2", "dica prática 3"],
-  "informacoes_publicas": "Informações REAIS encontradas: endereço completo, telefone, site, horário de funcionamento, redes sociais, etc"
+  "resumo_empresa": "Uma linha curta e objetiva sobre o tipo de negócio (máx 50 palavras)",
+  "produtos_recomendados": ["produto 1", "produto 2"],
+  "dicas_abordagem": ["dica curta 1", "dica curta 2"],
+  "informacoes_publicas": "Informações essenciais: telefone, site (se encontrar)"
 }
 
 REGRAS CRÍTICAS:
-1. Use APENAS nomes exatos dos produtos da lista fornecida
-2. Pesquise no Google informações reais sobre "${nomeEmpresa} ${cidade}"
-3. Inclua endereço, telefone, site e horários reais quando encontrar
-4. Se não encontrar informações, diga "Informações não disponíveis publicamente"`;
+1. Use APENAS nomes exatos dos produtos da lista fornecida (máximo 2 produtos)
+2. Seja MUITO CONCISO - respostas curtas e diretas
+3. Pesquise no Google informações reais sobre "${nomeEmpresa} ${cidade}"
+4. Dicas de abordagem devem ter no máximo 10 palavras cada
+5. Se não encontrar informações, retorne "Não disponível"`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',

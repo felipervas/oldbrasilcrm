@@ -374,14 +374,10 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
                       <h4 className="font-semibold mb-2">🌐 Informações Públicas</h4>
                       <p className="text-sm text-muted-foreground">{insights.informacoes_publicas}</p>
                     </CardContent>
-                  </Card>
-                )}
-
-                <p className="text-xs text-muted-foreground text-center">
-                  Gerado em {insights.gerado_em && format(new Date(insights.gerado_em), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                </p>
-              </div>
-            ) : (
+                </Card>
+              )}
+            </div>
+          ) : (
               <Card>
                 <CardContent className="pt-6 text-center py-12">
                   <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />

@@ -22,6 +22,8 @@ import { useMapboxRotaOtimizada } from '@/hooks/useMapboxRotaOtimizada';
 import { useIAInsights } from '@/hooks/useIAInsights';
 import { AgendamentoRapidoModal } from '@/components/prospects/AgendamentoRapidoModal';
 import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History, Trophy, List, CalendarDays, Lightbulb, Package, Navigation, ExternalLink, Route, Loader2 } from "lucide-react";
+import { EventoVisitaCard } from '@/components/relatorio/EventoVisitaCard';
+import { EventoTarefaCard } from '@/components/relatorio/EventoTarefaCard';
 import { format, isSameDay } from "date-fns";
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -70,19 +72,23 @@ const MeuPerfil = () => {
   // Buscar prospects com endereço para Planejar Rotas
   const { data: prospects, isLoading: loadingProspects } = useQuery({
     queryKey: ['prospects-com-endereco', cidadeFiltro],
+    staleTime: 60000, // Cache por 1 minuto
     queryFn: async () => {
       let query = supabase
         .from('prospects')
-        .select('*')
+        .select('id, nome_empresa, endereco_completo, latitude, longitude, cidade, segmento')
         .not('endereco_completo', 'is', null)
         .not('latitude', 'is', null)
         .not('longitude', 'is', null);
 
-      if (cidadeFiltro) {
-        query = query.ilike('cidade', `%${cidadeFiltro}%`);
+      if (cidadeFiltro && cidadeFiltro.trim()) {
+        query = query.ilike('cidade', `%${cidadeFiltro.trim()}%`);
       }
 
-      const { data, error } = await query.order('nome_empresa');
+      const { data, error } = await query
+        .order('cidade')
+        .order('nome_empresa')
+        .limit(100);
       
       if (error) throw error;
       return data || [];
@@ -92,6 +98,7 @@ const MeuPerfil = () => {
   // Buscar vendedores para Planejar Rotas
   const { data: vendedores } = useQuery({
     queryKey: ['vendedores'],
+    staleTime: 300000, // Cache por 5 minutos
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
@@ -411,198 +418,13 @@ const MeuPerfil = () => {
   // Renderizar evento do Meu Dia
   const renderEvento = (evento: EventoDia) => {
     if (evento.tipo === 'visita' && evento.prospect) {
-      return (
-        <Card key={evento.id} className="p-4 bg-gradient-to-br from-primary/5 to-background">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              <div>
-                <h4 className="font-semibold text-lg">{evento.prospect.nome_empresa}</h4>
-                {evento.horario_inicio && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {evento.horario_inicio} {evento.horario_fim && `- ${evento.horario_fim}`}
-                  </p>
-                )}
-              </div>
-            </div>
-            <Badge variant={evento.status === 'realizada' ? 'default' : 'secondary'}>
-              {evento.status === 'agendada' && '📅 Agendada'}
-              {evento.status === 'realizada' && '✅ Realizada'}
-              {evento.status === 'cancelada' && '❌ Cancelada'}
-            </Badge>
-          </div>
-
-          {evento.prospect.endereco_completo && (
-            <div className="flex items-start gap-2 mb-3 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <span>{evento.prospect.endereco_completo}</span>
-            </div>
-          )}
-
-          {evento.insights && (
-            <div className="space-y-3 mt-4">
-              {evento.insights.resumo_empresa && (
-                <div className="bg-background/60 rounded-lg p-3">
-                  <p className="text-sm font-medium flex items-center gap-2 mb-1">
-                    <Lightbulb className="h-4 w-4 text-yellow-500" />
-                    Sobre a empresa
-                  </p>
-                  <p className="text-sm text-muted-foreground">{evento.insights.resumo_empresa}</p>
-                </div>
-              )}
-
-              {evento.insights.produtos_recomendados && evento.insights.produtos_recomendados.length > 0 && (
-                <div className="bg-background/60 rounded-lg p-3">
-                  <p className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <Package className="h-4 w-4 text-blue-500" />
-                    Produtos Recomendados
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {evento.insights.produtos_recomendados.map((produto, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {produto}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {evento.insights.dicas_abordagem && evento.insights.dicas_abordagem.length > 0 && (
-                <div className="bg-background/60 rounded-lg p-3">
-                  <p className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <AlertCircle className="h-4 w-4 text-green-500" />
-                    Dicas de Abordagem
-                  </p>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {evento.insights.dicas_abordagem.map((dica, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <span className="text-primary">•</span>
-                        <span>{dica}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex gap-2 mt-4">
-            {evento.prospect.endereco_completo && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  const endereco = encodeURIComponent(evento.prospect?.endereco_completo || '');
-                  window.open(`https://www.google.com/maps/search/?api=1&query=${endereco}`, '_blank');
-                }}
-              >
-                <Navigation className="h-4 w-4 mr-2" />
-                Navegação
-              </Button>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                if (confirm('Deseja excluir esta visita?')) {
-                  try {
-                    await supabase.from('prospect_visitas').delete().eq('id', evento.id);
-                    await supabase.from('colaborador_eventos').delete().eq('titulo', `Visita: ${evento.prospect?.nome_empresa}`).eq('data', format(evento.data, 'yyyy-MM-dd'));
-                    toast({ title: 'Visita excluída com sucesso' });
-                    window.location.reload();
-                  } catch (error) {
-                    toast({ title: 'Erro ao excluir visita', variant: 'destructive' });
-                  }
-                }
-              }}
-            >
-              <Trash className="h-4 w-4 mr-2" />
-              Excluir
-            </Button>
-            <Select
-              onValueChange={async (status) => {
-                try {
-                  await supabase.from('prospect_visitas').update({ status }).eq('id', evento.id);
-                  toast({ title: 'Status atualizado!' });
-                  window.location.reload();
-                } catch (error) {
-                  toast({ title: 'Erro ao atualizar', variant: 'destructive' });
-                }
-              }}
-            >
-              <SelectTrigger className="h-9 w-[140px]">
-                <SelectValue placeholder="Feedback" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="realizada">✅ Realizada</SelectItem>
-                <SelectItem value="cancelada">❌ Cancelada</SelectItem>
-                <SelectItem value="reagendada">🔄 Reagendar</SelectItem>
-                <SelectItem value="sem_resposta">📵 Sem Resposta</SelectItem>
-                <SelectItem value="ausente">🚫 Ausente</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </Card>
-      );
+      return <EventoVisitaCard key={evento.id} evento={evento} />;
     }
 
     if (evento.tipo === 'tarefa' && evento.tarefa) {
-      return (
-        <Card key={evento.id} className="p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-2 flex-1">
-              {evento.tarefa.tipo === 'ligacao' ? (
-                <Phone className="h-5 w-5 text-blue-500 mt-0.5" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
-              )}
-              <div className="flex-1">
-                <h4 className="font-semibold">{evento.tarefa.titulo}</h4>
-                {evento.tarefa.cliente_nome && (
-                  <p className="text-sm text-muted-foreground">
-                    Cliente: {evento.tarefa.cliente_nome}
-                  </p>
-                )}
-                {evento.horario_inicio && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <Clock className="h-3 w-3" />
-                    {evento.horario_inicio}
-                  </p>
-                )}
-                {evento.tarefa.descricao && (
-                  <p className="text-sm text-muted-foreground mt-2">{evento.tarefa.descricao}</p>
-                )}
-                {evento.endereco_completo && (
-                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                    <Navigation className="h-3 w-3" />
-                    {evento.endereco_completo}
-                  </p>
-                )}
-              </div>
-            </div>
-            <Badge variant={evento.tarefa.prioridade === 'alta' ? 'destructive' : 'secondary'}>
-              {evento.tarefa.prioridade}
-            </Badge>
-          </div>
-          {evento.endereco_completo && (
-            <div className="flex gap-2 mt-3">
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  const endereco = encodeURIComponent(evento.endereco_completo || '');
-                  window.open(`https://www.google.com/maps/search/?api=1&query=${endereco}`, '_blank');
-                }}
-              >
-                <Navigation className="h-4 w-4 mr-2" />
-                Navegação
-              </Button>
-            </div>
-          )}
-         </Card>
-       );
-     }
+      const isHoje = selectedDate ? isSameDay(selectedDate, new Date()) : false;
+      return <EventoTarefaCard key={evento.id} evento={evento} isHoje={isHoje} />;
+    }
 
      return (
       <Card key={evento.id} className="p-4">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,18 +6,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useRelatorioDiario, EventoDia } from '@/hooks/useRelatorioDiario';
+import { EventoVisitaCard } from '@/components/relatorio/EventoVisitaCard';
+import { EventoTarefaCard } from '@/components/relatorio/EventoTarefaCard';
 import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   CalendarDays, 
-  Clock, 
-  MapPin, 
-  Phone, 
-  CheckCircle2, 
-  AlertCircle,
-  Lightbulb,
-  Package,
-  Navigation,
   ExternalLink
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -48,171 +42,14 @@ export default function ColaboradorRelatorioDiario() {
 
   const renderEvento = (evento: EventoDia) => {
     if (evento.tipo === 'visita' && evento.prospect) {
-      return (
-        <Card key={evento.id} className="p-4 bg-gradient-to-br from-primary/5 to-background">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              <div>
-                <h4 className="font-semibold text-lg">{evento.prospect.nome_empresa}</h4>
-                {evento.horario_inicio && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {evento.horario_inicio} {evento.horario_fim && `- ${evento.horario_fim}`}
-                  </p>
-                )}
-              </div>
-            </div>
-            <Badge variant={evento.status === 'realizada' ? 'default' : 'secondary'}>
-              {evento.status === 'agendada' && '📅 Agendada'}
-              {evento.status === 'realizada' && '✅ Realizada'}
-              {evento.status === 'cancelada' && '❌ Cancelada'}
-            </Badge>
-          </div>
-
-          {evento.prospect.endereco_completo && (
-            <div className="flex items-start gap-2 mb-3 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <span>{evento.prospect.endereco_completo}</span>
-            </div>
-          )}
-
-          {evento.insights && (
-            <div className="space-y-3 mt-4">
-              {evento.insights.resumo_empresa && (
-                <div className="bg-background/60 rounded-lg p-3">
-                  <p className="text-sm font-medium flex items-center gap-2 mb-1">
-                    <Lightbulb className="h-4 w-4 text-yellow-500" />
-                    Sobre a empresa
-                  </p>
-                  <p className="text-sm text-muted-foreground">{evento.insights.resumo_empresa}</p>
-                </div>
-              )}
-
-              {evento.insights.produtos_recomendados && evento.insights.produtos_recomendados.length > 0 && (
-                <div className="bg-background/60 rounded-lg p-3">
-                  <p className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <Package className="h-4 w-4 text-blue-500" />
-                    Produtos Recomendados
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {evento.insights.produtos_recomendados.map((produto, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {produto}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {evento.insights.dicas_abordagem && evento.insights.dicas_abordagem.length > 0 && (
-                <div className="bg-background/60 rounded-lg p-3">
-                  <p className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <AlertCircle className="h-4 w-4 text-green-500" />
-                    Dicas de Abordagem
-                  </p>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {evento.insights.dicas_abordagem.map((dica, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <span className="text-primary">•</span>
-                        <span>{dica}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex gap-2 mt-4">
-            {evento.status === 'agendada' && isHoje && (
-              <Button size="sm" className="flex-1">
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Iniciar Visita
-              </Button>
-            )}
-            {evento.prospect.endereco_completo && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  const endereco = encodeURIComponent(evento.prospect?.endereco_completo || '');
-                  window.open(`https://www.google.com/maps/search/?api=1&query=${endereco}`, '_blank');
-                }}
-              >
-                <Navigation className="h-4 w-4 mr-2" />
-                Navegação
-              </Button>
-            )}
-          </div>
-        </Card>
-      );
+      return <EventoVisitaCard key={evento.id} evento={evento} />;
     }
 
     if (evento.tipo === 'tarefa' && evento.tarefa) {
-      return (
-        <Card key={evento.id} className="p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-2 flex-1">
-              {evento.tarefa.tipo === 'ligacao' ? (
-                <Phone className="h-5 w-5 text-blue-500 mt-0.5" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
-              )}
-              <div className="flex-1">
-                <h4 className="font-semibold">{evento.tarefa.titulo}</h4>
-                {evento.tarefa.cliente_nome && (
-                  <p className="text-sm text-muted-foreground">
-                    Cliente: {evento.tarefa.cliente_nome}
-                  </p>
-                )}
-                {evento.horario_inicio && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <Clock className="h-3 w-3" />
-                    {evento.horario_inicio}
-                  </p>
-                )}
-                {evento.tarefa.descricao && (
-                  <p className="text-sm text-muted-foreground mt-2">{evento.tarefa.descricao}</p>
-                )}
-                {evento.endereco_completo && (
-                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                    <Navigation className="h-3 w-3" />
-                    {evento.endereco_completo}
-                  </p>
-                )}
-              </div>
-            </div>
-            <Badge variant={evento.tarefa.prioridade === 'alta' ? 'destructive' : 'secondary'}>
-              {evento.tarefa.prioridade}
-            </Badge>
-          </div>
-          {evento.status === 'pendente' && isHoje && (
-            <div className="flex gap-2 mt-3">
-              <Button size="sm" className="flex-1">
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Marcar como Concluída
-              </Button>
-              {evento.endereco_completo && (
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => {
-                    const endereco = encodeURIComponent(evento.endereco_completo || '');
-                    window.open(`https://www.google.com/maps/search/?api=1&query=${endereco}`, '_blank');
-                  }}
-                >
-                  <Navigation className="h-4 w-4 mr-2" />
-                  Navegação
-                </Button>
-              )}
-            </div>
-          )}
-         </Card>
-       );
-     }
+      return <EventoTarefaCard key={evento.id} evento={evento} isHoje={isHoje} />;
+    }
 
-     return (
+    return (
       <Card key={evento.id} className="p-4">
         <div className="flex items-center gap-2">
           <CalendarDays className="h-5 w-5 text-muted-foreground" />
@@ -220,7 +57,6 @@ export default function ColaboradorRelatorioDiario() {
             <h4 className="font-semibold">{evento.titulo}</h4>
             {evento.horario_inicio && (
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" />
                 {evento.horario_inicio}
               </p>
             )}

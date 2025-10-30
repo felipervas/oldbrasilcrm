@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCallback } from 'react';
 
 export const useIAInsights = (prospectId?: string) => {
   const queryClient = useQueryClient();
@@ -9,12 +10,13 @@ export const useIAInsights = (prospectId?: string) => {
   // Buscar insights existentes
   const { data: insights, isLoading } = useQuery({
     queryKey: ['prospect-ia-insights', prospectId],
+    staleTime: 300000, // Cache por 5 minutos
     queryFn: async () => {
       if (!prospectId) return null;
       
       const { data, error } = await supabase
         .from('prospect_ia_insights')
-        .select('*')
+        .select('prospect_id, resumo_empresa, produtos_recomendados, dicas_abordagem, informacoes_publicas')
         .eq('prospect_id', prospectId)
         .maybeSingle();
 
@@ -88,10 +90,16 @@ export const useIAInsights = (prospectId?: string) => {
     },
   });
 
+  const generateInsightsCallback = useCallback(
+    (params: { prospectId: string; nomeEmpresa: string; segmento?: string; cidade?: string }) => 
+      generateInsights.mutateAsync(params),
+    [generateInsights]
+  );
+
   return {
     insights,
     isLoading,
-    generateInsights: generateInsights.mutateAsync,
+    generateInsights: generateInsightsCallback,
     isGenerating: generateInsights.isPending,
     generateRoteiro,
   };

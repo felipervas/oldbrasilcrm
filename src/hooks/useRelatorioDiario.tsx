@@ -39,6 +39,7 @@ export const useRelatorioDiario = (data: Date) => {
 
   return useQuery({
     queryKey: ['relatorio-diario', format(data, 'yyyy-MM-dd')],
+    staleTime: 30000, // Cache por 30 segundos
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
@@ -49,7 +50,11 @@ export const useRelatorioDiario = (data: Date) => {
       const { data: visitas, error: visitasError } = await supabase
         .from('prospect_visitas')
         .select(`
-          *,
+          id,
+          data_visita,
+          horario_inicio,
+          horario_fim,
+          status,
           prospects (
             id,
             nome_empresa,
@@ -135,7 +140,15 @@ export const useRelatorioDiario = (data: Date) => {
       const { data: tarefas, error: tarefasError } = await supabase
         .from('tarefas')
         .select(`
-          *,
+          id,
+          titulo,
+          descricao,
+          data_prevista,
+          horario,
+          status,
+          prioridade,
+          tipo,
+          endereco_completo,
           clientes (
             nome_fantasia
           )
