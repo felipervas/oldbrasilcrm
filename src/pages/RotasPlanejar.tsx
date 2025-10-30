@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,28 +53,60 @@ export default function RotasPlanejar() {
 
   // Buscar prospects com endereço
   const { data: prospects, isLoading: loadingProspects } = useQuery({
-    queryKey: ['prospects-com-endereco', cidadeFiltro],
+    queryKey: ['prospects-com-endereco'],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('prospects')
         .select('id, nome_empresa, endereco_completo, latitude, longitude, cidade, segmento')
         .not('endereco_completo', 'is', null)
         .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
-
-      if (cidadeFiltro && cidadeFiltro.trim()) {
-        query = query.ilike('cidade', `%${cidadeFiltro.trim()}%`);
-      }
-
-      const { data, error } = await query
-        .order('cidade')
+        .not('longitude', 'is', null)
         .order('nome_empresa')
-        .limit(100);
+        .limit(200);
       
       if (error) throw error;
-      return data || [];
+      return (data || []).map(p => ({ ...p, tipo: 'prospect' as const, nome: p.nome_empresa }));
     },
-    staleTime: 60000, // Cache por 1 minuto
+    staleTime: 60000,
+  });
+
+  // Buscar clientes com endereço
+  const { data: clientes, isLoading: loadingClientes } = useQuery({
+    queryKey: ['clientes-com-endereco'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('id, nome_fantasia, logradouro, numero, cidade, uf, cep')
+        .not('logradouro', 'is', null)
+        .not('cidade', 'is', null)
+        .eq('ativo', true)
+        .order('nome_fantasia')
+        .limit(200);
+      
+      if (error) throw error;
+      return (data || []).map(c => {
+        const endereco = [
+          c.logradouro,
+          c.numero,
+          c.cidade,
+          c.uf,
+          c.cep
+        ].filter(Boolean).join(', ');
+        
+        return {
+          id: c.id,
+          tipo: 'cliente' as const,
+          nome: c.nome_fantasia,
+          nome_empresa: c.nome_fantasia,
+          endereco_completo: endereco,
+          cidade: c.cidade,
+          segmento: undefined,
+          latitude: undefined,
+          longitude: undefined
+        };
+      });
+    },
+    staleTime: 60000,
   });
 
   // Buscar vendedores (profiles)
@@ -103,8 +135,22 @@ export default function RotasPlanejar() {
     loadUser();
   }, [vendedorId]);
 
-  // Cidades disponíveis
-  const cidades = Array.from(new Set(prospects?.map(p => p.cidade).filter(Boolean))) as string[];
+  // Combinar e filtrar entidades (prospects + clientes)
+  const entidadesCombinadas = useMemo(() => {
+    const todasEntidades = [...(prospects || []), ...(clientes || [])];
+    if (cidadeFiltro) {
+      return todasEntidades.filter(e => e.cidade === cidadeFiltro);
+    }
+    return todasEntidades;
+  }, [prospects, clientes, cidadeFiltro]);
+
+  // Cidades disponíveis (união de prospects e clientes)
+  const cidades = useMemo(() => {
+    const cidadesSet = new Set<string>();
+    prospects?.forEach(p => p.cidade && cidadesSet.add(p.cidade));
+    clientes?.forEach(c => c.cidade && cidadesSet.add(c.cidade));
+    return Array.from(cidadesSet).sort();
+  }, [prospects, clientes]);
 
   const toggleProspect = (prospect: ProspectSelecionado) => {
     if (prospectsSelecionados.find(p => p.id === prospect.id)) {
@@ -274,21 +320,19 @@ export default function RotasPlanejar() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex-1">
                   <Label>Filtrar por Cidade</Label>
-                  <Input
-                    placeholder="Digite o nome da cidade..."
-                    value={cidadeFiltro}
-                    onChange={(e) => setCidadeFiltro(e.target.value)}
-                  />
-                  {cidadeFiltro && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCidadeFiltro('')}
-                      className="mt-1 text-xs"
-                    >
-                      Limpar filtro
-                    </Button>
-                  )}
+                  <Select value={cidadeFiltro} onValueChange={setCidadeFiltro}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas as cidades" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todas as cidades</SelectItem>
+                      {cidades.map(cidade => (
+                        <SelectItem key={cidade} value={cidade}>
+                          {cidade}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Selecionados</Label>
@@ -300,30 +344,35 @@ export default function RotasPlanejar() {
             </Card>
 
             <div className="space-y-2">
-              {loadingProspects ? (
+              {loadingProspects || loadingClientes ? (
                 [1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 w-full" />)
-              ) : prospects && prospects.length > 0 ? (
-                prospects.map((prospect) => {
-                  const isSelected = !!prospectsSelecionados.find(p => p.id === prospect.id);
+              ) : entidadesCombinadas && entidadesCombinadas.length > 0 ? (
+                entidadesCombinadas.map((entidade) => {
+                  const isSelected = !!prospectsSelecionados.find(p => p.id === entidade.id);
                   return (
                     <Card 
-                      key={prospect.id}
+                      key={`${entidade.tipo}-${entidade.id}`}
                       className={`p-4 cursor-pointer transition-all hover:shadow-md ${
                         isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
                       }`}
-                      onClick={() => toggleProspect(prospect)}
+                      onClick={() => toggleProspect(entidade)}
                     >
                       <div className="flex items-start gap-3">
                         <Checkbox checked={isSelected} />
                         <div className="flex-1">
-                          <h4 className="font-semibold">{prospect.nome_empresa}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold">{entidade.nome}</h4>
+                            <Badge variant={entidade.tipo === 'prospect' ? 'secondary' : 'default'} className="text-xs">
+                              {entidade.tipo === 'prospect' ? 'Prospect' : 'Cliente'}
+                            </Badge>
+                          </div>
                           <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                             <MapPin className="h-3 w-3" />
-                            {prospect.endereco_completo}
+                            {entidade.endereco_completo}
                           </p>
-                          {prospect.segmento && (
+                          {entidade.segmento && (
                             <Badge variant="outline" className="mt-2 text-xs">
-                              {prospect.segmento}
+                              {entidade.segmento}
                             </Badge>
                           )}
                         </div>
@@ -334,11 +383,11 @@ export default function RotasPlanejar() {
               ) : (
                 <Card className="p-12 text-center">
                   <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Nenhum prospect encontrado</h3>
+                  <h3 className="font-semibold mb-2">Nenhum resultado encontrado</h3>
                   <p className="text-sm text-muted-foreground">
                     {cidadeFiltro 
-                      ? `Não há prospects com endereço completo em ${cidadeFiltro}.`
-                      : 'Não há prospects com endereço cadastrado.'}
+                      ? `Não há prospects ou clientes com endereço completo em ${cidadeFiltro}.`
+                      : 'Não há prospects ou clientes com endereço cadastrado.'}
                   </p>
                 </Card>
               )}

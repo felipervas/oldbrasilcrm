@@ -36,6 +36,8 @@ export const EventoVisitaCard = memo(({ evento }: EventoVisitaCardProps) => {
     
     setExcluindo(true);
     try {
+      const dataFormatada = format(evento.data, 'yyyy-MM-dd');
+      
       // Excluir da prospect_visitas
       const { error: visitaError } = await supabase
         .from('prospect_visitas')
@@ -44,19 +46,20 @@ export const EventoVisitaCard = memo(({ evento }: EventoVisitaCardProps) => {
 
       if (visitaError) throw visitaError;
 
-      // Excluir evento correspondente
+      // Excluir todos os eventos correspondentes
       const { error: eventoError } = await supabase
         .from('colaborador_eventos')
         .delete()
-        .eq('titulo', `Visita: ${evento.prospect?.nome_empresa}`)
-        .eq('data', format(evento.data, 'yyyy-MM-dd'));
+        .ilike('titulo', `%${evento.prospect?.nome_empresa}%`)
+        .eq('data', dataFormatada);
 
       if (eventoError) console.warn('Evento não encontrado:', eventoError);
 
       toast({ title: '✅ Visita excluída com sucesso' });
       
-      // Invalidar queries
+      // Invalidar queries para atualizar a lista
       queryClient.invalidateQueries({ queryKey: ['relatorio-diario'] });
+      queryClient.invalidateQueries({ queryKey: ['colaborador-eventos'] });
     } catch (error) {
       console.error('Erro ao excluir:', error);
       toast({ 
