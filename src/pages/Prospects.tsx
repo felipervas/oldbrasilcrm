@@ -528,7 +528,9 @@ export default function Prospects() {
         open={agendamentoModalOpen}
         onOpenChange={setAgendamentoModalOpen}
         onSuccess={() => {
-          window.location.reload();
+          // Fecha o modal e recarrega apenas os dados necessários (mais rápido)
+          setAgendamentoModalOpen(false);
+          setProspectToSchedule(null);
         }}
       />
     </AppLayout>

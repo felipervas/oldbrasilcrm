@@ -56,11 +56,22 @@ export const AgendamentoRapidoModal = ({
     }
 
     setLoading(true);
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) {
+        toast({
+          title: 'Erro de autenticação',
+          description: 'Faça login novamente',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
 
-      // 1. Criar visita
+      console.log('🚀 Iniciando agendamento para:', selectedProspect.nome_empresa);
+
+      // 1. Criar visita no banco
       const { error: visitaError } = await supabase
         .from('prospect_visitas')
         .insert({
@@ -73,44 +84,54 @@ export const AgendamentoRapidoModal = ({
           status: 'agendada',
         });
 
-      if (visitaError) throw visitaError;
+      if (visitaError) {
+        console.error('❌ Erro ao criar visita:', visitaError);
+        throw new Error(`Erro ao criar visita: ${visitaError.message}`);
+      }
 
-      // 2. Criar evento no colaborador
+      console.log('✅ Visita criada com sucesso');
+
+      // 2. Criar evento no calendário do colaborador
       const { error: eventoError } = await supabase
         .from('colaborador_eventos')
         .insert({
           colaborador_id: user.id,
           titulo: `Visita: ${selectedProspect.nome_empresa}`,
-          descricao: `Visita agendada ao prospect ${selectedProspect.nome_empresa}`,
+          descricao: `Visita agendada ao prospect ${selectedProspect.nome_empresa}${formData.observacoes ? ` - ${formData.observacoes}` : ''}`,
           data: formData.data_visita,
           horario: formData.horario_inicio || null,
           tipo: 'visita',
         });
 
-      if (eventoError) throw eventoError;
-
-      // 3. Disparar IA automaticamente (não bloqueia o agendamento)
-      if (selectedProspect.id && selectedProspect.nome_empresa) {
-        setTimeout(async () => {
-          try {
-            await generateInsights({
-              prospectId: selectedProspect.id,
-              nomeEmpresa: selectedProspect.nome_empresa,
-              segmento: selectedProspect.segmento || '',
-              cidade: selectedProspect.cidade || '',
-            });
-          } catch (err) {
-            console.log('Insights serão gerados em segundo plano');
-          }
-        }, 100);
+      if (eventoError) {
+        console.error('❌ Erro ao criar evento:', eventoError);
+        throw new Error(`Erro ao criar evento: ${eventoError.message}`);
       }
 
+      console.log('✅ Evento criado no calendário');
+
+      // Sucesso! Mostrar toast e fechar modal
       toast({
-        title: '✅ Visita agendada!',
-        description: 'Evento criado no seu dia. Insights sendo gerados.',
+        title: '✅ Visita agendada com sucesso!',
+        description: `Visita marcada para ${new Date(formData.data_visita).toLocaleDateString('pt-BR')}`,
       });
 
-      onOpenChange(false);
+      // 3. Tentar gerar insights em background (não bloqueia)
+      console.log('🧠 Tentando gerar insights...');
+      try {
+        await generateInsights({
+          prospectId: selectedProspect.id,
+          nomeEmpresa: selectedProspect.nome_empresa,
+          segmento: selectedProspect.segmento || '',
+          cidade: selectedProspect.cidade || '',
+        });
+        console.log('✅ Insights gerados com sucesso');
+      } catch (insightError) {
+        console.log('⚠️ Insights não puderam ser gerados (não crítico):', insightError);
+        // Não mostra erro ao usuário pois insights são opcionais
+      }
+
+      // Resetar formulário e fechar
       setFormData({
         data_visita: '',
         horario_inicio: '',
@@ -118,12 +139,14 @@ export const AgendamentoRapidoModal = ({
         observacoes: '',
       });
       setSelectedProspectId('');
+      onOpenChange(false);
       onSuccess();
+
     } catch (error: any) {
-      console.error('Erro ao agendar visita:', error);
+      console.error('❌ Erro no agendamento:', error);
       toast({
         title: 'Erro ao agendar visita',
-        description: error.message || 'Tente novamente',
+        description: error.message || 'Verifique os dados e tente novamente',
         variant: 'destructive',
       });
     } finally {
@@ -210,9 +233,9 @@ export const AgendamentoRapidoModal = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
-              <Sparkles className="h-4 w-4 mr-2" />
-              {loading ? 'Agendando...' : 'Agendar e Gerar Insights'}
+            <Button type="submit" disabled={loading || !selectedProspect}>
+              <Calendar className="h-4 w-4 mr-2" />
+              {loading ? 'Agendando...' : 'Agendar Visita'}
             </Button>
           </div>
         </form>
