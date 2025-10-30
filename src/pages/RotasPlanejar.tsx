@@ -20,7 +20,8 @@ import {
   Clock,
   Loader2,
   Navigation,
-  CheckCircle2
+  CheckCircle2,
+  Lightbulb
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -42,8 +43,11 @@ export default function RotasPlanejar() {
   const [horarioInicio, setHorarioInicio] = useState<string>('09:00');
   const [duracaoVisita, setDuracaoVisita] = useState<number>(30);
   const [vendedorId, setVendedorId] = useState<string>('');
+  const [roteiroIA, setRoteiroIA] = useState<string | null>(null);
+  const [loadingRoteiro, setLoadingRoteiro] = useState(false);
   
   const { calcularRotaOtimizada, isCalculating } = useMapboxRotaOtimizada();
+  const { generateRoteiro } = useIAInsights();
   const { toast } = useToast();
   const [rotaCalculada, setRotaCalculada] = useState<any>(null);
 
@@ -195,6 +199,7 @@ export default function RotasPlanejar() {
       // Limpar seleção
       setProspectsSelecionados([]);
       setRotaCalculada(null);
+      setRoteiroIA(null);
 
     } catch (error) {
       console.error('Erro ao agendar visitas:', error);
@@ -203,6 +208,44 @@ export default function RotasPlanejar() {
         description: error instanceof Error ? error.message : 'Erro desconhecido',
         variant: 'destructive'
       });
+    }
+  };
+
+  const handleGerarRoteiro = async () => {
+    if (prospectsSelecionados.length === 0) {
+      toast({
+        title: 'Selecione prospects',
+        description: 'Adicione prospects à rota antes de gerar o roteiro.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setLoadingRoteiro(true);
+    try {
+      const visitas = prospectsSelecionados.map(p => ({
+        nome_empresa: p.nome_empresa,
+        endereco: p.endereco_completo,
+        cidade: p.cidade,
+        segmento: p.segmento
+      }));
+
+      const result = await generateRoteiro.mutateAsync({ visitas, dataRota });
+      setRoteiroIA(result.roteiro);
+      
+      toast({
+        title: '✨ Roteiro gerado!',
+        description: 'IA criou um roteiro otimizado para você.'
+      });
+    } catch (error) {
+      console.error('Erro ao gerar roteiro:', error);
+      toast({
+        title: 'Erro ao gerar roteiro',
+        description: error instanceof Error ? error.message : 'Tente novamente',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoadingRoteiro(false);
     }
   };
 
@@ -226,16 +269,11 @@ export default function RotasPlanejar() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex-1">
                   <Label>Filtrar por Cidade</Label>
-                  <Select value={cidadeFiltro || undefined} onValueChange={(value) => setCidadeFiltro(value || '')}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas as cidades" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cidades.map(cidade => (
-                        <SelectItem key={cidade} value={cidade}>{cidade}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    placeholder="Digite o nome da cidade..."
+                    value={cidadeFiltro}
+                    onChange={(e) => setCidadeFiltro(e.target.value)}
+                  />
                   {cidadeFiltro && (
                     <Button
                       variant="ghost"
@@ -408,8 +446,37 @@ export default function RotasPlanejar() {
                   <CheckCircle2 className="h-4 w-4 mr-2" />
                   Agendar Todas as Visitas
                 </Button>
+
+                <Button 
+                  className="w-full"
+                  variant="outline"
+                  size="lg"
+                  onClick={handleGerarRoteiro}
+                  disabled={prospectsSelecionados.length === 0 || loadingRoteiro}
+                >
+                  {loadingRoteiro ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Gerando Roteiro...
+                    </>
+                  ) : (
+                    <>
+                      <Lightbulb className="h-4 w-4 mr-2" />
+                      Gerar Roteiro Inteligente
+                    </>
+                  )}
+                </Button>
               </div>
             </Card>
+
+            {roteiroIA && (
+              <Card className="p-4">
+                <h3 className="font-semibold mb-3">📋 Roteiro Gerado pela IA</h3>
+                <div className="prose prose-sm max-w-none text-sm">
+                  <pre className="whitespace-pre-wrap text-xs bg-muted p-3 rounded">{roteiroIA}</pre>
+                </div>
+              </Card>
+            )}
 
             {prospectsSelecionados.length > 0 && (
               <Card className="p-4">

@@ -37,7 +37,7 @@ export const useIAInsights = (prospectId?: string) => {
       segmento?: string; 
       cidade?: string;
     }) => {
-      const { data, error } = await supabase.functions.invoke('gerar-insights-prospect', {
+      const { data, error } = await supabase.functions.invoke('gerar-insights-melhorado', {
         body: { prospectId, nomeEmpresa, segmento, cidade }
       });
 
@@ -76,10 +76,23 @@ export const useIAInsights = (prospectId?: string) => {
     },
   });
 
+  // Gerar roteiro com IA
+  const generateRoteiro = useMutation({
+    mutationFn: async ({ visitas, dataRota }: { visitas: any[]; dataRota: string }) => {
+      const { data, error } = await supabase.functions.invoke('gerar-roteiro-ia', {
+        body: { visitas, dataRota }
+      });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return {
     insights,
     isLoading,
     generateInsights: generateInsights.mutateAsync,
     isGenerating: generateInsights.isPending,
+    generateRoteiro,
   };
 };

@@ -501,6 +501,47 @@ const MeuPerfil = () => {
                 Navegação
               </Button>
             )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                if (confirm('Deseja excluir esta visita?')) {
+                  try {
+                    await supabase.from('prospect_visitas').delete().eq('id', evento.id);
+                    await supabase.from('colaborador_eventos').delete().eq('titulo', `Visita: ${evento.prospect?.nome_empresa}`).eq('data', format(evento.data, 'yyyy-MM-dd'));
+                    toast({ title: 'Visita excluída com sucesso' });
+                    window.location.reload();
+                  } catch (error) {
+                    toast({ title: 'Erro ao excluir visita', variant: 'destructive' });
+                  }
+                }
+              }}
+            >
+              <Trash className="h-4 w-4 mr-2" />
+              Excluir
+            </Button>
+            <Select
+              onValueChange={async (status) => {
+                try {
+                  await supabase.from('prospect_visitas').update({ status }).eq('id', evento.id);
+                  toast({ title: 'Status atualizado!' });
+                  window.location.reload();
+                } catch (error) {
+                  toast({ title: 'Erro ao atualizar', variant: 'destructive' });
+                }
+              }}
+            >
+              <SelectTrigger className="h-9 w-[140px]">
+                <SelectValue placeholder="Feedback" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="realizada">✅ Realizada</SelectItem>
+                <SelectItem value="cancelada">❌ Cancelada</SelectItem>
+                <SelectItem value="reagendada">🔄 Reagendar</SelectItem>
+                <SelectItem value="sem_resposta">📵 Sem Resposta</SelectItem>
+                <SelectItem value="ausente">🚫 Ausente</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </Card>
       );
