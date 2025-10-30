@@ -10,8 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Prospect, useProspectInteracoes, useUpdateProspect, useCreateInteracao, useDeleteProspect } from '@/hooks/useProspects';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Phone, Mail, Globe, MapPin, Calendar, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Phone, Mail, Globe, MapPin, Calendar, Trash2, CheckCircle, XCircle, Sparkles, Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useIAInsights } from '@/hooks/useIAInsights';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProspectDetailModalProps {
   prospect: Prospect | null;
@@ -30,11 +33,27 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
   });
 
   const { data: interacoes } = useProspectInteracoes(prospect?.id || '');
+  const { insights, isLoading: loadingInsights, generateInsights, isGenerating } = useIAInsights(prospect?.id);
   const updateProspect = useUpdateProspect();
   const createInteracao = useCreateInteracao();
   const deleteProspect = useDeleteProspect();
 
   if (!prospect) return null;
+
+  const handleGenerateInsights = async () => {
+    if (!prospect.id || !prospect.nome_empresa) return;
+    
+    try {
+      await generateInsights({
+        prospectId: prospect.id,
+        nomeEmpresa: prospect.nome_empresa,
+        segmento: prospect.segmento || '',
+        cidade: prospect.cidade || '',
+      });
+    } catch (error) {
+      console.error('Erro ao gerar insights:', error);
+    }
+  };
 
   const handleSave = () => {
     if (prospect.id) {
@@ -107,8 +126,12 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
         </DialogHeader>
 
         <Tabs defaultValue="info" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="info">Informações</TabsTrigger>
+            <TabsTrigger value="insights">
+              <Sparkles className="h-4 w-4 mr-1" />
+              Insights IA
+            </TabsTrigger>
             <TabsTrigger value="historico">Histórico</TabsTrigger>
             <TabsTrigger value="acoes">Ações Rápidas</TabsTrigger>
           </TabsList>
@@ -278,6 +301,100 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
                 <Button onClick={() => { setEditMode(true); setFormData(prospect); }}>Editar</Button>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="insights" className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Insights para Venda
+              </h3>
+              <Button
+                onClick={handleGenerateInsights}
+                disabled={isGenerating}
+                size="sm"
+              >
+                {isGenerating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {insights ? 'Atualizar' : 'Gerar'} Insights
+              </Button>
+            </div>
+
+            {loadingInsights ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-24 w-full" />
+                ))}
+              </div>
+            ) : insights ? (
+              <div className="space-y-4">
+                {insights.resumo_empresa && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <h4 className="font-semibold mb-2">📋 Resumo da Empresa</h4>
+                      <p className="text-sm text-muted-foreground">{insights.resumo_empresa}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {insights.produtos_recomendados && insights.produtos_recomendados.length > 0 && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <h4 className="font-semibold mb-2">🎯 Produtos Recomendados</h4>
+                      <ul className="space-y-1">
+                        {insights.produtos_recomendados.map((produto, idx) => (
+                          <li key={idx} className="text-sm flex items-start gap-2">
+                            <span className="text-primary">•</span>
+                            <span>{produto}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {insights.dicas_abordagem && insights.dicas_abordagem.length > 0 && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <h4 className="font-semibold mb-2">💡 Dicas de Abordagem</h4>
+                      <ul className="space-y-2">
+                        {insights.dicas_abordagem.map((dica, idx) => (
+                          <li key={idx} className="text-sm flex items-start gap-2">
+                            <span className="text-primary font-bold">{idx + 1}.</span>
+                            <span>{dica}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {insights.informacoes_publicas && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <h4 className="font-semibold mb-2">🌐 Informações Públicas</h4>
+                      <p className="text-sm text-muted-foreground">{insights.informacoes_publicas}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Gerado em {insights.gerado_em && format(new Date(insights.gerado_em), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                </p>
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="pt-6 text-center py-12">
+                  <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Nenhum insight gerado ainda para este prospect.
+                  </p>
+                  <Button onClick={handleGenerateInsights} disabled={isGenerating}>
+                    {isGenerating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Gerar Insights com IA
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="historico" className="space-y-4">

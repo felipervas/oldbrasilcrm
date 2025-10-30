@@ -256,6 +256,10 @@ export type Database = {
           nome_fantasia: string
           numero: string | null
           observacoes: string | null
+          prospect_data_criacao: string | null
+          prospect_observacoes_iniciais: string | null
+          prospect_origem_id: string | null
+          prospect_status_origem: string | null
           razao_social: string | null
           responsavel_id: string | null
           segmento: string | null
@@ -283,6 +287,10 @@ export type Database = {
           nome_fantasia: string
           numero?: string | null
           observacoes?: string | null
+          prospect_data_criacao?: string | null
+          prospect_observacoes_iniciais?: string | null
+          prospect_origem_id?: string | null
+          prospect_status_origem?: string | null
           razao_social?: string | null
           responsavel_id?: string | null
           segmento?: string | null
@@ -310,6 +318,10 @@ export type Database = {
           nome_fantasia?: string
           numero?: string | null
           observacoes?: string | null
+          prospect_data_criacao?: string | null
+          prospect_observacoes_iniciais?: string | null
+          prospect_origem_id?: string | null
+          prospect_status_origem?: string | null
           razao_social?: string | null
           responsavel_id?: string | null
           segmento?: string | null
@@ -323,6 +335,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "clientes_prospect_origem_id_fkey"
+            columns: ["prospect_origem_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clientes_responsavel_id_fkey"
             columns: ["responsavel_id"]

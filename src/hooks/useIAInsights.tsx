@@ -79,7 +79,7 @@ export const useIAInsights = (prospectId?: string) => {
   return {
     insights,
     isLoading,
-    generateInsights: generateInsights.mutate,
+    generateInsights: generateInsights.mutateAsync,
     isGenerating: generateInsights.isPending,
   };
 };
