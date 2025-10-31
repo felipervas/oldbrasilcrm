@@ -24,6 +24,7 @@ import { AgendamentoRapidoModal } from '@/components/prospects/AgendamentoRapido
 import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History, Trophy, List, CalendarDays, Lightbulb, Package, Navigation, ExternalLink, Route, Loader2 } from "lucide-react";
 import { EventoVisitaCard } from '@/components/relatorio/EventoVisitaCard';
 import { EventoTarefaCard } from '@/components/relatorio/EventoTarefaCard';
+import { EventoGeralCard } from '@/components/relatorio/EventoGeralCard';
 import { format, isSameDay } from "date-fns";
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -68,6 +69,9 @@ const MeuPerfil = () => {
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const { data: eventosRelatorioDiario, isLoading: loadingRelatorioDiario } = useRelatorioDiario(selectedDate || new Date());
   const { calcularRotaOtimizada, isCalculating } = useMapboxRotaOtimizada();
+  const { generateRoteiro } = useIAInsights();
+  const [gerandoRoteiro, setGerandoRoteiro] = useState(false);
+  const [roteiroMeuDia, setRoteiroMeuDia] = useState<string | null>(null);
 
   // Buscar prospects com endereço para Planejar Rotas
   const { data: prospects, isLoading: loadingProspects } = useQuery({
@@ -415,6 +419,57 @@ const MeuPerfil = () => {
     }
   };
 
+  // Gerar roteiro do meu dia
+  const handleGerarRoteiroMeuDia = async () => {
+    if (!eventosRelatorioDiario || eventosRelatorioDiario.length === 0) {
+      toast({
+        title: 'Nenhum evento encontrado',
+        description: 'Não há eventos para gerar um roteiro.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setGerandoRoteiro(true);
+    try {
+      const visitas = eventosRelatorioDiario
+        .filter(e => (e.tipo === 'visita' && e.prospect) || e.endereco_completo)
+        .map(e => ({
+          nome_empresa: e.prospect?.nome_empresa || e.titulo,
+          endereco: e.prospect?.endereco_completo || e.endereco_completo || '',
+          cidade: e.prospect?.cidade || '',
+          segmento: e.prospect?.segmento || ''
+        }));
+
+      if (visitas.length === 0) {
+        toast({
+          title: 'Nenhuma visita com endereço',
+          description: 'Não há eventos com endereço para gerar roteiro.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const dataFormatada = format(selectedDate || new Date(), 'yyyy-MM-dd');
+      const result = await generateRoteiro.mutateAsync({ visitas, dataRota: dataFormatada });
+      setRoteiroMeuDia(result.roteiro);
+      
+      toast({
+        title: '✨ Roteiro gerado!',
+        description: 'IA criou um roteiro otimizado do seu dia.'
+      });
+    } catch (error) {
+      console.error('Erro ao gerar roteiro:', error);
+      toast({
+        title: 'Erro ao gerar roteiro',
+        description: error instanceof Error ? error.message : 'Tente novamente',
+        variant: 'destructive'
+      });
+    } finally {
+      setGerandoRoteiro(false);
+    }
+  };
+
   // Renderizar evento do Meu Dia
   const renderEvento = (evento: EventoDia) => {
     if (evento.tipo === 'visita' && evento.prospect) {
@@ -426,22 +481,7 @@ const MeuPerfil = () => {
       return <EventoTarefaCard key={evento.id} evento={evento} isHoje={isHoje} />;
     }
 
-     return (
-      <Card key={evento.id} className="p-4">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-5 w-5 text-muted-foreground" />
-          <div>
-            <h4 className="font-semibold">{evento.titulo}</h4>
-            {evento.horario_inicio && (
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {evento.horario_inicio}
-              </p>
-            )}
-          </div>
-        </div>
-      </Card>
-    );
+    return <EventoGeralCard key={evento.id} evento={evento} />;
   };
 
   const agruparEventosPorPeriodo = (eventos: EventoDia[]) => {
@@ -608,15 +648,61 @@ const MeuPerfil = () => {
                     </p>
                   )}
                 </div>
-                <Button
-                  onClick={() => setAgendamentoModalOpen(true)}
-                  size="sm"
-                  className="gap-2"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Agendar Visita
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleGerarRoteiroMeuDia}
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    disabled={gerandoRoteiro}
+                  >
+                    {gerandoRoteiro ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Gerando...
+                      </>
+                    ) : (
+                      <>
+                        <Lightbulb className="h-4 w-4" />
+                        Gerar Roteiro IA
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => setAgendamentoModalOpen(true)}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Agendar Visita
+                  </Button>
+                </div>
               </div>
+
+              {roteiroMeuDia && (
+                <Card className="p-6 bg-gradient-to-br from-primary/5 to-background">
+                  <div className="flex items-start gap-3 mb-4">
+                    <Lightbulb className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+                    <div>
+                      <h3 className="text-xl font-bold mb-2">Roteiro Inteligente do Dia</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Gerado por IA baseado nas suas atividades do dia
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setRoteiroMeuDia(null)}
+                      className="ml-auto"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <div className="whitespace-pre-wrap text-sm">{roteiroMeuDia}</div>
+                  </div>
+                </Card>
+              )}
 
               {loadingRelatorioDiario ? (
                 <div className="space-y-4">

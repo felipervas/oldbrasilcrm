@@ -4,6 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -18,7 +21,8 @@ import {
   Package, 
   AlertCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Edit2
 } from 'lucide-react';
 
 interface EventoVisitaCardProps {
@@ -30,6 +34,10 @@ export const EventoVisitaCard = memo(({ evento }: EventoVisitaCardProps) => {
   const queryClient = useQueryClient();
   const [expandido, setExpandido] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [horarioInicio, setHorarioInicio] = useState(evento.horario_inicio || '');
+  const [horarioFim, setHorarioFim] = useState(evento.horario_fim || '');
+  const [observacoes, setObservacoes] = useState('');
 
   const handleExcluir = async () => {
     if (!confirm('Deseja excluir esta visita?')) return;
@@ -86,6 +94,31 @@ export const EventoVisitaCard = memo(({ evento }: EventoVisitaCardProps) => {
       console.error('Erro ao atualizar:', error);
       toast({ 
         title: 'Erro ao atualizar status', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  const handleSalvarEdicao = async () => {
+    try {
+      const { error } = await supabase
+        .from('prospect_visitas')
+        .update({ 
+          horario_inicio: horarioInicio,
+          horario_fim: horarioFim,
+          observacoes: observacoes
+        })
+        .eq('id', evento.id);
+
+      if (error) throw error;
+
+      toast({ title: '✅ Visita atualizada!' });
+      queryClient.invalidateQueries({ queryKey: ['relatorio-diario'] });
+      setEditando(false);
+    } catch (error) {
+      console.error('Erro ao atualizar:', error);
+      toast({ 
+        title: 'Erro ao atualizar visita', 
         variant: 'destructive' 
       });
     }
@@ -200,6 +233,16 @@ export const EventoVisitaCard = memo(({ evento }: EventoVisitaCardProps) => {
           </SelectContent>
         </Select>
 
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs"
+          onClick={() => setEditando(true)}
+        >
+          <Edit2 className="h-3 w-3 mr-1" />
+          Editar
+        </Button>
+
         {evento.prospect.endereco_completo && (
           <Button 
             size="sm" 
@@ -226,6 +269,43 @@ export const EventoVisitaCard = memo(({ evento }: EventoVisitaCardProps) => {
           Excluir
         </Button>
       </div>
+
+      <Dialog open={editando} onOpenChange={setEditando}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Visita</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Horário Início</Label>
+              <Input 
+                type="time" 
+                value={horarioInicio} 
+                onChange={(e) => setHorarioInicio(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Horário Fim</Label>
+              <Input 
+                type="time" 
+                value={horarioFim} 
+                onChange={(e) => setHorarioFim(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Observações</Label>
+              <Textarea 
+                value={observacoes} 
+                onChange={(e) => setObservacoes(e.target.value)}
+                placeholder="Observações sobre a visita..."
+              />
+            </div>
+            <Button onClick={handleSalvarEdicao} className="w-full">
+              Salvar Alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 });
