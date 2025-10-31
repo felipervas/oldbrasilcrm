@@ -45,8 +45,11 @@ export default function RotasPlanejar() {
   const [vendedorId, setVendedorId] = useState<string>('');
   const [roteiroIA, setRoteiroIA] = useState<string | null>(null);
   const [loadingRoteiro, setLoadingRoteiro] = useState(false);
+  const [enderecoManual, setEnderecoManual] = useState('');
+  const [nomeEnderecoManual, setNomeEnderecoManual] = useState('');
+  const [adicionandoEndereco, setAdicionandoEndereco] = useState(false);
   
-  const { calcularRotaOtimizada, isCalculating } = useMapboxRotaOtimizada();
+  const { calcularRotaOtimizada, geocodeEndereco, isCalculating } = useMapboxRotaOtimizada();
   const { generateRoteiro } = useIAInsights();
   const { toast } = useToast();
   const [rotaCalculada, setRotaCalculada] = useState<any>(null);
@@ -160,6 +163,61 @@ export default function RotasPlanejar() {
     }
   };
 
+  const handleAdicionarEnderecoManual = async () => {
+    if (!enderecoManual.trim() || !nomeEnderecoManual.trim()) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha o nome e endereço',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setAdicionandoEndereco(true);
+    try {
+      // Geocodificar o endereço
+      const coords = await geocodeEndereco(enderecoManual);
+      
+      if (!coords) {
+        toast({
+          title: 'Endereço não encontrado',
+          description: 'Não foi possível localizar este endereço. Tente ser mais específico.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Adicionar à lista de selecionados
+      const novoLocal: ProspectSelecionado = {
+        id: `manual-${Date.now()}`,
+        nome_empresa: nomeEnderecoManual,
+        endereco_completo: enderecoManual,
+        latitude: coords.lat,
+        longitude: coords.lng,
+        cidade: '',
+        segmento: 'Manual'
+      };
+
+      setProspectsSelecionados([...prospectsSelecionados, novoLocal]);
+      setEnderecoManual('');
+      setNomeEnderecoManual('');
+      
+      toast({
+        title: '✅ Endereço adicionado!',
+        description: `${nomeEnderecoManual} foi adicionado à rota`
+      });
+    } catch (error) {
+      console.error('Erro ao geocodificar:', error);
+      toast({
+        title: 'Erro ao adicionar endereço',
+        description: 'Tente novamente com um endereço mais específico',
+        variant: 'destructive'
+      });
+    } finally {
+      setAdicionandoEndereco(false);
+    }
+  };
+
   const handleCalcularRota = async () => {
     if (prospectsSelecionados.length < 2) {
       toast({
@@ -204,30 +262,35 @@ export default function RotasPlanejar() {
         const [hora, minuto] = horarioAtual.split(':').map(Number);
         const horarioFim = `${String(hora + Math.floor((minuto + duracaoVisita) / 60)).padStart(2, '0')}:${String((minuto + duracaoVisita) % 60).padStart(2, '0')}`;
 
-        // Criar visita
-        const { error: visitaError } = await supabase
-          .from('prospect_visitas')
-          .insert({
-            prospect_id: prospect.id,
-            responsavel_id: vendedorId,
-            data_visita: dataRota,
-            horario_inicio: horarioAtual,
-            horario_fim: horarioFim,
-            status: 'agendada',
-            ordem_rota: i + 1,
-            distancia_km: rotaCalculada?.segmentos[i]?.distancia_km || 0,
-            tempo_trajeto_min: rotaCalculada?.segmentos[i]?.tempo_min || 0,
-          });
+        // Se for um endereço manual, não criar visita em prospect_visitas
+        const isEnderecoManual = prospect.id.startsWith('manual-');
+        
+        if (!isEnderecoManual) {
+          // Criar visita apenas para prospects/clientes reais
+          const { error: visitaError } = await supabase
+            .from('prospect_visitas')
+            .insert({
+              prospect_id: prospect.id,
+              responsavel_id: vendedorId,
+              data_visita: dataRota,
+              horario_inicio: horarioAtual,
+              horario_fim: horarioFim,
+              status: 'agendada',
+              ordem_rota: i + 1,
+              distancia_km: rotaCalculada?.segmentos[i]?.distancia_km || 0,
+              tempo_trajeto_min: rotaCalculada?.segmentos[i]?.tempo_min || 0,
+            });
 
-        if (visitaError) throw visitaError;
+          if (visitaError) throw visitaError;
+        }
 
-        // Criar evento na agenda
+        // Criar evento na agenda para todos (prospects e endereços manuais)
         const { error: eventoError } = await supabase
           .from('colaborador_eventos')
           .insert({
             colaborador_id: vendedorId,
-            titulo: `Visita: ${prospect.nome_empresa}`,
-            descricao: `Rota planejada - ${prospect.cidade}`,
+            titulo: `${isEnderecoManual ? 'Parada' : 'Visita'}: ${prospect.nome_empresa}`,
+            descricao: `Rota planejada - ${prospect.endereco_completo || prospect.cidade}`,
             data: dataRota,
             horario: horarioAtual,
             tipo: 'visita',
@@ -309,7 +372,7 @@ export default function RotasPlanejar() {
             Planejar Rotas Inteligentes
           </h1>
           <p className="text-muted-foreground">
-            Selecione prospects, calcule a melhor rota e agende visitas automaticamente
+            Selecione prospects, clientes ou adicione endereços manualmente para criar rotas otimizadas
           </p>
         </div>
 
@@ -317,8 +380,8 @@ export default function RotasPlanejar() {
           {/* Lista de Prospects */}
           <div className="space-y-4">
             <Card className="p-4">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex-1">
+              <div className="space-y-4">
+                <div>
                   <Label>Filtrar por Cidade</Label>
                   <Select value={cidadeFiltro} onValueChange={setCidadeFiltro}>
                     <SelectTrigger>
@@ -334,7 +397,45 @@ export default function RotasPlanejar() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+
+                <div className="border-t pt-4">
+                  <Label className="text-base font-semibold">Adicionar Endereço Manual</Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Digite um endereço para adicionar à rota
+                  </p>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Nome do local (ex: Padaria Central)"
+                      value={nomeEnderecoManual}
+                      onChange={(e) => setNomeEnderecoManual(e.target.value)}
+                    />
+                    <Input
+                      placeholder="Endereço completo (Rua, Número, Cidade, Estado)"
+                      value={enderecoManual}
+                      onChange={(e) => setEnderecoManual(e.target.value)}
+                    />
+                    <Button
+                      onClick={handleAdicionarEnderecoManual}
+                      disabled={adicionandoEndereco}
+                      className="w-full"
+                      size="sm"
+                    >
+                      {adicionandoEndereco ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Localizando...
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="h-4 w-4 mr-2" />
+                          Adicionar à Rota
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center border-t pt-4">
                   <Label className="text-muted-foreground">Selecionados</Label>
                   <Badge variant="secondary" className="text-lg px-4 py-2">
                     {prospectsSelecionados.length}
@@ -344,6 +445,33 @@ export default function RotasPlanejar() {
             </Card>
 
             <div className="space-y-2">
+              {prospectsSelecionados.length > 0 && (
+                <Card className="p-4 bg-primary/5">
+                  <h4 className="font-semibold mb-3 text-sm">Locais Selecionados:</h4>
+                  <div className="space-y-2">
+                    {prospectsSelecionados.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between text-sm bg-background p-2 rounded">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                          <span className="truncate">{p.nome_empresa}</span>
+                          {p.segmento === 'Manual' && (
+                            <Badge variant="outline" className="text-xs flex-shrink-0">Manual</Badge>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => toggleProspect(p)}
+                          className="h-6 w-6 p-0 flex-shrink-0"
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
               {loadingProspects || loadingClientes ? (
                 [1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 w-full" />)
               ) : entidadesCombinadas && entidadesCombinadas.length > 0 ? (

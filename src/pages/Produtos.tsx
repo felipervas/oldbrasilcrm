@@ -248,16 +248,35 @@ const Produtos = () => {
       
       // Ignora a primeira linha (cabeçalho)
       const produtos = lines.slice(1).map(line => {
-        const [nome, sku, marca_nome, preco, descricao] = line.split(',').map(item => item.trim());
+        // CSV tem formato: Nome, Marca, Preco, Descricao
+        const [nome, marca_nome, precoStr, descricao] = line.split(',').map(item => item.trim());
         
         // Encontra marca pelo nome
         const marca = marcas.find(m => m.nome.toLowerCase() === marca_nome?.toLowerCase());
         
+        // Extrair peso da descrição (ex: "Peso da embalagem: 5 kg.")
+        let pesoEmbalagem = 25; // default
+        const pesoMatch = descricao?.match(/(\d+(?:\.\d+)?)\s*kg/i);
+        if (pesoMatch) {
+          pesoEmbalagem = parseFloat(pesoMatch[1]);
+        }
+        
+        // Preço é o preço TOTAL da embalagem
+        const precoTotal = precoStr ? parseFloat(precoStr.replace(',', '.')) : null;
+        const precoPorKg = precoTotal && pesoEmbalagem > 0 ? precoTotal / pesoEmbalagem : null;
+        
+        console.log(`📦 ${nome}: Preço Total R$${precoTotal} / ${pesoEmbalagem}kg = R$${precoPorKg?.toFixed(2)}/kg`);
+        
         return {
           nome: nome || 'Produto sem nome',
           marca_id: marca?.id || null,
-          preco_base: preco ? parseFloat(preco) : null,
+          preco_base: precoTotal,
+          preco_por_kg: precoPorKg,
+          peso_embalagem_kg: pesoEmbalagem,
           descricao: descricao || null,
+          tipo_venda: 'kg', // Produtos importados são vendidos por kg
+          ativo: true,
+          visivel_loja: true,
         };
       }).filter(p => p.nome !== 'Produto sem nome');
 
@@ -268,7 +287,10 @@ const Produtos = () => {
       if (error) {
         toast({ title: "Erro ao importar produtos", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: `${produtos.length} produtos importados com sucesso!` });
+        toast({ 
+          title: `✅ ${produtos.length} produtos importados!`,
+          description: 'Preços calculados automaticamente por kg'
+        });
         setImportOpen(false);
         loadProdutos();
       }
@@ -454,9 +476,21 @@ const Produtos = () => {
                 <DialogTitle>Importar Produtos via CSV</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  O arquivo CSV deve ter o formato: Nome, Marca, Preço, Descrição
-                </p>
+                <div className="bg-primary/5 p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-medium">Formato do CSV:</p>
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Nome, Marca, Preço, Descrição</strong>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    • <strong>Preço:</strong> Valor total da embalagem<br/>
+                    • <strong>Descrição:</strong> Deve conter o peso (ex: "Peso da embalagem: 5 kg.")<br/>
+                    • O sistema calculará automaticamente o preço por kg
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    <strong>Exemplo:</strong><br/>
+                    DEXTRO,Kommodity,191.60,Peso da embalagem: 5 kg.
+                  </p>
+                </div>
                 <Input
                   ref={fileInputRef}
                   type="file"
@@ -464,7 +498,7 @@ const Produtos = () => {
                   onChange={handleImportCSV}
                   disabled={loading}
                 />
-                {loading && <p className="text-sm">Importando produtos...</p>}
+                {loading && <p className="text-sm">Importando e calculando preços...</p>}
               </div>
             </DialogContent>
           </Dialog>
