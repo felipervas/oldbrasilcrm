@@ -234,16 +234,16 @@ export default function Prospects() {
 
   return (
     <AppLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Pipeline de Vendas</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold">Pipeline de Vendas</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Gerencie seus prospects e acompanhe o funil de vendas
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <Button variant="outline" onClick={() => navigate('/rotas/planejar')}>
               <MapIcon className="h-4 w-4 mr-2" />
               Planejar Rotas
@@ -420,15 +420,15 @@ export default function Prospects() {
         </div>
 
         {/* Filtros */}
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-4">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar empresa ou cidade..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-9 h-10"
               />
             </div>
           </div>

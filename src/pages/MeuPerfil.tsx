@@ -31,6 +31,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
+import { AudioTaskRecorder } from '@/components/AudioTaskRecorder';
 
 const MeuPerfil = () => {
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ const MeuPerfil = () => {
   const [eventoEditando, setEventoEditando] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchMeuDia, setSearchMeuDia] = useState('');
   const [dialogMultiplosOpen, setDialogMultiplosOpen] = useState(false);
   const [eventosTexto, setEventosTexto] = useState('');
   const [comentarioEvento, setComentarioEvento] = useState<{[key: string]: string}>({});
@@ -635,46 +637,79 @@ const MeuPerfil = () => {
               )}
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <CalendarDays className="h-6 w-6" />
-                    {selectedDate && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="w-full sm:w-auto">
+                  <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                    <CalendarDays className="h-5 w-6" />
+                    <span className="hidden sm:inline">{selectedDate && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+                    <span className="sm:hidden">{selectedDate && format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}</span>
                   </h2>
                   {isHoje && (
-                    <p className="text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-1 hidden sm:block">
                       Aqui está o seu relatório de hoje. Organize suas atividades e tenha um ótimo dia! 🚀
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                  <AudioTaskRecorder 
+                    tipo="tarefa"
+                    onSuccess={async (data) => {
+                      // Criar tarefa com os dados extraídos da IA
+                      const { dados } = data;
+                      await supabase.from('tarefas').insert({
+                        titulo: dados.titulo,
+                        descricao: dados.descricao,
+                        prioridade: dados.prioridade || 'media',
+                        data_prevista: dados.data_prevista || format(new Date(), 'yyyy-MM-dd'),
+                        responsavel_id: profile?.id,
+                        status: 'pendente',
+                      });
+                      loadProfile();
+                    }}
+                  />
+                  <AudioTaskRecorder 
+                    tipo="visita"
+                    onSuccess={async (data) => {
+                      // Criar visita/evento com os dados extraídos da IA
+                      const { dados } = data;
+                      await createEvento.mutateAsync({
+                        titulo: `Visita: ${dados.cliente}`,
+                        descricao: dados.observacoes || '',
+                        data: dados.data || format(new Date(), 'yyyy-MM-dd'),
+                        horario: dados.horario || '',
+                        tipo: 'visita',
+                      });
+                    }}
+                  />
                   <Button
                     onClick={handleGerarRoteiroMeuDia}
                     size="sm"
                     variant="outline"
-                    className="gap-2"
+                    className="gap-2 flex-1 sm:flex-none"
                     disabled={gerandoRoteiro}
                   >
                     {gerandoRoteiro ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Gerando...
+                        <span className="hidden sm:inline">Gerando...</span>
                       </>
                     ) : (
                       <>
                         <Lightbulb className="h-4 w-4" />
-                        Gerar Roteiro IA
+                        <span className="hidden sm:inline">Gerar Roteiro IA</span>
+                        <span className="sm:hidden">IA</span>
                       </>
                     )}
                   </Button>
                   <Button
                     onClick={() => setAgendamentoModalOpen(true)}
                     size="sm"
-                    className="gap-2"
+                    className="gap-2 flex-1 sm:flex-none"
                   >
                     <Calendar className="h-4 w-4" />
-                    Agendar Visita
+                    <span className="hidden sm:inline">Agendar Visita</span>
+                    <span className="sm:hidden">Visita</span>
                   </Button>
                 </div>
               </div>
@@ -704,6 +739,13 @@ const MeuPerfil = () => {
                 </Card>
               )}
 
+              <Input
+                placeholder="🔍 Buscar no seu dia (cliente, tarefa, evento)..."
+                value={searchMeuDia}
+                onChange={(e) => setSearchMeuDia(e.target.value)}
+                className="mb-4"
+              />
+
               {loadingRelatorioDiario ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
@@ -713,7 +755,14 @@ const MeuPerfil = () => {
               ) : eventosRelatorioDiario && eventosRelatorioDiario.length > 0 ? (
                 <div className="space-y-6">
                   {(() => {
-                    const { manha, tarde, noite, semHorario } = agruparEventosPorPeriodo(eventosRelatorioDiario);
+                    const eventosFiltrados = searchMeuDia 
+                      ? eventosRelatorioDiario.filter(e => 
+                          e.titulo?.toLowerCase().includes(searchMeuDia.toLowerCase()) ||
+                          e.prospect?.nome_empresa?.toLowerCase().includes(searchMeuDia.toLowerCase())
+                        )
+                      : eventosRelatorioDiario;
+
+                    const { manha, tarde, noite, semHorario } = agruparEventosPorPeriodo(eventosFiltrados);
 
                     return (
                       <>

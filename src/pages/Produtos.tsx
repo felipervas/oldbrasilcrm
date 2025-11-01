@@ -15,8 +15,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ProdutoTabelasPreco } from "@/components/ProdutoTabelasPreco";
 import { ProdutoEditDialog } from "@/components/loja/ProdutoEditDialog";
+import { CarrinhoOrcamento } from "@/components/CarrinhoOrcamento";
+import { useCarrinho } from "@/hooks/useCarrinho";
+import { ShoppingCart } from "lucide-react";
 
 const Produtos = () => {
+  const { adicionarItem } = useCarrinho();
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -450,20 +454,21 @@ const Produtos = () => {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="flex-1 space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Produtos
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground hidden sm:block">
               Catálogo de produtos representados
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <CarrinhoOrcamento />
           <Dialog open={importOpen} onOpenChange={setImportOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
@@ -897,13 +902,35 @@ const Produtos = () => {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(produto)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDelete(produto.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                    <div className="flex flex-col gap-2">
+                      {produto.preco_por_kg && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => {
+                            adicionarItem({
+                              produto_id: produto.id,
+                              nome: produto.nome,
+                              preco_por_kg: parseFloat(produto.preco_por_kg),
+                              quantidade_kg: 1,
+                              marca: produto.marcas?.nome,
+                            });
+                            toast({ title: '✅ Produto adicionado ao orçamento!' });
+                          }}
+                          className="w-full"
+                        >
+                          <ShoppingCart className="h-4 w-4 mr-1" />
+                          Adicionar
+                        </Button>
+                      )}
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(produto)} className="flex-1">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleDelete(produto.id)} className="flex-1">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   
