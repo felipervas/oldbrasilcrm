@@ -31,7 +31,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
-import { AudioTaskRecorder } from '@/components/AudioTaskRecorder';
 
 const MeuPerfil = () => {
   const navigate = useNavigate();
@@ -652,36 +651,16 @@ const MeuPerfil = () => {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                  <AudioTaskRecorder 
-                    tipo="tarefa"
-                    onSuccess={async (data) => {
-                      // Criar tarefa com os dados extraídos da IA
-                      const { dados } = data;
-                      await supabase.from('tarefas').insert({
-                        titulo: dados.titulo,
-                        descricao: dados.descricao,
-                        prioridade: dados.prioridade || 'media',
-                        data_prevista: dados.data_prevista || format(new Date(), 'yyyy-MM-dd'),
-                        responsavel_id: profile?.id,
-                        status: 'pendente',
-                      });
-                      loadProfile();
-                    }}
-                  />
-                  <AudioTaskRecorder 
-                    tipo="visita"
-                    onSuccess={async (data) => {
-                      // Criar visita/evento com os dados extraídos da IA
-                      const { dados } = data;
-                      await createEvento.mutateAsync({
-                        titulo: `Visita: ${dados.cliente}`,
-                        descricao: dados.observacoes || '',
-                        data: dados.data || format(new Date(), 'yyyy-MM-dd'),
-                        horario: dados.horario || '',
-                        tipo: 'visita',
-                      });
-                    }}
-                  />
+                  <Button
+                    onClick={() => setAgendamentoModalOpen(true)}
+                    size="sm"
+                    variant="outline"
+                    className="gap-2 flex-1 sm:flex-none"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Agendar Visita</span>
+                    <span className="sm:hidden">Visita</span>
+                  </Button>
                   <Button
                     onClick={handleGerarRoteiroMeuDia}
                     size="sm"

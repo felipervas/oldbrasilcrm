@@ -2,6 +2,3 @@ project_id = "uwbzrkqtwmykniijbwik"
 
 [functions.gerar-insights-prospect]
 verify_jwt = false
-
-[functions.process-audio-task]
-verify_jwt = true
