@@ -298,7 +298,12 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
                   <Button onClick={handleSave}>Salvar</Button>
                 </>
               ) : (
-                <Button onClick={() => { setEditMode(true); setFormData(prospect); }}>Editar</Button>
+                <Button onClick={() => { 
+                  setEditMode(true); 
+                  // Remove campos de relacionamento antes de editar
+                  const { profiles, criador, ...editableData } = prospect;
+                  setFormData(editableData); 
+                }}>Editar</Button>
               )}
             </div>
           </TabsContent>

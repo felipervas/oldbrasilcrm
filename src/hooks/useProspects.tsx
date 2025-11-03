@@ -142,9 +142,12 @@ export const useUpdateProspect = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Prospect> & { id: string }) => {
+      // Remove campos de relacionamento que não existem como colunas no banco
+      const { profiles, criador, ...validUpdates } = updates as any;
+      
       const { data, error } = await supabase
         .from('prospects')
-        .update(updates)
+        .update(validUpdates)
         .eq('id', id)
         .select()
         .single();
