@@ -38,6 +38,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useIsMobile } from "@/hooks/use-mobile";
 import oldLogo from "@/assets/old-brasil-logo.png";
 import {
   DndContext,
@@ -79,7 +80,7 @@ const defaultMenuItems = [
   { id: "gestor-dashboard", title: "Dashboard Gestor", url: "/gestor/dashboard", icon: BarChart3, restricted: true },
 ];
 
-function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; open: boolean }) {
+function SortableMenuItem({ item, showText }: { item: typeof defaultMenuItems[0]; showText: boolean }) {
   const {
     attributes,
     listeners,
@@ -107,7 +108,7 @@ function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; op
             }
           >
             <item.icon className="h-4 w-4" />
-            {open && <span>{item.title}</span>}
+            {showText && <span>{item.title}</span>}
           </NavLink>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -117,6 +118,7 @@ function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; op
 
 export function AppSidebar() {
   const { open, setOpen } = useSidebar();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -148,12 +150,12 @@ export function AppSidebar() {
     };
   }, []);
 
-  // Auto-minimizar sidebar ao navegar
+  // Auto-minimizar sidebar ao navegar (apenas no mobile)
   useEffect(() => {
-    if (open && setOpen) {
+    if (isMobile && open && setOpen) {
       setOpen(false);
     }
-  }, [location.pathname]);
+  }, [location.pathname, isMobile]);
 
   const checkFinanceiroAccess = async () => {
     try {
@@ -248,8 +250,12 @@ export function AppSidebar() {
     icon: Store,
   };
 
+  // No mobile, sempre mostrar texto quando aberto
+  // No desktop, seguir o comportamento do collapsible
+  const showText = isMobile ? open : open;
+
   return (
-    <Sidebar className={open ? "w-64" : "w-16"} collapsible="icon">
+    <Sidebar className={open ? "w-64" : "w-16"} collapsible={isMobile ? "offcanvas" : "icon"}>
       <SidebarHeader className="border-b border-sidebar-border p-4">
         {open && (
           <div className="flex items-center gap-3">
@@ -260,7 +266,7 @@ export function AppSidebar() {
             </div>
           </div>
         )}
-        {!open && (
+        {!open && !isMobile && (
           <div className="flex items-center justify-center mx-auto">
             <img src={oldLogo} alt="OLD" className="h-8 w-auto" />
           </div>
@@ -282,7 +288,7 @@ export function AppSidebar() {
               >
                 <SidebarMenu>
                   {visibleMenuItems.map((item) => (
-                    <SortableMenuItem key={item.id} item={item} open={open} />
+                    <SortableMenuItem key={item.id} item={item} showText={showText} />
                   ))}
                 </SidebarMenu>
               </SortableContext>
@@ -300,7 +306,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to={gerenciarLojaItem.url}>
                       <gerenciarLojaItem.icon className="h-4 w-4" />
-                      {open && <span>{gerenciarLojaItem.title}</span>}
+                      {showText && <span>{gerenciarLojaItem.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -308,7 +314,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to="/gerenciar-equipe">
                       <Users className="h-4 w-4" />
-                      {open && <span>Gerenciar Equipe</span>}
+                      {showText && <span>Gerenciar Equipe</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -316,7 +322,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to="/administracao">
                       <Shield className="h-4 w-4" />
-                      {open && <span>Administração</span>}
+                      {showText && <span>Administração</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -333,7 +339,7 @@ export function AppSidebar() {
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
-          {open && <span className="ml-2">Sair</span>}
+          {showText && <span className="ml-2">Sair</span>}
         </Button>
       </SidebarFooter>
 
