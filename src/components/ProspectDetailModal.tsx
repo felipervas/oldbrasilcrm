@@ -7,14 +7,164 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Prospect, useProspectInteracoes, useUpdateProspect, useCreateInteracao, useDeleteProspect } from '@/hooks/useProspects';
+import { Prospect, ProspectInteracao, useProspectInteracoes, useUpdateProspect, useCreateInteracao, useDeleteProspect, useUpdateInteracao, useDeleteInteracao } from '@/hooks/useProspects';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Phone, Mail, Globe, MapPin, Calendar, Trash2, CheckCircle, XCircle, Sparkles, Loader2 } from 'lucide-react';
+import { Phone, Mail, Globe, Calendar, Trash2, CheckCircle, XCircle, Sparkles, Loader2, Edit, X, ThumbsUp, ThumbsDown, Minus } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useIAInsights } from '@/hooks/useIAInsights';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+
+// Componente para card de interação
+const InteracaoCard = ({ interacao, prospectId }: { interacao: ProspectInteracao; prospectId: string }) => {
+  const [editando, setEditando] = useState(false);
+  const [formData, setFormData] = useState({
+    tipo_interacao: interacao.tipo_interacao,
+    resultado: interacao.resultado,
+    descricao: interacao.descricao,
+    proximo_passo: interacao.proximo_passo || '',
+  });
+
+  const updateInteracao = useUpdateInteracao();
+  const deleteInteracao = useDeleteInteracao();
+
+  const getResultadoIcon = (resultado?: string) => {
+    if (!resultado) return null;
+    switch (resultado) {
+      case 'positivo': return <ThumbsUp className="h-4 w-4 text-green-500" />;
+      case 'negativo': return <ThumbsDown className="h-4 w-4 text-red-500" />;
+      case 'neutro': return <Minus className="h-4 w-4 text-yellow-500" />;
+      default: return null;
+    }
+  };
+
+  const handleSave = () => {
+    updateInteracao.mutate({
+      id: interacao.id,
+      prospect_id: prospectId,
+      ...formData,
+    });
+    setEditando(false);
+  };
+
+  const handleDelete = () => {
+    deleteInteracao.mutate({ id: interacao.id, prospect_id: prospectId });
+  };
+
+  if (editando) {
+    return (
+      <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold">Editando Interação</h4>
+          <Button variant="ghost" size="sm" onClick={() => setEditando(false)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Tipo</Label>
+            <Select value={formData.tipo_interacao} onValueChange={(value: any) => setFormData({ ...formData, tipo_interacao: value })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ligacao">Ligação</SelectItem>
+                <SelectItem value="email">E-mail</SelectItem>
+                <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                <SelectItem value="visita">Visita</SelectItem>
+                <SelectItem value="reuniao">Reunião</SelectItem>
+                <SelectItem value="outro">Outro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Resultado</Label>
+            <Select value={formData.resultado || undefined} onValueChange={(value: any) => setFormData({ ...formData, resultado: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="positivo">Positivo</SelectItem>
+                <SelectItem value="neutro">Neutro</SelectItem>
+                <SelectItem value="negativo">Negativo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div>
+          <Label>Descrição</Label>
+          <Textarea
+            value={formData.descricao}
+            onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label>Próximo Passo</Label>
+          <Input
+            value={formData.proximo_passo}
+            onChange={(e) => setFormData({ ...formData, proximo_passo: e.target.value })}
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleSave} className="flex-1">Salvar</Button>
+          <Button variant="outline" onClick={() => setEditando(false)}>Cancelar</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border rounded-lg p-4 space-y-2 group hover:bg-muted/20 transition-colors">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Badge>{interacao.tipo_interacao}</Badge>
+          {getResultadoIcon(interacao.resultado)}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">
+              {format(new Date(interacao.data_interacao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            </p>
+            <p className="text-xs text-muted-foreground">Por: {interacao.profiles?.nome}</p>
+          </div>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+            <Button variant="ghost" size="sm" onClick={() => setEditando(true)}>
+              <Edit className="h-4 w-4" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja excluir esta interação? Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </div>
+      <p className="text-sm">{interacao.descricao}</p>
+      {interacao.proximo_passo && (
+        <p className="text-sm text-muted-foreground">
+          <strong>Próximo passo:</strong> {interacao.proximo_passo}
+        </p>
+      )}
+    </div>
+  );
+};
 
 interface ProspectDetailModalProps {
   prospect: Prospect | null;
@@ -84,14 +234,6 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
     if (prospect.id) {
       deleteProspect.mutate(prospect.id);
       onOpenChange(false);
-    }
-  };
-
-  const getResultadoIcon = (resultado?: string) => {
-    switch (resultado) {
-      case 'positivo': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'negativo': return <XCircle className="h-4 w-4 text-red-500" />;
-      default: return null;
     }
   };
 
@@ -379,10 +521,10 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
                       <h4 className="font-semibold mb-2">🌐 Informações Públicas</h4>
                       <p className="text-sm text-muted-foreground">{insights.informacoes_publicas}</p>
                     </CardContent>
-                </Card>
-              )}
-            </div>
-          ) : (
+                  </Card>
+                )}
+              </div>
+            ) : (
               <Card>
                 <CardContent className="pt-6 text-center py-12">
                   <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -456,26 +598,11 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
                 <h3 className="font-semibold">Histórico de Interações</h3>
                 {interacoes && interacoes.length > 0 ? (
                   interacoes.map((interacao) => (
-                    <div key={interacao.id} className="border rounded-lg p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge>{interacao.tipo_interacao}</Badge>
-                          {getResultadoIcon(interacao.resultado)}
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(interacao.data_interacao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          </p>
-                          <p className="text-xs text-muted-foreground">Por: {interacao.profiles?.nome}</p>
-                        </div>
-                      </div>
-                      <p className="text-sm">{interacao.descricao}</p>
-                      {interacao.proximo_passo && (
-                        <p className="text-sm text-muted-foreground">
-                          <strong>Próximo passo:</strong> {interacao.proximo_passo}
-                        </p>
-                      )}
-                    </div>
+                    <InteracaoCard
+                      key={interacao.id}
+                      interacao={interacao}
+                      prospectId={prospect.id}
+                    />
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">Nenhuma interação registrada</p>

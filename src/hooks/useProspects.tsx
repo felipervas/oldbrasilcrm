@@ -218,6 +218,55 @@ export const useCreateInteracao = () => {
   });
 };
 
+export const useUpdateInteracao = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, prospect_id, ...updates }: Partial<ProspectInteracao> & { id: string; prospect_id: string }) => {
+      const { data, error } = await supabase
+        .from('prospect_interacoes')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['prospect-interacoes', variables.prospect_id] });
+      toast.success('Interação atualizada com sucesso!');
+    },
+    onError: (error) => {
+      console.error('Erro ao atualizar interação:', error);
+      toast.error('Erro ao atualizar interação');
+    },
+  });
+};
+
+export const useDeleteInteracao = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, prospect_id }: { id: string; prospect_id: string }) => {
+      const { error } = await supabase
+        .from('prospect_interacoes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['prospect-interacoes', variables.prospect_id] });
+      toast.success('Interação deletada com sucesso!');
+    },
+    onError: (error) => {
+      console.error('Erro ao deletar interação:', error);
+      toast.error('Erro ao deletar interação');
+    },
+  });
+};
+
 export const useBulkCreateProspects = () => {
   const queryClient = useQueryClient();
 

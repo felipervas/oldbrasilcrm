@@ -33,6 +33,7 @@ const GerenciarEquipe = lazy(() => import("./pages/GerenciarEquipe"));
 const Prospects = lazy(() => import("./pages/Prospects"));
 const ColaboradorRelatorioDiario = lazy(() => import("./pages/ColaboradorRelatorioDiario"));
 const RotasPlanejar = lazy(() => import("./pages/RotasPlanejar"));
+const LeadsLoja = lazy(() => import("./pages/LeadsLoja"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Páginas Públicas da Loja
@@ -322,6 +323,14 @@ const App = () => (
             element={
               <AppLayout>
                 <RotasPlanejar />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/leads-loja"
+            element={
+              <AppLayout>
+                <LeadsLoja />
               </AppLayout>
             }
           />
