@@ -383,12 +383,12 @@ export default function RotasPlanejar() {
               <div className="space-y-4">
                 <div>
                   <Label>Filtrar por Cidade</Label>
-                  <Select value={cidadeFiltro} onValueChange={setCidadeFiltro}>
+                  <Select value={cidadeFiltro || "todas"} onValueChange={(val) => setCidadeFiltro(val === "todas" ? "" : val)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Todas as cidades" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as cidades</SelectItem>
+                      <SelectItem value="todas">Todas as cidades</SelectItem>
                       {cidades.map(cidade => (
                         <SelectItem key={cidade} value={cidade}>
                           {cidade}
