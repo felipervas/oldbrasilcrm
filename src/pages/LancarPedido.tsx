@@ -251,8 +251,6 @@ const LancarPedido = () => {
           observacoes: formData.get("observacoes") as string || null,
           observacoes_internas: observacoesInternas || null,
           responsavel_venda_id: responsavelFinal || null,
-          prazo_entrega: formData.get("prazo_entrega") as string || null,
-          data_previsao_entrega: formData.get("data_previsao_entrega") as string || null,
           observacoes_entrega: formData.get("observacoes_entrega") as string || null,
         })
         .select()

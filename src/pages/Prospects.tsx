@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useProspects, useCreateProspect, useBulkCreateProspects, Prospect, ProspectStatus } from '@/hooks/useProspects';
 import { ProspectCard } from '@/components/ProspectCard';
@@ -20,6 +20,8 @@ import { CriarTarefaModal } from '@/components/prospects/CriarTarefaModal';
 import { useIAInsights } from '@/hooks/useIAInsights';
 import { useNavigate } from 'react-router-dom';
 import { CheckSquare } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const statusLabels: Record<ProspectStatus, string> = {
   novo: 'Novo',
@@ -54,6 +56,7 @@ export default function Prospects() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
   const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
+  const [ultimasInteracoes, setUltimasInteracoes] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const { generateInsights } = useIAInsights();
 
@@ -92,6 +95,35 @@ export default function Prospects() {
     };
     loadData();
   });
+
+  // Buscar última interação de cada prospect
+  useEffect(() => {
+    const loadUltimasInteracoes = async () => {
+      if (!prospects) return;
+      
+      const interacoesMap: Record<string, string> = {};
+      
+      await Promise.all(
+        prospects.map(async (prospect) => {
+          const { data } = await supabase
+            .from('prospect_interacoes')
+            .select('data_interacao')
+            .eq('prospect_id', prospect.id)
+            .order('data_interacao', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          if (data) {
+            interacoesMap[prospect.id] = format(new Date(data.data_interacao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+          }
+        })
+      );
+      
+      setUltimasInteracoes(interacoesMap);
+    };
+    
+    loadUltimasInteracoes();
+  }, [prospects]);
 
   const filteredProspects = useMemo(() => {
     if (!prospects) return [];
@@ -506,7 +538,11 @@ export default function Prospects() {
                         />
                       </div>
                       <div onClick={() => handleCardClick(prospect)}>
-                        <ProspectCard prospect={prospect} onClick={() => {}} />
+                        <ProspectCard 
+                          prospect={prospect} 
+                          onClick={() => {}}
+                          ultimaInteracao={ultimasInteracoes[prospect.id]}
+                        />
                       </div>
                     </div>
                   ))}

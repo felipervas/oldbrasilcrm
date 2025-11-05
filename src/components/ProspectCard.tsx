@@ -11,9 +11,10 @@ interface ProspectCardProps {
   onClick: () => void;
   isSelected?: boolean;
   onSelectChange?: (selected: boolean) => void;
+  ultimaInteracao?: string;
 }
 
-export const ProspectCard = ({ prospect, onClick, isSelected, onSelectChange }: ProspectCardProps) => {
+export const ProspectCard = ({ prospect, onClick, isSelected, onSelectChange, ultimaInteracao }: ProspectCardProps) => {
   const getPrioridadeColor = (prioridade: string) => {
     switch (prioridade) {
       case 'alta': return 'bg-red-500/10 text-red-500 border-red-500/20';
@@ -76,6 +77,20 @@ export const ProspectCard = ({ prospect, onClick, isSelected, onSelectChange }: 
         <div className="text-xs text-muted-foreground">
           <span className="font-medium">Cadastrado:</span> {format(new Date(prospect.created_at), "dd/MM/yyyy", { locale: ptBR })}
         </div>
+
+        {/* Última edição */}
+        {prospect.updated_at && (
+          <div className="text-xs text-muted-foreground">
+            📝 Editado: {format(new Date(prospect.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+          </div>
+        )}
+
+        {/* Última interação */}
+        {ultimaInteracao && (
+          <div className="text-xs font-medium text-purple-600 dark:text-purple-400">
+            💬 Última interação: {ultimaInteracao}
+          </div>
+        )}
 
         {/* Último contato */}
         {prospect.data_ultimo_contato && (
