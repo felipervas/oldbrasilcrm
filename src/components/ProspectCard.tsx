@@ -95,7 +95,7 @@ export const ProspectCard = ({ prospect, onClick, isSelected, onSelectChange, ul
         {/* Último contato */}
         {prospect.data_ultimo_contato && (
           <div className="text-xs font-medium text-green-600 dark:text-green-400">
-            ✓ Último contato: {format(new Date(prospect.data_ultimo_contato), "dd/MM/yyyy", { locale: ptBR })}
+            📞 Último contato: {format(new Date(prospect.data_ultimo_contato), "dd/MM/yyyy", { locale: ptBR })}
           </div>
         )}
 

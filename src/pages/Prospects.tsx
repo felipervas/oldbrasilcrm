@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { useProspects, useCreateProspect, useBulkCreateProspects, Prospect, ProspectStatus } from '@/hooks/useProspects';
+import { useProspects, useCreateProspect, useBulkCreateProspects, useUpdateProspect, Prospect, ProspectStatus } from '@/hooks/useProspects';
 import { ProspectCard } from '@/components/ProspectCard';
 import { ProspectDetailModal } from '@/components/ProspectDetailModal';
 import { ImportarProspects } from '@/components/ImportarProspects';
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Search, Users, MapIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProspectQuickActions } from '@/components/prospects/ProspectQuickActions';
@@ -22,6 +23,9 @@ import { useNavigate } from 'react-router-dom';
 import { CheckSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors, DragStartEvent, closestCorners } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const statusLabels: Record<ProspectStatus, string> = {
   novo: 'Novo',
@@ -57,8 +61,18 @@ export default function Prospects() {
   const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
   const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
   const [ultimasInteracoes, setUltimasInteracoes] = useState<Record<string, string>>({});
+  const [activeId, setActiveId] = useState<string | null>(null);
   const { toast } = useToast();
   const { generateInsights } = useIAInsights();
+  const updateProspectMutation = useUpdateProspect();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   const [novoProspect, setNovoProspect] = useState({
     nome_empresa: '',
@@ -124,6 +138,41 @@ export default function Prospects() {
     
     loadUltimasInteracoes();
   }, [prospects]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const prospectId = active.id as string;
+    const newStatus = over.id as ProspectStatus;
+
+    const prospect = prospects?.find(p => p.id === prospectId);
+    if (!prospect || prospect.status === newStatus) return;
+
+    try {
+      await updateProspectMutation.mutateAsync({
+        id: prospectId,
+        status: newStatus,
+      });
+
+      toast({
+        title: "Status atualizado",
+        description: `Prospect movido para ${statusLabels[newStatus]}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar status",
+        description: "Tente novamente",
+        variant: "destructive",
+      });
+    }
+  };
 
   const filteredProspects = useMemo(() => {
     if (!prospects) return [];
@@ -260,13 +309,57 @@ export default function Prospects() {
     setTarefaModalOpen(true);
   };
 
+  const SortableProspectCard = ({ prospect }: { prospect: Prospect }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: prospect.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+      <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative group">
+        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+          <ProspectQuickActions
+            prospect={prospect}
+            onAgendarVisita={handleAgendarVisita}
+            onGerarInsights={handleGerarInsights}
+            onRegistrarInteracao={handleRegistrarInteracao}
+            onVerMapa={handleVerMapa}
+          />
+        </div>
+        <div onClick={() => handleCardClick(prospect)}>
+          <ProspectCard 
+            prospect={prospect} 
+            onClick={() => {}}
+            ultimaInteracao={ultimasInteracoes[prospect.id]}
+          />
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return <AppLayout><div className="p-8">Carregando...</div></AppLayout>;
   }
 
   return (
     <AppLayout>
-      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <DndContext 
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
@@ -514,43 +607,51 @@ export default function Prospects() {
           </Select>
         </div>
 
-        {/* Kanban Board - Layout otimizado para tela cheia */}
+        {/* Kanban Board - Layout otimizado para tela cheia com Drag and Drop */}
         <div className="flex gap-3 min-h-[calc(100vh-300px)] overflow-x-auto pb-4">
-          {statusColumns.map((status) => (
-            <div key={status} className="flex flex-col min-w-[300px] flex-1 max-w-[400px]">
-              <div className="bg-muted rounded-t-lg p-4 sticky top-0 z-10">
-                <h3 className="font-semibold">{statusLabels[status]}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {prospectsByStatus[status].length} {prospectsByStatus[status].length === 1 ? 'prospect' : 'prospects'}
-                </p>
-              </div>
-              <ScrollArea className="flex-1 border border-t-0 rounded-b-lg p-3">
-                <div className="space-y-3">
-                  {prospectsByStatus[status].map((prospect) => (
-                    <div key={prospect.id} className="relative group">
-                      <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ProspectQuickActions
-                          prospect={prospect}
-                          onAgendarVisita={handleAgendarVisita}
-                          onGerarInsights={handleGerarInsights}
-                          onRegistrarInteracao={handleRegistrarInteracao}
-                          onVerMapa={handleVerMapa}
-                        />
-                      </div>
-                      <div onClick={() => handleCardClick(prospect)}>
-                        <ProspectCard 
-                          prospect={prospect} 
-                          onClick={() => {}}
-                          ultimaInteracao={ultimasInteracoes[prospect.id]}
-                        />
-                      </div>
+          {statusColumns.map((status) => {
+            const statusProspects = prospectsByStatus[status] || [];
+            return (
+              <SortableContext
+                key={status}
+                id={status}
+                items={statusProspects.map(p => p.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="flex flex-col min-w-[300px] flex-1 max-w-[400px]">
+                  <div 
+                    className="bg-muted rounded-t-lg p-4 sticky top-0 z-10"
+                    data-status={status}
+                  >
+                    <h3 className="font-semibold">{statusLabels[status]}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {statusProspects.length} {statusProspects.length === 1 ? 'prospect' : 'prospects'}
+                    </p>
+                  </div>
+                  <ScrollArea className="flex-1 border border-t-0 rounded-b-lg p-3">
+                    <div className="space-y-3">
+                      {statusProspects.map((prospect) => (
+                        <SortableProspectCard key={prospect.id} prospect={prospect} />
+                      ))}
                     </div>
-                  ))}
+                  </ScrollArea>
                 </div>
-              </ScrollArea>
-            </div>
-          ))}
+              </SortableContext>
+            );
+          })}
         </div>
+
+        <DragOverlay>
+          {activeId ? (
+            <div className="opacity-80 rotate-3">
+              <ProspectCard 
+                prospect={prospects?.find(p => p.id === activeId)!} 
+                onClick={() => {}}
+                ultimaInteracao={ultimasInteracoes[activeId]}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
       </div>
 
       <ProspectDetailModal
@@ -569,6 +670,17 @@ export default function Prospects() {
           setProspectToSchedule(null);
         }}
       />
+
+      <CriarTarefaModal
+        open={tarefaModalOpen}
+        onOpenChange={setTarefaModalOpen}
+        prospects={prospects?.filter(p => selectedProspects.has(p.id)) || []}
+        onSuccess={() => {
+          setSelectedProspects(new Set());
+          setTarefaModalOpen(false);
+        }}
+      />
+      </DndContext>
     </AppLayout>
   );
 }
