@@ -150,7 +150,19 @@ export default function Prospects() {
     if (!over) return;
 
     const prospectId = active.id as string;
-    const newStatus = over.id as ProspectStatus;
+    
+    // Verifica se over.id é um status válido ou se é o ID de um prospect
+    let newStatus: ProspectStatus;
+    
+    if (statusColumns.includes(over.id as ProspectStatus)) {
+      // Foi solto diretamente na coluna
+      newStatus = over.id as ProspectStatus;
+    } else {
+      // Foi solto sobre outro prospect - busca o status do prospect de destino
+      const targetProspect = prospects?.find(p => p.id === over.id);
+      if (!targetProspect) return;
+      newStatus = targetProspect.status;
+    }
 
     const prospect = prospects?.find(p => p.id === prospectId);
     if (!prospect || prospect.status === newStatus) return;
@@ -166,6 +178,7 @@ export default function Prospects() {
         description: `Prospect movido para ${statusLabels[newStatus]}`,
       });
     } catch (error) {
+      console.error('Erro ao atualizar prospect:', error);
       toast({
         title: "Erro ao atualizar status",
         description: "Tente novamente",
