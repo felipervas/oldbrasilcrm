@@ -343,6 +343,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "clientes_prospect_origem_id_fkey"
+            columns: ["prospect_origem_id"]
+            isOneToOne: false
+            referencedRelation: "prospects_with_last_interaction"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "clientes_responsavel_id_fkey"
             columns: ["responsavel_id"]
             isOneToOne: false
@@ -1235,6 +1242,13 @@ export type Database = {
             referencedRelation: "prospects"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "prospect_ia_insights_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: true
+            referencedRelation: "prospects_with_last_interaction"
+            referencedColumns: ["id"]
+          },
         ]
       }
       prospect_interacoes: {
@@ -1277,6 +1291,13 @@ export type Database = {
             columns: ["prospect_id"]
             isOneToOne: false
             referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_interacoes_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects_with_last_interaction"
             referencedColumns: ["id"]
           },
           {
@@ -1350,6 +1371,13 @@ export type Database = {
             columns: ["prospect_id"]
             isOneToOne: false
             referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_visitas_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects_with_last_interaction"
             referencedColumns: ["id"]
           },
           {
@@ -1617,7 +1645,55 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      prospects_with_last_interaction: {
+        Row: {
+          cep: string | null
+          cidade: string | null
+          convertido_cliente_id: string | null
+          created_at: string | null
+          criado_por_id: string | null
+          criado_por_nome: string | null
+          data_proximo_contato: string | null
+          data_ultimo_contato: string | null
+          email: string | null
+          endereco_completo: string | null
+          estado: string | null
+          id: string | null
+          latitude: number | null
+          longitude: number | null
+          motivo_perda: string | null
+          nome_empresa: string | null
+          observacoes: string | null
+          origem: string | null
+          porte: string | null
+          prioridade: string | null
+          produto_utilizado: string | null
+          responsavel_id: string | null
+          responsavel_nome: string | null
+          segmento: string | null
+          site: string | null
+          status: string | null
+          telefone: string | null
+          ultima_interacao: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospects_convertido_cliente_id_fkey"
+            columns: ["convertido_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospects_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       calcular_metricas_cliente: {

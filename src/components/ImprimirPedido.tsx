@@ -253,8 +253,8 @@ export function ImprimirPedido({ pedido, produtos }: ImprimirPedidoProps) {
             <tbody>
               {produtos.map((produto, idx) => (
                 <tr key={idx}>
-                  <td>{produto.produtos?.sku || '-'}</td>
-                  <td>{produto.produtos?.nome || 'N/A'}</td>
+                  <td>{produto.sku || produto.produtos?.sku || '-'}</td>
+                  <td>{produto.nome || produto.produtos?.nome || 'N/A'}</td>
                   <td>{parseFloat(produto.quantidade || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                   <td>{formatCurrency(parseFloat(produto.preco_unitario || 0))}</td>
                   <td>{formatCurrency(parseFloat(produto.quantidade || 0) * parseFloat(produto.preco_unitario || 0))}</td>

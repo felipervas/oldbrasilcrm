@@ -1,6 +1,8 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, memo, useCallback } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { useProspects, useCreateProspect, useBulkCreateProspects, useUpdateProspect, Prospect, ProspectStatus } from '@/hooks/useProspects';
+import { useCreateProspect, useBulkCreateProspects, useUpdateProspect, Prospect, ProspectStatus } from '@/hooks/useProspects';
+import { useProspectsOptimized } from '@/hooks/useProspectsOptimized';
+import { useDebounce } from '@/hooks/useDebounce';
 import { ProspectCard } from '@/components/ProspectCard';
 import { ProspectDetailModal } from '@/components/ProspectDetailModal';
 import { ImportarProspects } from '@/components/ImportarProspects';
@@ -41,7 +43,7 @@ const statusLabels: Record<ProspectStatus, string> = {
 const statusColumns: ProspectStatus[] = ['novo', 'em_contato', 'aguardando_retorno', 'em_negociacao', 'proposta_enviada', 'ganho'];
 
 export default function Prospects() {
-  const { data: prospects, isLoading } = useProspects();
+  const { data: prospects, refetch } = useProspectsOptimized();
   const createProspect = useCreateProspect();
   const bulkCreateProspects = useBulkCreateProspects();
   const navigate = useNavigate();
@@ -52,6 +54,7 @@ export default function Prospects() {
   const [agendamentoModalOpen, setAgendamentoModalOpen] = useState(false);
   const [prospectToSchedule, setProspectToSchedule] = useState<Prospect | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [filterEstado, setFilterEstado] = useState('todos');
   const [filterCidade, setFilterCidade] = useState('todos');
   const [filterPorte, setFilterPorte] = useState('todos');
@@ -60,7 +63,7 @@ export default function Prospects() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
   const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
-  const [ultimasInteracoes, setUltimasInteracoes] = useState<Record<string, string>>({});
+  // Removido ultimasInteracoes - agora vem da view otimizada
   const [activeId, setActiveId] = useState<string | null>(null);
   const { toast } = useToast();
   const { generateInsights } = useIAInsights();
@@ -110,40 +113,13 @@ export default function Prospects() {
     loadData();
   });
 
-  // Buscar última interação de cada prospect
-  useEffect(() => {
-    const loadUltimasInteracoes = async () => {
-      if (!prospects) return;
-      
-      const interacoesMap: Record<string, string> = {};
-      
-      await Promise.all(
-        prospects.map(async (prospect) => {
-          const { data } = await supabase
-            .from('prospect_interacoes')
-            .select('data_interacao')
-            .eq('prospect_id', prospect.id)
-            .order('data_interacao', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          
-          if (data) {
-            interacoesMap[prospect.id] = format(new Date(data.data_interacao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-          }
-        })
-      );
-      
-      setUltimasInteracoes(interacoesMap);
-    };
-    
-    loadUltimasInteracoes();
-  }, [prospects]);
+  // Removido: agora a view prospects_with_last_interaction já traz ultima_interacao otimizada
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string);
-  };
+  }, []);
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
 
@@ -161,7 +137,7 @@ export default function Prospects() {
       // Foi solto sobre outro prospect - busca o status do prospect de destino
       const targetProspect = prospects?.find(p => p.id === over.id);
       if (!targetProspect) return;
-      newStatus = targetProspect.status;
+      newStatus = targetProspect.status as ProspectStatus;
     }
 
     const prospect = prospects?.find(p => p.id === prospectId);
@@ -185,14 +161,14 @@ export default function Prospects() {
         variant: "destructive",
       });
     }
-  };
+  }, [prospects, updateProspectMutation, toast]);
 
   const filteredProspects = useMemo(() => {
     if (!prospects) return [];
 
     return prospects.filter((p) => {
-      const matchSearch = p.nome_empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.cidade?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchSearch = p.nome_empresa.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        p.cidade?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       const matchEstado = filterEstado === 'todos' || p.estado === filterEstado;
       const matchCidade = filterCidade === 'todos' || p.cidade === filterCidade;
       const matchPorte = filterPorte === 'todos' || p.porte === filterPorte;
@@ -200,7 +176,7 @@ export default function Prospects() {
 
       return matchSearch && matchEstado && matchCidade && matchPorte && matchPrioridade;
     });
-  }, [prospects, searchTerm, filterEstado, filterCidade, filterPorte, filterPrioridade]);
+  }, [prospects, debouncedSearchTerm, filterEstado, filterCidade, filterPorte, filterPrioridade]);
 
   const prospectsByStatus = useMemo(() => {
     const grouped: Record<ProspectStatus, Prospect[]> = {
@@ -351,18 +327,15 @@ export default function Prospects() {
         </div>
         <div onClick={() => handleCardClick(prospect)}>
           <ProspectCard 
-            prospect={prospect} 
+            prospect={prospect as any} 
             onClick={() => {}}
-            ultimaInteracao={ultimasInteracoes[prospect.id]}
           />
         </div>
       </div>
     );
   };
 
-  if (isLoading) {
-    return <AppLayout><div className="p-8">Carregando...</div></AppLayout>;
-  }
+  // Removido isLoading - React Query gerencia isso automaticamente
 
   return (
     <AppLayout>
@@ -658,9 +631,8 @@ export default function Prospects() {
           {activeId ? (
             <div className="opacity-80 rotate-3">
               <ProspectCard 
-                prospect={prospects?.find(p => p.id === activeId)!} 
+                prospect={prospects?.find(p => p.id === activeId) as any} 
                 onClick={() => {}}
-                ultimaInteracao={ultimasInteracoes[activeId]}
               />
             </div>
           ) : null}
@@ -687,7 +659,7 @@ export default function Prospects() {
       <CriarTarefaModal
         open={tarefaModalOpen}
         onOpenChange={setTarefaModalOpen}
-        prospects={prospects?.filter(p => selectedProspects.has(p.id)) || []}
+        prospects={(prospects?.filter(p => selectedProspects.has(p.id)) as Prospect[]) || []}
         onSuccess={() => {
           setSelectedProspects(new Set());
           setTarefaModalOpen(false);

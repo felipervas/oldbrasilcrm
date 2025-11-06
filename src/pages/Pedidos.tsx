@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Package, Calendar, Trash2, Edit, Plus } from "lucide-react";
@@ -33,13 +34,14 @@ const Pedidos = () => {
   const [podeverFaturamento, setPodeVerFaturamento] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const pedidosFiltrados = pedidosRecentes.filter(pedido =>
-    pedido.clientes?.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pedido.numero_pedido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pedido.clientes?.profiles?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+    pedido.clientes?.nome_fantasia?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    pedido.numero_pedido?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    pedido.clientes?.profiles?.nome?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
 
   useEffect(() => {

@@ -1,87 +1,23 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Users, CheckSquare, MessageSquare, TrendingUp, Clock, AlertCircle, Package, Boxes, Truck, CalendarDays } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Users, CheckSquare, MessageSquare, Clock, AlertCircle, Package, Boxes, Truck, CalendarDays } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { EntregaStatusBadge } from "@/components/EntregaStatusBadge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
-interface DashboardStats {
-  totalClientes: number;
-  tarefasPendentes: number;
-  interacoesHoje: number;
-  tarefasAtrasadas: number;
-  amostrasEnviadas: number;
-  totalProdutos: number;
-  entregasPendentes: number;
-}
+import { useDashboardStats, useDashboardEntregas } from "@/hooks/useDashboardStats";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Dashboard = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalClientes: 0,
-    tarefasPendentes: 0,
-    interacoesHoje: 0,
-    tarefasAtrasadas: 0,
-    amostrasEnviadas: 0,
-    totalProdutos: 0,
-    entregasPendentes: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [entregas, setEntregas] = useState<any[]>([]);
-
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
-    try {
-      const hoje = new Date().toISOString().split('T')[0];
-
-      // Super otimizado: apenas contagens sem carregar dados
-      const [clientesRes, tarefasRes, interacoesRes, tarefasAtrasadasRes, amostrasRes, produtosRes, entregasRes, entregasListRes] = await Promise.all([
-        supabase.from('clientes').select('id', { count: 'exact', head: true }).eq('ativo', true),
-        supabase.from('tarefas').select('id', { count: 'exact', head: true }).eq('status', 'pendente'),
-        supabase.from('interacoes').select('id', { count: 'exact', head: true }).gte('data_hora', `${hoje}T00:00:00`),
-        supabase.from('tarefas').select('id', { count: 'exact', head: true }).eq('status', 'pendente').lt('data_prevista', hoje),
-        supabase.from('amostras').select('id', { count: 'exact', head: true }),
-        supabase.from('produtos').select('id', { count: 'exact', head: true }).eq('ativo', true),
-        supabase.from('pedidos').select('id', { count: 'exact', head: true }).not('data_previsao_entrega', 'is', null).not('status', 'in', '(cancelado,entregue)'),
-        supabase.from('pedidos').select('id, numero_pedido, data_previsao_entrega, status, clientes(nome_fantasia)').not('data_previsao_entrega', 'is', null).not('status', 'in', '(cancelado,entregue)').order('data_previsao_entrega', { ascending: true }).limit(5),
-      ]);
-
-      setStats({
-        totalClientes: clientesRes.count || 0,
-        tarefasPendentes: tarefasRes.count || 0,
-        interacoesHoje: interacoesRes.count || 0,
-        tarefasAtrasadas: tarefasAtrasadasRes.count || 0,
-        amostrasEnviadas: amostrasRes.count || 0,
-        totalProdutos: produtosRes.count || 0,
-        entregasPendentes: entregasRes.count || 0,
-      });
-
-      setEntregas(entregasListRes.data || []);
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
-      toast({
-        title: "Erro ao carregar estatísticas",
-        description: "Tente recarregar a página",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: stats, isLoading: loadingStats } = useDashboardStats();
+  const { data: entregas = [], isLoading: loadingEntregas } = useDashboardEntregas();
 
   const statCards = [
     {
       title: "Total de Clientes",
-      value: stats.totalClientes,
+      value: stats?.totalClientes || 0,
       icon: Users,
       description: "Clientes cadastrados",
       color: "text-primary",
@@ -90,7 +26,7 @@ const Dashboard = () => {
     },
     {
       title: "Tarefas Pendentes",
-      value: stats.tarefasPendentes,
+      value: stats?.tarefasPendentes || 0,
       icon: CheckSquare,
       description: "Aguardando execução",
       color: "text-warning",
@@ -99,7 +35,7 @@ const Dashboard = () => {
     },
     {
       title: "Amostras Enviadas",
-      value: stats.amostrasEnviadas,
+      value: stats?.amostrasEnviadas || 0,
       icon: Package,
       description: "Total de amostras",
       color: "text-info",
@@ -108,7 +44,7 @@ const Dashboard = () => {
     },
     {
       title: "Produtos Ativos",
-      value: stats.totalProdutos,
+      value: stats?.totalProdutos || 0,
       icon: Boxes,
       description: "Produtos cadastrados",
       color: "text-success",
@@ -117,7 +53,7 @@ const Dashboard = () => {
     },
     {
       title: "Interações Hoje",
-      value: stats.interacoesHoje,
+      value: stats?.interacoesHoje || 0,
       icon: MessageSquare,
       description: "Visitas e ligações",
       color: "text-accent",
@@ -126,7 +62,7 @@ const Dashboard = () => {
     },
     {
       title: "Tarefas Atrasadas",
-      value: stats.tarefasAtrasadas,
+      value: stats?.tarefasAtrasadas || 0,
       icon: AlertCircle,
       description: "Requerem atenção",
       color: "text-destructive",
@@ -135,7 +71,7 @@ const Dashboard = () => {
     },
     {
       title: "Entregas Pendentes",
-      value: stats.entregasPendentes,
+      value: stats?.entregasPendentes || 0,
       icon: Truck,
       description: "Pedidos p/ entregar",
       color: "text-info",
@@ -177,7 +113,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {loading ? "..." : stat.value}
+                {loadingStats ? <Skeleton className="h-8 w-16" /> : stat.value}
               </div>
               <p className="text-xs text-muted-foreground">
                 {stat.description}
@@ -199,7 +135,13 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {entregas.length === 0 ? (
+            {loadingEntregas ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-20 w-full" />
+                ))}
+              </div>
+            ) : entregas.length === 0 ? (
               <div className="text-sm text-muted-foreground text-center py-8">
                 Nenhuma entrega pendente
               </div>
