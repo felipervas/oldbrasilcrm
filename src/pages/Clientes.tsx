@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ClienteProdutosHistorico } from "@/components/ClienteProdutosHistorico";
+import { useClientes } from "@/hooks/useClientes";
+import { useDebounce } from "@/hooks/useDebounce";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Clientes = () => {
   const [open, setOpen] = useState(false);
@@ -22,13 +26,13 @@ const Clientes = () => {
   const [loading, setLoading] = useState(false);
   const [loadingCnpj, setLoadingCnpj] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
-  const [clientes, setClientes] = useState<any[]>([]);
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [contatos, setContatos] = useState<any[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<"todos" | "ativo" | "inativo">("todos");
   const [responsaveis, setResponsaveis] = useState<any[]>([]);
+  const [page, setPage] = useState(0);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -113,7 +117,7 @@ const Clientes = () => {
         aniversario: "",
       });
       setOpen(false);
-      loadClientes();
+      // Clientes serão recarregados automaticamente pelo React Query
     } catch (error: any) {
       toast({
         title: "Erro ao adicionar cliente",
@@ -125,13 +129,8 @@ const Clientes = () => {
     }
   };
 
-  const loadClientes = async () => {
-    const { data } = await supabase
-      .from("clientes")
-      .select("*, profiles(nome)")
-      .order("created_at", { ascending: false });
-    if (data) setClientes(data);
-  };
+  // Remover loadClientes - usar hook otimizado
+  // const loadClientes = async () => { ... }
 
   const checkUserProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -161,7 +160,7 @@ const Clientes = () => {
       if (error) throw error;
       
       toast({ title: "Cliente excluído com sucesso!" });
-      loadClientes();
+      // Clientes serão recarregados automaticamente
     } catch (error: any) {
       console.error("Erro ao excluir cliente:", error);
       toast({ 
@@ -240,7 +239,7 @@ const Clientes = () => {
     } else {
       toast({ title: "Cliente atualizado com sucesso!" });
       setEditOpen(false);
-      loadClientes();
+      // Clientes serão recarregados automaticamente
     }
   };
 
@@ -395,27 +394,20 @@ const Clientes = () => {
       toast({ title: "Erro ao alterar responsável", variant: "destructive" });
     } else {
       toast({ title: "Responsável alterado com sucesso!" });
-      loadClientes();
+      // Clientes serão recarregados automaticamente
     }
   };
 
-  const clientesFiltrados = clientes.filter(cliente => {
-    const matchSearch = 
-      cliente.nome_fantasia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cliente.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cliente.cnpj_cpf?.includes(searchTerm) ||
-      cliente.telefone?.includes(searchTerm);
-
-    const matchStatus = 
-      filtroStatus === "todos" ? true :
-      filtroStatus === "ativo" ? cliente.ativo === true :
-      cliente.ativo === false;
-
-    return matchSearch && matchStatus;
-  });
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const { data: clientesData, isLoading: clientesLoading } = useClientes(page, 50, debouncedSearchTerm, filtroStatus);
+  
+  const clientes = clientesData?.data || [];
+  const totalClientes = clientesData?.count || 0;
+  
+  // Filtrar clientes localmente (já vem do backend)
+  const clientesFiltrados = clientes;
 
   useEffect(() => {
-    loadClientes();
     loadResponsaveis();
   }, []);
 
@@ -733,7 +725,7 @@ const Clientes = () => {
                                 .eq("id", cliente.id);
                               if (!error) {
                                 toast({ title: "Status atualizado!" });
-                                loadClientes();
+                                queryClient.invalidateQueries({ queryKey: ['clientes'] });
                               }
                             }}
                           >

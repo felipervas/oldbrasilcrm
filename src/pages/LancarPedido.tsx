@@ -14,7 +14,6 @@ import { useNavigate } from "react-router-dom";
 import { Combobox } from "@/components/ui/combobox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import * as pdfjsLib from 'pdfjs-dist';
 import { useFormPersistence } from "@/hooks/useFormPersistence";
 
 interface ProdutoItem {
@@ -329,8 +328,14 @@ const LancarPedido = () => {
   };
 
   const convertPdfToImage = async (file: File): Promise<string> => {
+    // Lazy load PDF.js APENAS quando necessário
+    const pdfjsLib = await import('pdfjs-dist');
+    
     // Configurar worker do PDF.js
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.mjs',
+      import.meta.url,
+    ).toString();
 
     return new Promise(async (resolve, reject) => {
       try {

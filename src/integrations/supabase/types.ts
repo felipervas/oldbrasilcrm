@@ -66,6 +66,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "amostras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
             foreignKeyName: "amostras_produto_id_fkey"
             columns: ["produto_id"]
             isOneToOne: false
@@ -152,6 +159,13 @@ export type Database = {
             referencedRelation: "marcas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "catalogos_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_marcas"
+            referencedColumns: ["marca_id"]
+          },
         ]
       }
       cliente_historico: {
@@ -189,6 +203,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clientes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cliente_historico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
           },
         ]
       }
@@ -230,6 +251,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clientes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cliente_produtos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
           },
           {
             foreignKeyName: "cliente_produtos_produto_id_fkey"
@@ -348,6 +376,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "prospects_with_last_interaction"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clientes_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "mv_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
           },
           {
             foreignKeyName: "clientes_responsavel_id_fkey"
@@ -480,6 +515,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clientes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contatos_clientes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
           },
         ]
       }
@@ -628,6 +670,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "interacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "interacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "mv_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
+          },
+          {
             foreignKeyName: "interacoes_usuario_id_fkey"
             columns: ["usuario_id"]
             isOneToOne: false
@@ -740,6 +796,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "marcas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marca_contatos_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_marcas"
+            referencedColumns: ["marca_id"]
           },
         ]
       }
@@ -918,6 +981,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clientes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "pedidos_responsavel_venda_id_fkey"
+            columns: ["responsavel_venda_id"]
+            isOneToOne: false
+            referencedRelation: "mv_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
           },
           {
             foreignKeyName: "pedidos_responsavel_venda_id_fkey"
@@ -1159,6 +1236,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "produtos_marca_id_fkey"
+            columns: ["marca_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_marcas"
+            referencedColumns: ["marca_id"]
+          },
+          {
             foreignKeyName: "produtos_tabela_preco_loja_id_fkey"
             columns: ["tabela_preco_loja_id"]
             isOneToOne: false
@@ -1304,6 +1388,13 @@ export type Database = {
             foreignKeyName: "prospect_interacoes_usuario_id_fkey"
             columns: ["usuario_id"]
             isOneToOne: false
+            referencedRelation: "mv_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
+          },
+          {
+            foreignKeyName: "prospect_interacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1379,6 +1470,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "prospects_with_last_interaction"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_visitas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "mv_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
           },
           {
             foreignKeyName: "prospect_visitas_responsavel_id_fkey"
@@ -1483,6 +1581,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "prospects_convertido_cliente_id_fkey"
+            columns: ["convertido_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "prospects_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "mv_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
+          },
+          {
             foreignKeyName: "prospects_responsavel_id_fkey"
             columns: ["responsavel_id"]
             isOneToOne: false
@@ -1535,6 +1647,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clientes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receitas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
           },
         ]
       }
@@ -1614,6 +1733,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tarefas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "tarefas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "mv_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
+          },
+          {
             foreignKeyName: "tarefas_responsavel_id_fkey"
             columns: ["responsavel_id"]
             isOneToOne: false
@@ -1645,6 +1778,36 @@ export type Database = {
       }
     }
     Views: {
+      mv_faturamento_clientes: {
+        Row: {
+          cliente_id: string | null
+          faturamento_total: number | null
+          nome_fantasia: string | null
+          total_pedidos: number | null
+          ultima_compra: string | null
+        }
+        Relationships: []
+      }
+      mv_faturamento_marcas: {
+        Row: {
+          faturamento_total: number | null
+          marca: string | null
+          marca_id: string | null
+          quantidade_total: number | null
+          total_pedidos: number | null
+        }
+        Relationships: []
+      }
+      mv_performance_vendedores: {
+        Row: {
+          faturamento_total: number | null
+          nome: string | null
+          ticket_medio: number | null
+          total_pedidos: number | null
+          vendedor_id: string | null
+        }
+        Relationships: []
+      }
       prospects_with_last_interaction: {
         Row: {
           cep: string | null
@@ -1684,6 +1847,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clientes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospects_convertido_cliente_id_fkey"
+            columns: ["convertido_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "prospects_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "mv_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
           },
           {
             foreignKeyName: "prospects_responsavel_id_fkey"
@@ -1767,6 +1944,7 @@ export type Database = {
       pode_ver_faturamento: { Args: { user_id: string }; Returns: boolean }
       pode_ver_financeiro: { Args: { user_id: string }; Returns: boolean }
       processar_clientes_inativos: { Args: never; Returns: undefined }
+      refresh_dashboard_views: { Args: never; Returns: undefined }
     }
     Enums: {
       interaction_result: "concluida" | "nao_atendido" | "reagendada"

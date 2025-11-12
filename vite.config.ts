@@ -23,6 +23,9 @@ export default defineConfig(({ mode }) => ({
           'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-tabs'],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-icons': ['lucide-react'],
+          'vendor-charts': ['recharts'], // Separar Recharts (gráficos pesados)
+          'vendor-pdf': ['pdfjs-dist'], // Separar PDF.js (2MB)
+          'vendor-date': ['date-fns'], // Separar date-fns
         },
       },
     },

@@ -15,17 +15,18 @@ export const useTestNotification = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const cincMinutosAtras = new Date();
-      cincMinutosAtras.setMinutes(cincMinutosAtras.getMinutes() - 5);
+      // Verificar apenas tarefas criadas nos últimos 10 minutos (reduzido de 5)
+      const dezMinutosAtras = new Date();
+      dezMinutosAtras.setMinutes(dezMinutosAtras.getMinutes() - 10);
 
       const { data: tarefas, error } = await supabase
         .from('tarefas')
         .select('id, titulo, data_prevista, horario, clientes(nome_fantasia)')
         .eq('responsavel_id', user.id)
         .eq('status', 'pendente')
-        .gte('created_at', cincMinutosAtras.toISOString())
+        .gte('created_at', dezMinutosAtras.toISOString())
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(3); // Reduzido de 5 para 3
 
       if (error) {
         console.error('Erro ao verificar tarefas:', error);
@@ -54,7 +55,8 @@ export const useTestNotification = () => {
     };
 
     checkRecentTasks();
-    const interval = setInterval(checkRecentTasks, 60000);
+    // Verificar a cada 5 minutos (reduzido de 1 minuto) para reduzir carga
+    const interval = setInterval(checkRecentTasks, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [toast]);

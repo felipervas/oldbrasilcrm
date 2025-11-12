@@ -1,15 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, TrendingUp, Users, Package, DollarSign, BarChart3, PieChart as PieChartIcon } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { useGestorDashboard } from "@/hooks/useGestorDashboard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+// Lazy load Recharts para reduzir bundle inicial
+const BarChart = lazy(() => import("recharts").then(m => ({ default: m.BarChart })));
+const Bar = lazy(() => import("recharts").then(m => ({ default: m.Bar })));
+const XAxis = lazy(() => import("recharts").then(m => ({ default: m.XAxis })));
+const YAxis = lazy(() => import("recharts").then(m => ({ default: m.YAxis })));
+const CartesianGrid = lazy(() => import("recharts").then(m => ({ default: m.CartesianGrid })));
+const Tooltip = lazy(() => import("recharts").then(m => ({ default: m.Tooltip })));
+const Legend = lazy(() => import("recharts").then(m => ({ default: m.Legend })));
+const ResponsiveContainer = lazy(() => import("recharts").then(m => ({ default: m.ResponsiveContainer })));
+const PieChart = lazy(() => import("recharts").then(m => ({ default: m.PieChart })));
+const Pie = lazy(() => import("recharts").then(m => ({ default: m.Pie })));
+const Cell = lazy(() => import("recharts").then(m => ({ default: m.Cell })));
+const LineChart = lazy(() => import("recharts").then(m => ({ default: m.LineChart })));
+const Line = lazy(() => import("recharts").then(m => ({ default: m.Line })));
 
 interface FaturamentoPorCliente {
   cliente: string;
@@ -43,15 +58,9 @@ const GestorDashboard = () => {
   const { isGestor, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [faturamentoClientes, setFaturamentoClientes] = useState<FaturamentoPorCliente[]>([]);
-  const [faturamentoMarcas, setFaturamentoMarcas] = useState<FaturamentoPorMarca[]>([]);
-  const [vendedoresStats, setVendedoresStats] = useState<VendedorStats[]>([]);
-  const [pedidosRecentes, setPedidosRecentes] = useState<PedidoRecente[]>([]);
-  const [totalFaturamento, setTotalFaturamento] = useState(0);
-  const [totalPedidos, setTotalPedidos] = useState(0);
-  const [transacoesFinanceiras, setTransacoesFinanceiras] = useState<any[]>([]);
-  const [balancoMensal, setBalancoMensal] = useState<any[]>([]);
+  
+  // Usar hook otimizado com views materializadas
+  const { data: dashboardData, isLoading: loading } = useGestorDashboard();
 
   useEffect(() => {
     if (!roleLoading && !isGestor) {
@@ -61,153 +70,105 @@ const GestorDashboard = () => {
         variant: "destructive",
       });
       navigate("/");
-    } else if (!roleLoading && isGestor) {
-      loadDashboardData();
     }
   }, [isGestor, roleLoading, navigate, toast]);
-
-  const loadDashboardData = async () => {
-    try {
-      // Faturamento por cliente
-      const { data: pedidos } = await supabase
-        .from('pedidos')
-        .select('cliente_id, valor_total, numero_pedido, data_pedido, status, responsavel_venda_id, clientes(nome_fantasia), profiles!pedidos_responsavel_venda_id_fkey(nome)')
-        .neq('status', 'cancelado')
-        .order('data_pedido', { ascending: false });
-
-      const clientesMap = new Map<string, { total: number; pedidos: number }>();
-      const pedidosRecentesData: PedidoRecente[] = [];
-
-      pedidos?.forEach((p, idx) => {
-        const nome = (p.clientes as any)?.nome_fantasia || 'Sem nome';
-        const current = clientesMap.get(nome) || { total: 0, pedidos: 0 };
-        clientesMap.set(nome, {
-          total: current.total + (parseFloat(p.valor_total as any) || 0),
-          pedidos: current.pedidos + 1
-        });
-
-        // Adicionar aos pedidos recentes (primeiros 10)
-        if (idx < 10) {
-          pedidosRecentesData.push({
-            id: p.cliente_id,
-            numero_pedido: p.numero_pedido || 'S/N',
-            cliente: nome,
-            valor_total: parseFloat(p.valor_total as any) || 0,
-            data_pedido: p.data_pedido || '',
-            status: p.status || '',
-            vendedor: (p.profiles as any)?.nome || 'N/A'
-          });
-        }
-      });
-
-      const faturamentoClientesArray = Array.from(clientesMap.entries())
-        .map(([cliente, data]) => ({ cliente, ...data }))
-        .sort((a, b) => b.total - a.total);
-
-      setFaturamentoClientes(faturamentoClientesArray);
-      setPedidosRecentes(pedidosRecentesData);
-      setTotalFaturamento(faturamentoClientesArray.reduce((sum, c) => sum + c.total, 0));
-      setTotalPedidos(faturamentoClientesArray.reduce((sum, c) => sum + c.pedidos, 0));
-
-      // Faturamento por marca
-      const { data: produtosPedidos } = await supabase
-        .from('pedidos_produtos')
-        .select('quantidade, preco_unitario, produto_id, produtos(marca_id, marcas(nome))');
-
-      const marcasMap = new Map<string, { total: number; quantidade: number }>();
-      produtosPedidos?.forEach(pp => {
-        const marca = (pp.produtos as any)?.marcas?.nome || 'Sem marca';
-        const current = marcasMap.get(marca) || { total: 0, quantidade: 0 };
-        const subtotal = (parseFloat(pp.quantidade as any) || 0) * (parseFloat(pp.preco_unitario as any) || 0);
-        marcasMap.set(marca, {
-          total: current.total + subtotal,
-          quantidade: current.quantidade + (parseFloat(pp.quantidade as any) || 0)
-        });
-      });
-
-      setFaturamentoMarcas(
-        Array.from(marcasMap.entries())
-          .map(([marca, data]) => ({ marca, ...data }))
-          .sort((a, b) => b.total - a.total)
-      );
-
-      // Vendedores stats
-      const { data: pedidosVendedores } = await supabase
-        .from('pedidos')
-        .select('responsavel_venda_id, valor_total, profiles(nome)')
-        .not('responsavel_venda_id', 'is', null)
-        .neq('status', 'cancelado');
-
-      const vendedoresMap = new Map<string, { total: number; pedidos: number }>();
-      pedidosVendedores?.forEach(pv => {
-        const vendedor = (pv.profiles as any)?.nome || 'Desconhecido';
-        const current = vendedoresMap.get(vendedor) || { total: 0, pedidos: 0 };
-        vendedoresMap.set(vendedor, {
-          total: current.total + (parseFloat(pv.valor_total as any) || 0),
-          pedidos: current.pedidos + 1
-        });
-      });
-
-      setVendedoresStats(
-        Array.from(vendedoresMap.entries())
-          .map(([vendedor, data]) => ({ vendedor, ...data }))
-          .sort((a, b) => b.total - a.total)
-      );
-
-      // Transações financeiras (calendário)
-      const { data: financeiro } = await supabase
-        .from('financeiro')
-        .select('*')
-        .order('data', { ascending: true });
-
-      setTransacoesFinanceiras(financeiro || []);
-
-      // Balanço mensal (entrada vs saída)
-      const balancoMap = new Map<string, { mes: string; receitas: number; despesas: number }>();
-      financeiro?.forEach(t => {
-        const mes = format(new Date(t.data), 'MMM/yy', { locale: ptBR });
-        const current = balancoMap.get(mes) || { mes, receitas: 0, despesas: 0 };
-        
-        if (t.tipo === 'receita') {
-          current.receitas += parseFloat(t.valor as any) || 0;
-        } else {
-          current.despesas += parseFloat(t.valor as any) || 0;
-        }
-        
-        balancoMap.set(mes, current);
-      });
-
-      setBalancoMensal(Array.from(balancoMap.values()));
-
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      toast({
-        title: "Erro ao carregar dados",
-        description: "Ocorreu um erro ao carregar os dados do dashboard",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+  
+  const faturamentoClientes: FaturamentoPorCliente[] = dashboardData?.faturamentoClientes.map((c: any) => ({
+    cliente: c.nome_fantasia,
+    total: Number(c.faturamento_total) || 0,
+    pedidos: Number(c.total_pedidos) || 0,
+  })) || [];
+  
+  const faturamentoMarcas: FaturamentoPorMarca[] = dashboardData?.faturamentoMarcas.map((m: any) => ({
+    marca: m.marca,
+    total: Number(m.faturamento_total) || 0,
+    quantidade: Number(m.quantidade_total) || 0,
+  })) || [];
+  
+  const vendedoresStats: VendedorStats[] = dashboardData?.vendedores.map((v: any) => ({
+    vendedor: v.nome,
+    total: Number(v.faturamento_total) || 0,
+    pedidos: Number(v.total_pedidos) || 0,
+  })) || [];
+  
+  const pedidosRecentes: PedidoRecente[] = dashboardData?.pedidosRecentes.map((p: any) => ({
+    id: p.id,
+    numero_pedido: p.numero_pedido || 'S/N',
+    cliente: (p.clientes as any)?.nome_fantasia || 'Sem nome',
+    valor_total: Number(p.valor_total) || 0,
+    data_pedido: p.data_pedido || '',
+    status: p.status || '',
+    vendedor: (p.profiles as any)?.nome || 'N/A',
+  })) || [];
+  
+  const transacoesFinanceiras = dashboardData?.financeiro || [];
+  
+  const totalFaturamento = faturamentoClientes.reduce((sum, c) => sum + c.total, 0);
+  const totalPedidos = faturamentoClientes.reduce((sum, c) => sum + c.pedidos, 0);
+  
+  // Balanço mensal
+  const balancoMap = new Map<string, { mes: string; receitas: number; despesas: number }>();
+  transacoesFinanceiras.forEach(t => {
+    const mes = format(new Date(t.data), 'MMM/yy', { locale: ptBR });
+    const current = balancoMap.get(mes) || { mes, receitas: 0, despesas: 0 };
+    
+    if (t.tipo === 'receita') {
+      current.receitas += Number(t.valor) || 0;
+    } else {
+      current.despesas += Number(t.valor) || 0;
     }
-  };
+    
+    balancoMap.set(mes, current);
+  });
+  
+  const balancoMensal = Array.from(balancoMap.values());
 
   if (roleLoading || !isGestor) {
-    return <div className="flex-1 p-8">Carregando...</div>;
+    return (
+      <div className="flex-1 p-8">
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (loading) {
+    return (
+      <div className="flex-1 p-8">
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+          <Skeleton className="h-96" />
+        </div>
+      </div>
+    );
   }
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value));
   };
 
   const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
   const totalReceitas = transacoesFinanceiras
     .filter(t => t.tipo === 'receita')
-    .reduce((sum, t) => sum + (parseFloat(t.valor) || 0), 0);
+    .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
 
   const totalDespesas = transacoesFinanceiras
     .filter(t => t.tipo === 'despesa')
-    .reduce((sum, t) => sum + (parseFloat(t.valor) || 0), 0);
+    .reduce((sum, t) => sum + (Number(t.valor) || 0), 0);
 
   const saldoTotal = totalReceitas - totalDespesas;
 
@@ -310,15 +271,17 @@ const GestorDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={faturamentoClientes.slice(0, 10)}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="cliente" angle={-45} textAnchor="end" height={100} />
-                    <YAxis />
-                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                    <Bar dataKey="total" fill="hsl(var(--chart-1))" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<Skeleton className="h-[300px]" />}>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={faturamentoClientes.slice(0, 10)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="cliente" angle={-45} textAnchor="end" height={100} />
+                      <YAxis />
+                      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                      <Bar dataKey="total" fill="hsl(var(--chart-1))" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Suspense>
               </CardContent>
             </Card>
 

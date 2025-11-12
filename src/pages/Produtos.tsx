@@ -1,4 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useProdutos } from "@/hooks/useProdutos";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -38,6 +42,9 @@ const Produtos = () => {
     observacao: "",
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(0);
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const { data: produtosData, isLoading: produtosLoading } = useProdutos(page, 50, debouncedSearchTerm);
   const [imagensLoja, setImagensLoja] = useState<any[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string; preco?: number; usarNoSite?: boolean }>>([]);
@@ -81,23 +88,9 @@ const Produtos = () => {
     }
   };
 
-  const produtosFiltrados = produtos.filter(produto =>
-    produto.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    produto.marcas?.nome?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const loadProdutos = async () => {
-    const { data, error } = await supabase
-      .from("produtos")
-      .select("*, marcas(nome, id)")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast({ title: "Erro ao carregar produtos", variant: "destructive" });
-    } else {
-      setProdutos(data || []);
-    }
-  };
+  // Usar hook otimizado em vez de loadProdutos
+  const produtos = produtosData?.data || [];
+  const totalProdutos = produtosData?.count || 0;
 
   const loadMarcas = async () => {
     const { data } = await supabase.from("marcas").select("*").eq("ativa", true);
@@ -105,7 +98,6 @@ const Produtos = () => {
   };
 
   useEffect(() => {
-    loadProdutos();
     loadMarcas();
   }, []);
 
@@ -225,7 +217,7 @@ const Produtos = () => {
       setMarcaSelecionada("");
       setTabelasPrecoCriacao([]);
       setUsarTabelas(false);
-      loadProdutos();
+      // Produtos serão recarregados automaticamente
       
     } catch (error: any) {
       console.error('❌ Erro ao adicionar produto:', error);
@@ -296,7 +288,7 @@ const Produtos = () => {
           description: 'Preços calculados automaticamente por kg'
         });
         setImportOpen(false);
-        loadProdutos();
+        // Produtos serão recarregados automaticamente
       }
 
       if (fileInputRef.current) {
@@ -403,7 +395,7 @@ const Produtos = () => {
       setEstoqueOpen(false);
       setMovimentacaoData({ tipo: "entrada", quantidade: "", observacao: "" });
       loadMovimentacoes(produtoSelecionado.id);
-      loadProdutos();
+      // Produtos serão recarregados automaticamente
     }
   };
 
@@ -436,7 +428,7 @@ const Produtos = () => {
     } else {
       toast({ title: "Produto atualizado com sucesso!" });
       setEditOpen(false);
-      loadProdutos();
+      // Produtos serão recarregados automaticamente
     }
   };
 
@@ -449,7 +441,7 @@ const Produtos = () => {
       toast({ title: "Erro ao excluir produto", variant: "destructive" });
     } else {
       toast({ title: "Produto excluído com sucesso!" });
-      loadProdutos();
+      // Produtos serão recarregados automaticamente
     }
   };
 
@@ -951,7 +943,7 @@ const Produtos = () => {
           setEditOpen(open);
           if (!open) {
             setProdutoSelecionado(null);
-            loadProdutos(); // Recarregar lista após editar
+            queryClient.invalidateQueries({ queryKey: ['produtos'] });
           }
         }}
       />

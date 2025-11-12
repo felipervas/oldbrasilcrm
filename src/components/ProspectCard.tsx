@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,7 +15,7 @@ interface ProspectCardProps {
   ultimaInteracao?: string;
 }
 
-export const ProspectCard = ({ prospect, onClick, isSelected, onSelectChange, ultimaInteracao }: ProspectCardProps) => {
+export const ProspectCard = memo(({ prospect, onClick, isSelected, onSelectChange, ultimaInteracao }: ProspectCardProps) => {
   const getPrioridadeColor = (prioridade: string) => {
     switch (prioridade) {
       case 'alta': return 'bg-red-500/10 text-red-500 border-red-500/20';
@@ -133,4 +134,12 @@ export const ProspectCard = ({ prospect, onClick, isSelected, onSelectChange, ul
       </CardContent>
     </Card>
   );
-};
+}, (prevProps, nextProps) => {
+  // Memoização customizada: só re-renderizar se dados relevantes mudarem
+  return (
+    prevProps.prospect.id === nextProps.prospect.id &&
+    prevProps.prospect.updated_at === nextProps.prospect.updated_at &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.ultimaInteracao === nextProps.ultimaInteracao
+  );
+});

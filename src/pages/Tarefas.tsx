@@ -1,4 +1,8 @@
 import { useState, useEffect } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useTarefas } from "@/hooks/useTarefas";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -26,37 +30,14 @@ const Tarefas = () => {
   const [tipoTarefa, setTipoTarefa] = useState("");
   const [editFormData, setEditFormData] = useState<any>({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(0);
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const { data: tarefasData, isLoading: tarefasLoading } = useTarefas(page, 20);
   const { toast } = useToast();
 
-  const loadTarefas = async () => {
-    // Carregar TODAS as tarefas pendentes (visíveis para todos)
-    const { data, error } = await supabase
-      .from("tarefas")
-      .select(`
-        id, 
-        titulo, 
-        descricao, 
-        tipo, 
-        prioridade, 
-        data_prevista, 
-        horario, 
-        status, 
-        created_at, 
-        responsavel_id,
-        cliente_id, 
-        clientes(nome_fantasia), 
-        profiles:responsavel_id(nome)
-      `)
-      .eq("status", "pendente")
-      .order("data_prevista", { ascending: true })
-      .limit(100);
-
-    if (error) {
-      toast({ title: "Erro ao carregar tarefas", variant: "destructive" });
-    } else {
-      setTarefas(data || []);
-    }
-  };
+  // Usar hook otimizado
+  const tarefas = tarefasData?.data || [];
+  const totalTarefas = tarefasData?.count || 0;
 
   const loadClientes = async () => {
     const { data } = await supabase
@@ -77,7 +58,6 @@ const Tarefas = () => {
   };
 
   useEffect(() => {
-    loadTarefas();
     loadClientes();
     loadColaboradores();
   }, []);
@@ -137,7 +117,7 @@ const Tarefas = () => {
         prioridade: "media",
         endereco_completo: "",
       });
-      loadTarefas();
+      // Tarefas serão recarregadas automaticamente
     } catch (error: any) {
       console.error("Erro ao criar tarefa:", error);
       toast({ title: "Erro: " + (error?.message || "Erro desconhecido"), variant: "destructive" });
@@ -188,7 +168,7 @@ const Tarefas = () => {
       });
       setConclusaoOpen(false);
       setTarefaSelecionada(null);
-      loadTarefas();
+      // Tarefas serão recarregadas automaticamente
     } catch (error) {
       console.error("Erro ao finalizar tarefa:", error);
       toast({ title: "Erro ao finalizar tarefa", variant: "destructive" });
@@ -248,13 +228,14 @@ const Tarefas = () => {
     } else {
       toast({ title: "Tarefa atualizada com sucesso!" });
       setEditOpen(false);
-      loadTarefas();
+      // Tarefas serão recarregadas automaticamente
     }
   };
 
-  // Filtrar tarefas com base na pesquisa
+  // Filtrar tarefas com base na pesquisa debounced
   const tarefasFiltradas = tarefas.filter(tarefa => {
-    const termoBusca = searchTerm.toLowerCase();
+    const termoBusca = debouncedSearchTerm.toLowerCase();
+    if (!termoBusca) return true;
     return (
       tarefa.titulo?.toLowerCase().includes(termoBusca) ||
       tarefa.descricao?.toLowerCase().includes(termoBusca) ||
@@ -526,7 +507,7 @@ const Tarefas = () => {
                                   .eq("id", tarefa.id);
                                 if (!error) {
                                   toast({ title: "Tarefa concluída!" });
-                                  loadTarefas();
+                                  queryClient.invalidateQueries({ queryKey: ['tarefas'] });
                                 }
                               }}
                             >
