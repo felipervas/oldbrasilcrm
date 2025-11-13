@@ -10,15 +10,21 @@ import { useProdutosLoja, useMarcaDetalhes } from "@/hooks/useLojaPublic";
 import { useState } from "react";
 import { isMarcaVolatil, getCorMarca } from "@/lib/precosLoja";
 import { gerarLinkWhatsApp } from "@/lib/whatsapp";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function MarcaProdutos() {
   const { slug } = useParams<{ slug: string }>();
   const [ordenacao, setOrdenacao] = useState("ordem_exibicao");
+  const [busca, setBusca] = useState("");
+  const buscaDebounced = useDebounce(busca, 500);
 
   const { data: marca, isLoading: loadingMarca } = useMarcaDetalhes(slug!);
   const { data: produtos, isLoading: loadingProdutos } = useProdutosLoja({
     marca: marca?.id,
     ordenacao,
+    busca: buscaDebounced,
   });
 
   if (loadingMarca) {
@@ -109,16 +115,29 @@ export default function MarcaProdutos() {
 
       {/* Produtos */}
       <div className="container mx-auto px-4 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold">
-            Produtos {marca.nome}
-            {produtos && (
-              <span className="text-muted-foreground ml-2 text-lg">
-                ({produtos.length})
-              </span>
-            )}
-          </h2>
-          <OrdenacaoLoja value={ordenacao} onChange={setOrdenacao} />
+        <div className="flex flex-col gap-4 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <h2 className="text-2xl font-bold">
+              Produtos {marca.nome}
+              {produtos && (
+                <span className="text-muted-foreground ml-2 text-lg">
+                  ({produtos.length})
+                </span>
+              )}
+            </h2>
+            <OrdenacaoLoja value={ordenacao} onChange={setOrdenacao} />
+          </div>
+          
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Buscar produtos..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
 
         {loadingProdutos ? (
