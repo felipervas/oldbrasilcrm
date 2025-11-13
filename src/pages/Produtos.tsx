@@ -29,7 +29,7 @@ const Produtos = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState<any>(null);
-  const [produtos, setProdutos] = useState<any[]>([]);
+  const [produtosParaAdicionar, setProdutosParaAdicionar] = useState<any[]>([]);
   const [marcas, setMarcas] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [marcaSelecionada, setMarcaSelecionada] = useState("");
@@ -52,6 +52,7 @@ const Produtos = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagemInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const calcularEExibir = (preco: number, peso: number, rendimento: number) => {
     const resultadoDiv = document.getElementById('calculos-resultado');
@@ -89,7 +90,7 @@ const Produtos = () => {
   };
 
   // Usar hook otimizado em vez de loadProdutos
-  const produtos = produtosData?.data || [];
+  const produtosLista = produtosData?.data || [];
   const totalProdutos = produtosData?.count || 0;
 
   const loadMarcas = async () => {
@@ -830,7 +831,13 @@ const Produtos = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {produtosFiltrados.length === 0 ? (
+          {produtosLoading ? (
+            <div className="space-y-4">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
+          ) : produtosLista.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">Nenhum produto cadastrado</p>
@@ -838,7 +845,7 @@ const Produtos = () => {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
-              {produtosFiltrados.map((produto) => (
+              {produtosLista.map((produto) => (
                 <div key={produto.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
@@ -852,16 +859,16 @@ const Produtos = () => {
                         </p>
                       )}
                       
-                      {/* 🆕 SEÇÃO DE PREÇOS */}
+                       {/* 🆕 SEÇÃO DE PREÇOS */}
                       <div className="mt-3 space-y-1 bg-muted/50 p-3 rounded-lg">
                         {produto.preco_base && (
                           <p className="text-sm font-semibold text-primary">
-                            💰 Preço Base: R$ {parseFloat(produto.preco_base).toFixed(2)}
+                            💰 Preço Base: R$ {Number(produto.preco_base).toFixed(2)}
                           </p>
                         )}
                         {produto.preco_por_kg && (
                           <p className="text-sm">
-                            ⚖️ Preço por Kg: R$ {parseFloat(produto.preco_por_kg).toFixed(2)}
+                            ⚖️ Preço por Kg: R$ {Number(produto.preco_por_kg).toFixed(2)}
                           </p>
                         )}
                         {produto.peso_embalagem_kg && (
@@ -872,7 +879,7 @@ const Produtos = () => {
                         {produto.rendimento_dose_gramas && produto.preco_por_kg && (
                           <p className="text-sm">
                             🥄 Custo por Dose ({produto.rendimento_dose_gramas}g): 
-                            R$ {((parseFloat(produto.preco_por_kg) * produto.rendimento_dose_gramas) / 1000).toFixed(2)}
+                            R$ {((Number(produto.preco_por_kg) * produto.rendimento_dose_gramas) / 1000).toFixed(2)}
                           </p>
                         )}
                       </div>
@@ -903,7 +910,7 @@ const Produtos = () => {
                             adicionarItem({
                               produto_id: produto.id,
                               nome: produto.nome,
-                              preco_por_kg: parseFloat(produto.preco_por_kg),
+                              preco_por_kg: Number(produto.preco_por_kg),
                               quantidade_kg: 1,
                               marca: produto.marcas?.nome,
                             });

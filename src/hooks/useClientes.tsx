@@ -10,7 +10,7 @@ export const useClientes = (page: number = 0, pageSize: number = 50, searchTerm:
     queryFn: async () => {
       let query = supabase
         .from('clientes')
-        .select('id, nome_fantasia, cnpj_cpf, telefone, email, cidade, uf, ativo, responsavel_id, profiles(nome)', { count: 'exact' });
+        .select('*, profiles(nome)', { count: 'exact' });
 
       // Filtro de status
       if (filtroStatus === 'ativo') {

@@ -34,6 +34,7 @@ const Clientes = () => {
   const [responsaveis, setResponsaveis] = useState<any[]>([]);
   const [page, setPage] = useState(0);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
     nome_fantasia: "",

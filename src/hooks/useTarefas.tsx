@@ -12,7 +12,7 @@ export const useTarefas = (page: number = 0, pageSize: number = 20) => {
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from('tarefas')
-        .select('id, titulo, descricao, status, tipo, prioridade, data_prevista, cliente_id, responsavel_id, clientes(nome_fantasia), profiles(nome)', { count: 'exact' })
+        .select('id, titulo, descricao, status, tipo, prioridade, data_prevista, horario, created_at, cliente_id, responsavel_id, clientes(nome_fantasia), profiles(nome)', { count: 'exact' })
         .order('data_prevista', { ascending: true })
         .range(start, end);
 

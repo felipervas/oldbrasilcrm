@@ -611,7 +611,7 @@ const GestorDashboard = () => {
                       <p className={`font-bold text-lg ${
                         transacao.tipo === 'receita' ? 'text-success' : 'text-destructive'
                       }`}>
-                        {transacao.tipo === 'receita' ? '+' : '-'} {formatCurrency(parseFloat(transacao.valor))}
+                        {transacao.tipo === 'receita' ? '+' : '-'} {formatCurrency(Number(transacao.valor))}
                       </p>
                     </div>
                   </div>

@@ -21,7 +21,7 @@ const Tarefas = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [conclusaoOpen, setConclusaoOpen] = useState(false);
   const [tarefaSelecionada, setTarefaSelecionada] = useState<any>(null);
-  const [tarefas, setTarefas] = useState<any[]>([]);
+  const [tarefasOld, setTarefasOld] = useState<any[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
   const [colaboradores, setColaboradores] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,6 +34,7 @@ const Tarefas = () => {
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const { data: tarefasData, isLoading: tarefasLoading } = useTarefas(page, 20);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Usar hook otimizado
   const tarefas = tarefasData?.data || [];
