@@ -12,13 +12,17 @@ import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   CalendarDays, 
-  ExternalLink
+  ExternalLink,
+  Route,
+  MapPin
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useNavigate } from 'react-router-dom';
 
 export default function ColaboradorRelatorioDiario() {
   const [dataSelecionada, setDataSelecionada] = useState<Date>(new Date());
   const { data: eventos, isLoading } = useRelatorioDiario(dataSelecionada);
+  const navigate = useNavigate();
 
   const isHoje = isSameDay(dataSelecionada, new Date());
 
@@ -69,11 +73,20 @@ export default function ColaboradorRelatorioDiario() {
   return (
     <AppLayout>
       <div className="container mx-auto py-8 px-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">📅 Meu Dia</h1>
-          <p className="text-muted-foreground">
-            Visualize e gerencie suas atividades diárias de forma inteligente
-          </p>
+        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">📅 Meu Dia</h1>
+            <p className="text-muted-foreground">
+              Visualize e gerencie suas atividades diárias de forma inteligente
+            </p>
+          </div>
+          <Button 
+            onClick={() => navigate('/rotas/planejar')}
+            className="flex items-center gap-2"
+          >
+            <Route className="h-4 w-4" />
+            Planejar Rotas
+          </Button>
         </div>
         
         <div className="grid md:grid-cols-[300px_1fr] gap-6">
@@ -91,7 +104,10 @@ export default function ColaboradorRelatorioDiario() {
           
           {eventos && (
             <Card className="p-4">
-              <h3 className="font-semibold mb-3">Resumo do Dia</h3>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                Resumo do Dia
+              </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Visitas:</span>
