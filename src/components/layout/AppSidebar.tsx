@@ -66,7 +66,7 @@ const defaultMenuItems = [
   { id: "clientes", title: "Clientes", url: "/clientes", icon: Users },
   { id: "prospects", title: "Pipeline de Vendas", url: "/prospects", icon: Target },
   { id: "tarefas", title: "Tarefas", url: "/tarefas", icon: CheckSquare },
-  
+  { id: "performance", title: "Performance Vendas", url: "/performance-vendas", icon: BarChart3 },
   
   { id: "produtos", title: "Produtos", url: "/produtos", icon: Package },
   { id: "marcas", title: "Marcas", url: "/marcas", icon: Tag },

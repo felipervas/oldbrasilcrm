@@ -32,6 +32,8 @@ export interface Prospect {
   longitude?: number;
   created_at: string;
   updated_at: string;
+  score?: number;
+  score_atualizado_em?: string;
   profiles?: {
     nome: string;
   };

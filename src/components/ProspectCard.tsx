@@ -1,11 +1,15 @@
-import { memo } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Building2, MapPin, User, Calendar, UserPlus } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Building2, MapPin, Calendar, User, Tag, AlertCircle } from 'lucide-react';
 import { Prospect } from '@/hooks/useProspects';
-import { format } from 'date-fns';
+import { memo } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
+import { CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { format } from 'date-fns';
+import { UserPlus } from 'lucide-react';
+import { ProspectScoreBadge } from './prospects/ProspectScoreBadge';
 
 interface ProspectCardProps {
   prospect: Prospect;
@@ -53,6 +57,9 @@ export const ProspectCard = memo(({ prospect, onClick, isSelected, onSelectChang
             <Building2 className="h-4 w-4 mt-1 text-muted-foreground shrink-0" />
             <h4 className="font-semibold text-sm line-clamp-2">{prospect.nome_empresa}</h4>
           </div>
+          {prospect.score !== undefined && prospect.score !== null && (
+            <ProspectScoreBadge score={prospect.score} showLabel={false} />
+          )}
         </div>
 
         <div className="space-y-1">
