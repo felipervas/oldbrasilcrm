@@ -265,34 +265,40 @@ export default function PerformanceVendas() {
                     <Skeleton className="h-64" />
                   ) : perdaPorVendedor && perdaPorVendedor.length > 0 ? (
                     <div className="space-y-4">
-                      {perdaPorVendedor.map((vendedor) => (
-                        <div key={vendedor.responsavel_id} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{vendedor.vendedor_nome}</span>
+                      {perdaPorVendedor.map((vendedor) => {
+                        const taxaPerda = vendedor.total_prospects > 0 
+                          ? ((vendedor.total_perdidos / vendedor.total_prospects) * 100).toFixed(1)
+                          : '0.0';
+                        
+                        return (
+                          <div key={vendedor.vendedor_id} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{vendedor.vendedor_nome}</span>
+                              <div className="flex gap-2">
+                                <Badge variant="default">
+                                  {Number(vendedor.taxa_conversao).toFixed(1)}% ganho
+                                </Badge>
+                                <Badge variant="destructive">
+                                  {taxaPerda}% perda
+                                </Badge>
+                              </div>
+                            </div>
                             <div className="flex gap-2">
-                              <Badge variant="default">
-                                {Number(vendedor.taxa_conversao).toFixed(1)}% ganho
-                              </Badge>
-                              <Badge variant="destructive">
-                                {Number(vendedor.taxa_perda).toFixed(1)}% perda
-                              </Badge>
+                              <div 
+                                className="bg-green-500 h-2 rounded"
+                                style={{ width: `${vendedor.taxa_conversao}%` }}
+                              />
+                              <div 
+                                className="bg-red-500 h-2 rounded"
+                                style={{ width: `${taxaPerda}%` }}
+                              />
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {vendedor.total_ganhos} ganhos / {vendedor.total_perdidos} perdas / {vendedor.total_prospects} total
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <div 
-                              className="bg-green-500 h-2 rounded"
-                              style={{ width: `${vendedor.taxa_conversao}%` }}
-                            />
-                            <div 
-                              className="bg-red-500 h-2 rounded"
-                              style={{ width: `${vendedor.taxa_perda}%` }}
-                            />
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {vendedor.total_ganhos} ganhos / {vendedor.total_perdas} perdas / {vendedor.total_prospects} total
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="py-12 text-center text-muted-foreground">
