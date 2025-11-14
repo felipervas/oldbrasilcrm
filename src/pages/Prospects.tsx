@@ -345,9 +345,9 @@ export default function Prospects() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="px-2 sm:px-4 py-3 sm:py-4 space-y-3 sm:space-y-4">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">Pipeline de Leads</h1>
             <p className="text-sm sm:text-base text-muted-foreground">
@@ -594,7 +594,9 @@ export default function Prospects() {
         </div>
 
         {/* Kanban Board - Layout otimizado para tela cheia com Drag and Drop */}
-        <div className="flex gap-3 min-h-[calc(100vh-300px)] overflow-x-auto pb-4">
+        <div className="flex gap-3 md:gap-4 min-h-[calc(100vh-280px)] md:min-h-[calc(100vh-240px)] overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory will-change-scroll"
+          style={{ scrollbarWidth: 'thin' }}
+        >
           {statusColumns.map((status) => {
             const statusProspects = prospectsByStatus[status] || [];
             return (
@@ -604,17 +606,17 @@ export default function Prospects() {
                 items={statusProspects.map(p => p.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="flex flex-col min-w-[300px] flex-1 max-w-[400px]">
+                <div className="flex flex-col min-w-[280px] sm:min-w-[320px] flex-1 snap-start transform-gpu h-full">
                   <div 
-                    className="bg-muted rounded-t-lg p-4 sticky top-0 z-10"
+                    className="bg-muted/80 backdrop-blur-sm rounded-t-lg p-3 sm:p-4 sticky top-0 z-10 border-b"
                     data-status={status}
                   >
-                    <h3 className="font-semibold">{statusLabels[status]}</h3>
+                    <h3 className="font-semibold text-sm sm:text-base">{statusLabels[status]}</h3>
                     <p className="text-xs text-muted-foreground">
                       {statusProspects.length} {statusProspects.length === 1 ? 'lead' : 'leads'}
                     </p>
                   </div>
-                  <ScrollArea className="flex-1 border border-t-0 rounded-b-lg p-3">
+                  <ScrollArea className="flex-1 border border-t-0 rounded-b-lg p-2 sm:p-3 h-[calc(100vh-360px)] md:h-[calc(100vh-320px)]">
                     <div className="space-y-3">
                       {statusProspects.map((prospect) => (
                         <SortableProspectCard key={prospect.id} prospect={prospect} />
