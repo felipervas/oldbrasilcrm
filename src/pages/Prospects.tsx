@@ -151,7 +151,7 @@ export default function Prospects() {
 
       toast({
         title: "Status atualizado",
-        description: `Prospect movido para ${statusLabels[newStatus]}`,
+        description: `Lead movido para ${statusLabels[newStatus]}`,
       });
     } catch (error) {
       console.error('Erro ao atualizar prospect:', error);
@@ -292,7 +292,7 @@ export default function Prospects() {
 
   const handleOpenTarefaModal = () => {
     if (selectedProspects.size === 0) {
-      toast({ title: "Selecione pelo menos um prospect", variant: "destructive" });
+      toast({ title: "Selecione pelo menos um lead", variant: "destructive" });
       return;
     }
     setTarefaModalOpen(true);
@@ -349,9 +349,9 @@ export default function Prospects() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Pipeline de Vendas</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Pipeline de Leads</h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Gerencie seus prospects e acompanhe o funil de vendas
+              Gerencie seus leads e acompanhe o funil de vendas
             </p>
           </div>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
@@ -369,7 +369,7 @@ export default function Prospects() {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Adicionar Vários Prospects</DialogTitle>
+                  <DialogTitle>Adicionar Vários Leads</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
@@ -405,7 +405,7 @@ export default function Prospects() {
                       Cancelar
                     </Button>
                     <Button onClick={handleBulkCreate}>
-                      Adicionar {bulkProspects.split('\n').filter(l => l.trim()).length} Prospects
+                      Adicionar {bulkProspects.split('\n').filter(l => l.trim()).length} Leads
                     </Button>
                   </div>
                 </div>
@@ -415,12 +415,12 @@ export default function Prospects() {
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Novo Prospect
+                  Novo Lead
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Novo Prospect</DialogTitle>
+                  <DialogTitle>Novo Lead</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
@@ -611,7 +611,7 @@ export default function Prospects() {
                   >
                     <h3 className="font-semibold">{statusLabels[status]}</h3>
                     <p className="text-xs text-muted-foreground">
-                      {statusProspects.length} {statusProspects.length === 1 ? 'prospect' : 'prospects'}
+                      {statusProspects.length} {statusProspects.length === 1 ? 'lead' : 'leads'}
                     </p>
                   </div>
                   <ScrollArea className="flex-1 border border-t-0 rounded-b-lg p-3">
