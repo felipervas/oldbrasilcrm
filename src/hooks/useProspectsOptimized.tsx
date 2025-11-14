@@ -9,6 +9,7 @@ export const useProspectsOptimized = () => {
       const { data, error } = await supabase
         .from('prospects_with_last_interaction')
         .select('*')
+        .order('score', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
