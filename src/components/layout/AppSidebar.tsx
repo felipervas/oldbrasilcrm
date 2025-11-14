@@ -64,7 +64,7 @@ const defaultMenuItems = [
   { id: "meu-perfil", title: "Meu Perfil", url: "/meu-perfil", icon: User },
   { id: "loja-online", title: "Ver Loja Online", url: "/", icon: ShoppingBag },
   { id: "clientes", title: "Clientes", url: "/clientes", icon: Users },
-  { id: "prospects", title: "Pipeline de Vendas", url: "/prospects", icon: Target },
+  { id: "prospects", title: "Pipeline de Leads", url: "/prospects", icon: Target },
   { id: "tarefas", title: "Tarefas", url: "/tarefas", icon: CheckSquare },
   { id: "performance", title: "Performance Vendas", url: "/performance-vendas", icon: BarChart3 },
   
