@@ -23,12 +23,21 @@ export default defineConfig(({ mode }) => ({
           'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-tabs'],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-icons': ['lucide-react'],
-          'vendor-charts': ['recharts'], // Separar Recharts (gráficos pesados)
-          'vendor-pdf': ['pdfjs-dist'], // Separar PDF.js (2MB)
-          'vendor-date': ['date-fns'], // Separar date-fns
+          'vendor-charts': ['recharts'],
+          'vendor-pdf': ['pdfjs-dist'],
+          'vendor-date': ['date-fns'],
+          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
         },
       },
     },
     chunkSizeWarningLimit: 1000,
+    // 🚀 Minificação agressiva para produção
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
   },
 }));

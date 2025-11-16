@@ -120,6 +120,9 @@ export function AppSidebar() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // No mobile, sempre mostrar texto quando aberto
+  const showText = isMobile ? true : open;
   const { toast } = useToast();
   const { data: isAdmin } = useIsAdmin();
   const [menuItems, setMenuItems] = useState(defaultMenuItems);
@@ -249,12 +252,10 @@ export function AppSidebar() {
     icon: Store,
   };
 
-  // No mobile, sempre mostrar texto quando aberto
-  // No desktop, seguir o comportamento do collapsible
-  const showText = isMobile ? open : open;
-
   return (
-    <Sidebar className={open ? "w-64" : "w-16"} collapsible={isMobile ? "offcanvas" : "icon"}>
+    <Sidebar 
+      className={isMobile ? "w-[280px]" : (open ? "w-64" : "w-16")}
+      collapsible={isMobile ? "offcanvas" : "icon"}>
       <SidebarHeader className="border-b border-sidebar-border p-4">
         {open && (
           <div className="flex items-center gap-3">
