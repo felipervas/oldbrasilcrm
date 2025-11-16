@@ -12,6 +12,14 @@ export default {
         "2xl": "1400px",
       },
     },
+    screens: {
+      'xs': '375px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       colors: {
         border: "hsl(var(--border))",
@@ -66,6 +74,20 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        loja: {
+          primary: "hsl(var(--loja-primary))",
+          "primary-light": "hsl(var(--loja-primary-light))",
+          secondary: "hsl(var(--loja-secondary))",
+          accent: "hsl(var(--loja-accent))",
+        },
+        crm: {
+          primary: "hsl(var(--crm-primary))",
+          "primary-dark": "hsl(var(--crm-primary-dark))",
+          secondary: "hsl(var(--crm-secondary))",
+          accent: "hsl(var(--crm-accent))",
+          "sidebar-from": "hsl(var(--crm-sidebar-from))",
+          "sidebar-to": "hsl(var(--crm-sidebar-to))",
+        },
       },
       backgroundImage: {
         "gradient-primary": "var(--gradient-primary)",
@@ -76,6 +98,10 @@ export default {
         card: "var(--shadow-card)",
         elevated: "var(--shadow-elevated)",
         glow: "var(--shadow-glow)",
+        "loja-card": "var(--loja-shadow-card)",
+        "loja-hover": "var(--loja-shadow-hover)",
+        "crm-card": "var(--crm-shadow-card)",
+        "crm-hover": "var(--crm-shadow-hover)",
       },
       transitionProperty: {
         smooth: "var(--transition-smooth)",

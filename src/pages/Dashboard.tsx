@@ -81,12 +81,12 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8">
+    <div className="flex-1 space-y-6 p-4 md:p-8 bg-gradient-to-br from-[hsl(262_90%_98%)] via-white to-[hsl(217_91%_98%)]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(217_91%_60%)] bg-clip-text text-transparent">
               Dashboard
             </h1>
             <p className="text-muted-foreground">
@@ -99,26 +99,45 @@ const Dashboard = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {statCards.map((stat) => (
           <Card 
-            key={stat.title} 
-            className="shadow-card hover:shadow-elevated transition-shadow cursor-pointer"
+            key={stat.title}
+            className="group relative overflow-hidden border-0 bg-white/70 backdrop-blur-md shadow-crm-card hover:shadow-crm-hover transition-all duration-500 hover:-translate-y-1 cursor-pointer"
             onClick={() => navigate(stat.link)}
           >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+            {/* Gradiente de Fundo Sutil */}
+            <div className="absolute inset-0 bg-gradient-to-br from-transparent to-[hsl(262_83%_58%)]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-semibold text-gray-700">
                 {stat.title}
               </CardTitle>
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              
+              {/* Ícone com Glassmorphism */}
+              <div className="relative">
+                <div className={`p-3 rounded-2xl backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 ${stat.bgColor}`}>
+                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                </div>
+                {/* Glow Effect */}
+                <div className={`absolute -inset-2 rounded-2xl blur-lg opacity-0 group-hover:opacity-50 transition-opacity ${stat.bgColor}`} />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {loadingStats ? <Skeleton className="h-8 w-16" /> : stat.value}
+            
+            <CardContent className="relative">
+              {/* Número com Gradiente */}
+              <div className="text-4xl font-black bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(217_91%_60%)] bg-clip-text text-transparent mb-1">
+                {loadingStats ? <Skeleton className="h-10 w-20" /> : stat.value}
               </div>
-              <p className="text-xs text-muted-foreground">
+              
+              <p className="text-xs text-gray-600 font-medium flex items-center gap-1">
                 {stat.description}
+                <svg className="h-3 w-3 text-[hsl(142_76%_45%)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                  <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
               </p>
             </CardContent>
+            
+            {/* Borda Animada no Hover */}
+            <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(217_91%_60%)] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
           </Card>
         ))}
       </div>
