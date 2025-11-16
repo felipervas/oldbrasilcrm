@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { ChevronRight, MessageCircle, Package } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ChevronRight, MessageCircle, Package, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,7 @@ import { isMarcaVolatil, getCorMarca } from "@/lib/precosLoja";
 
 export default function ProdutoDetalhes() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [imagemAtual, setImagemAtual] = useState(0);
 
   const { data: produto, isLoading } = useProdutoDetalhes(id!);
@@ -63,8 +64,21 @@ export default function ProdutoDetalhes() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        {/* Botão Voltar Mobile */}
+        <div className="md:hidden mb-4">
+          <Button 
+            variant="ghost" 
+            size="lg"
+            onClick={() => navigate(-1)}
+            className="w-full justify-start text-lg"
+          >
+            <ArrowLeft className="mr-2 h-5 w-5" />
+            Voltar para Produtos
+          </Button>
+        </div>
+
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-8">
+        <nav className="hidden md:flex items-center space-x-2 text-sm text-muted-foreground mb-8">
           <Link to="/loja" className="hover:text-primary">
             Loja
           </Link>

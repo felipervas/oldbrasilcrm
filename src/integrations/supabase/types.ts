@@ -391,6 +391,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "clientes_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "v_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
+          },
         ]
       }
       colaborador_eventos: {
@@ -689,6 +696,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "v_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
           },
         ]
       }
@@ -1002,6 +1016,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_responsavel_venda_id_fkey"
+            columns: ["responsavel_venda_id"]
+            isOneToOne: false
+            referencedRelation: "v_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
           },
         ]
       }
@@ -1398,6 +1419,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "prospect_interacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "v_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
+          },
         ]
       }
       prospect_visitas: {
@@ -1485,6 +1513,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "prospect_visitas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "v_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
+          },
         ]
       }
       prospects: {
@@ -1510,6 +1545,8 @@ export type Database = {
           prioridade: string
           produto_utilizado: string | null
           responsavel_id: string | null
+          score: number | null
+          score_atualizado_em: string | null
           segmento: string | null
           site: string | null
           status: string
@@ -1538,6 +1575,8 @@ export type Database = {
           prioridade?: string
           produto_utilizado?: string | null
           responsavel_id?: string | null
+          score?: number | null
+          score_atualizado_em?: string | null
           segmento?: string | null
           site?: string | null
           status?: string
@@ -1566,6 +1605,8 @@ export type Database = {
           prioridade?: string
           produto_utilizado?: string | null
           responsavel_id?: string | null
+          score?: number | null
+          score_atualizado_em?: string | null
           segmento?: string | null
           site?: string | null
           status?: string
@@ -1600,6 +1641,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospects_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "v_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
           },
         ]
       }
@@ -1753,6 +1801,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tarefas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "v_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
+          },
         ]
       }
       user_roles: {
@@ -1833,6 +1888,8 @@ export type Database = {
           produto_utilizado: string | null
           responsavel_id: string | null
           responsavel_nome: string | null
+          score: number | null
+          score_atualizado_em: string | null
           segmento: string | null
           site: string | null
           status: string | null
@@ -1869,7 +1926,71 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "prospects_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "v_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
+          },
         ]
+      }
+      v_analise_perda: {
+        Row: {
+          motivo_perda: string | null
+          percentual: number | null
+          total_perdas: number | null
+        }
+        Relationships: []
+      }
+      v_perda_por_vendedor: {
+        Row: {
+          taxa_conversao: number | null
+          total_ganhos: number | null
+          total_perdidos: number | null
+          total_prospects: number | null
+          vendedor_id: string | null
+          vendedor_nome: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospects_responsavel_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "mv_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
+          },
+          {
+            foreignKeyName: "prospects_responsavel_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospects_responsavel_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "v_performance_vendedores"
+            referencedColumns: ["vendedor_id"]
+          },
+        ]
+      }
+      v_performance_vendedores: {
+        Row: {
+          faturamento_total: number | null
+          prospects_convertidos: number | null
+          tarefas_concluidas: number | null
+          taxa_conversao: number | null
+          tempo_primeira_resposta_horas: number | null
+          ticket_medio: number | null
+          total_pedidos: number | null
+          total_prospects: number | null
+          total_tarefas: number | null
+          vendedor_id: string | null
+          vendedor_nome: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
@@ -1879,6 +2000,10 @@ export type Database = {
           compra_mensal_media: number
           total_comprado: number
         }[]
+      }
+      calcular_score_prospect: {
+        Args: { prospect_id: string }
+        Returns: number
       }
       get_cliente_produtos_historico: {
         Args: { cliente_uuid: string }

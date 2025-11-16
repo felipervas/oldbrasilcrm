@@ -163,12 +163,14 @@ export default function Prospects() {
     }
   }, [prospects, updateProspectMutation, toast]);
 
+  // 🚀 OTIMIZAÇÃO: Filtros com useMemo para evitar re-renders
   const filteredProspects = useMemo(() => {
     if (!prospects) return [];
 
     return prospects.filter((p) => {
       const matchSearch = p.nome_empresa.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        p.cidade?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+        p.cidade?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        p.segmento?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       const matchEstado = filterEstado === 'todos' || p.estado === filterEstado;
       const matchCidade = filterCidade === 'todos' || p.cidade === filterCidade;
       const matchPorte = filterPorte === 'todos' || p.porte === filterPorte;
@@ -178,6 +180,7 @@ export default function Prospects() {
     });
   }, [prospects, debouncedSearchTerm, filterEstado, filterCidade, filterPorte, filterPrioridade]);
 
+  // 🚀 OTIMIZAÇÃO: Agrupar prospects por status
   const prospectsByStatus = useMemo(() => {
     const grouped: Record<ProspectStatus, Prospect[]> = {
       novo: [],

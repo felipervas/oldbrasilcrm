@@ -1,5 +1,5 @@
-import { useParams, Link } from "react-router-dom";
-import { ChevronRight, Package, ExternalLink } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ChevronRight, Package, ExternalLink, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 export default function MarcaProdutos() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [ordenacao, setOrdenacao] = useState("ordem_exibicao");
   const [busca, setBusca] = useState("");
   const buscaDebounced = useDebounce(busca, 500);
@@ -61,9 +62,22 @@ export default function MarcaProdutos() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Botão Voltar Mobile */}
+      <div className="md:hidden container mx-auto px-4 pt-4">
+        <Button 
+          variant="ghost" 
+          size="lg"
+          onClick={() => navigate(-1)}
+          className="w-full justify-start text-lg"
+        >
+          <ArrowLeft className="mr-2 h-5 w-5" />
+          Voltar para Loja
+        </Button>
+      </div>
+
       {/* Breadcrumb */}
       <div className="container mx-auto px-4 py-6">
-        <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+        <nav className="hidden md:flex items-center space-x-2 text-sm text-muted-foreground">
           <Link to="/loja" className="hover:text-primary">
             Loja
           </Link>

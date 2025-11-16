@@ -6,13 +6,40 @@ import { useLojaAgrupada } from "@/hooks/useLojaAgrupada";
 import { gerarLinkWhatsApp } from "@/lib/whatsapp";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function LojaHome() {
+  const queryClient = useQueryClient();
   const { data: marcas, isLoading } = useLojaAgrupada();
   const [busca, setBusca] = useState("");
   const buscaDebounced = useDebounce(busca, 300);
+
+  // 🚀 PREFETCH: Carregar detalhes dos produtos mais acessados
+  useEffect(() => {
+    if (marcas && marcas.length > 0) {
+      // Prefetch dos primeiros 3 produtos das 5 primeiras marcas
+      marcas.slice(0, 5).forEach(marca => {
+        marca.produtos.slice(0, 3).forEach(produto => {
+          queryClient.prefetchQuery({
+            queryKey: ['produto-detalhes', produto.id],
+            queryFn: async () => {
+              const { data } = await import('@/integrations/supabase/client').then(m => 
+                m.supabase
+                  .from('produtos')
+                  .select('*, produto_imagens(*), marcas(*)')
+                  .eq('id', produto.id)
+                  .single()
+              );
+              return data;
+            },
+            staleTime: 5 * 60 * 1000,
+          });
+        });
+      });
+    }
+  }, [marcas, queryClient]);
 
   // Filtrar produtos por busca
   const marcasFiltradas = useMemo(() => {
