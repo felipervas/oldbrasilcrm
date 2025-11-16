@@ -15,7 +15,7 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        "loja-primary": "relative overflow-hidden group bg-gradient-to-r from-[hsl(16_100%_57%)] to-[hsl(16_100%_67%)] text-white hover:shadow-loja-hover hover:scale-105 transition-all duration-300 before:absolute before:inset-0 before:bg-white/20 before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700",
+        "loja-primary": "relative overflow-hidden group bg-gradient-to-r from-[hsl(199_89%_58%)] to-[hsl(142_70%_65%)] text-white hover:shadow-loja-hover hover:scale-105 transition-all duration-300 before:absolute before:inset-0 before:bg-white/20 before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-700",
         "crm-primary": "relative overflow-hidden bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(217_91%_60%)] text-white hover:shadow-crm-hover hover:scale-105 transition-all duration-300",
       },
       size: {

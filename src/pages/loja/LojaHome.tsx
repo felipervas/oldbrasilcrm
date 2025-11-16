@@ -61,26 +61,26 @@ export default function LojaHome() {
       <ModalAtendimentoExclusivo />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#FFF5F2] via-[#FFF9E6] to-[#F0FDF4] py-20 md:py-28">
+      <section className="relative overflow-hidden bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-50 py-20 md:py-28">
         {/* Background Pattern Decorativo */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <div className="absolute top-10 left-10 w-64 h-64 bg-[hsl(16_100%_57%)] rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-[hsl(142_76%_45%)] rounded-full blur-3xl" />
+          <div className="absolute top-10 left-10 w-64 h-64 bg-[hsl(199_89%_58%)] rounded-full blur-3xl" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-[hsl(340_82%_70%)] rounded-full blur-3xl" />
         </div>
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center space-y-8">
             {/* Badge Destaque */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-[hsl(16_100%_57%)]/20 animate-fade-in">
-              <span className="w-2 h-2 bg-[hsl(16_100%_57%)] rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-[hsl(16_100%_57%)]">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-blue-200 animate-fade-in">
+              <span className="w-2 h-2 bg-[hsl(199_89%_58%)] rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-blue-700">
                 Produtos Premium para Profissionais
               </span>
             </div>
 
             {/* Título Principal com Gradiente */}
             <h1 className="text-5xl md:text-7xl font-black animate-fade-in">
-              <span className="bg-gradient-to-r from-[hsl(16_100%_57%)] via-[hsl(16_100%_67%)] to-[hsl(142_76%_45%)] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[hsl(199_89%_58%)] via-[hsl(340_82%_70%)] to-[hsl(142_70%_65%)] bg-clip-text text-transparent">
                 Loja OLD BRASIL
               </span>
             </h1>
@@ -88,9 +88,9 @@ export default function LojaHome() {
             {/* Subtítulo com Maior Destaque */}
             <p className="text-xl md:text-2xl text-gray-700 font-medium leading-relaxed animate-fade-in">
               Ingredientes e Acessórios de{" "}
-              <span className="text-[hsl(16_100%_57%)] font-bold">Alta Performance</span>
+              <span className="text-[hsl(199_89%_58%)] font-bold">Alta Performance</span>
               {" "}para Sorveterias e Confeitarias que buscam{" "}
-              <span className="text-[hsl(142_76%_45%)] font-bold">Excelência</span>
+              <span className="text-[hsl(142_70%_65%)] font-bold">Excelência</span>
             </p>
 
             {/* CTA com Micro-interação */}
@@ -111,7 +111,7 @@ export default function LojaHome() {
                 variant="outline" 
                 size="lg"
                 onClick={() => document.getElementById('produtos')?.scrollIntoView({ behavior: 'smooth' })}
-                className="border-2 border-[hsl(16_100%_57%)] text-[hsl(16_100%_57%)] hover:bg-[hsl(16_100%_57%)] hover:text-white font-semibold px-8 py-6 text-lg transition-all duration-300"
+                className="border-2 border-[hsl(199_89%_58%)] text-[hsl(199_89%_58%)] hover:bg-[hsl(199_89%_58%)] hover:text-white font-semibold px-8 py-6 text-lg transition-all duration-300"
               >
                 Ver Catálogo
                 <svg className="ml-2 h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -123,20 +123,20 @@ export default function LojaHome() {
             {/* Social Proof */}
             <div className="flex items-center justify-center gap-8 pt-8 text-sm text-gray-600 animate-fade-in flex-wrap">
               <div className="flex items-center gap-2">
-                <svg className="h-5 w-5 text-[hsl(142_76%_45%)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="h-5 w-5 text-[hsl(142_70%_65%)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                   <polyline points="22 4 12 14.01 9 11.01"></polyline>
                 </svg>
                 <span>Entrega Rápida</span>
               </div>
               <div className="flex items-center gap-2">
-                <svg className="h-5 w-5 text-[hsl(142_76%_45%)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="h-5 w-5 text-[hsl(142_70%_65%)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
                 <span>Garantia de Qualidade</span>
               </div>
               <div className="flex items-center gap-2">
-                <svg className="h-5 w-5 text-[hsl(142_76%_45%)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="h-5 w-5 text-[hsl(142_70%_65%)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="8" r="7"></circle>
                   <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
                 </svg>

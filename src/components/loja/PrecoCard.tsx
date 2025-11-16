@@ -68,19 +68,14 @@ export const PrecoCard = ({
 
       return (
         <div className="space-y-2">
-          {nomeTabela && (
-            <Badge variant="outline" className="text-xs mb-1">
-              📋 {nomeTabela}
-            </Badge>
-          )}
-          <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg">
+          <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-sky-50 dark:from-blue-950 dark:to-sky-950 rounded-lg border border-blue-100 dark:border-blue-800">
             <span className="text-sm">{iconEmb} {nomeEmb} ({infoPreco.pesoEmbalagem}kg)</span>
-            <span className="font-bold text-lg">{formatarPreco(infoPreco.precoEmbalagem)}</span>
+            <span className="font-bold text-lg text-blue-700 dark:text-blue-400">{formatarPreco(infoPreco.precoEmbalagem)}</span>
           </div>
           {infoPreco.precoDose && (
-            <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-              <span className="text-sm">🥄 Dose ({infoPreco.rendimentoDose}g)</span>
-              <span className="font-bold text-lg text-green-700 dark:text-green-400">
+            <div className="flex justify-between items-center p-2.5 bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950 dark:to-rose-950 rounded-lg border border-pink-200 dark:border-pink-800">
+              <span className="text-xs font-medium text-pink-900 dark:text-pink-200">🥄 Dose ({infoPreco.rendimentoDose}g)</span>
+              <span className="font-bold text-base text-pink-700 dark:text-pink-400">
                 {formatarPreco(infoPreco.precoDose)}
               </span>
             </div>
@@ -105,26 +100,21 @@ export const PrecoCard = ({
 
     return (
       <div className="space-y-2">
-        {nomeTabela && (
-          <Badge variant="outline" className="text-xs mb-1">
-            📋 {nomeTabela}
-          </Badge>
-        )}
-        <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg">
+        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-sky-50 dark:from-blue-950 dark:to-sky-950 rounded-lg border border-blue-100 dark:border-blue-800">
           <span className="text-sm">💰 Preço/kg</span>
-          <span className="font-bold text-lg">{formatarPreco(infoPreco.precoKg)}</span>
+          <span className="font-bold text-lg text-blue-700 dark:text-blue-400">{formatarPreco(infoPreco.precoKg)}</span>
         </div>
-        <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-          <span className="text-sm">🥄 Dose ({infoPreco.rendimentoDose}g)</span>
-          <span className="font-bold text-lg text-green-700 dark:text-green-400">
-            {formatarPreco(infoPreco.precoDose)}
-          </span>
-        </div>
-        <div className="flex justify-between items-center p-3 bg-accent/10 rounded-lg">
-          <span className="text-sm">{iconEmb} {nomeEmb} ({infoPreco.pesoEmbalagem}kg)</span>
-          <span className="font-bold text-lg text-accent-foreground">
-            {formatarPreco(infoPreco.precoEmbalagem)}
-          </span>
+        {infoPreco.precoDose && (
+          <div className="flex justify-between items-center p-2.5 bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-950 dark:to-rose-950 rounded-lg border border-pink-200 dark:border-pink-800">
+            <span className="text-xs font-medium text-pink-900 dark:text-pink-200">🥄 Dose ({infoPreco.rendimentoDose}g)</span>
+            <span className="font-bold text-base text-pink-700 dark:text-pink-400">
+              {formatarPreco(infoPreco.precoDose)}
+            </span>
+          </div>
+        )}
+        <div className="flex justify-between items-center p-2.5 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950 dark:to-yellow-950 rounded-lg border border-amber-200 dark:border-amber-800">
+          <span className="text-xs text-amber-900 dark:text-amber-200">{iconEmb} {nomeEmb} ({infoPreco.pesoEmbalagem}kg)</span>
+          <span className="font-semibold text-sm text-amber-700 dark:text-amber-400">{formatarPreco(infoPreco.precoEmbalagem)}</span>
         </div>
       </div>
     );
@@ -149,18 +139,13 @@ export const PrecoCard = ({
 
     return (
       <div className="space-y-2">
-        {nomeTabela && (
-          <Badge variant="outline" className="text-xs mb-1">
-            📋 {nomeTabela}
-          </Badge>
-        )}
-        <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950 rounded-lg">
+        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950 rounded-lg border border-orange-200 dark:border-orange-800">
           <span className="text-sm">💰 Preço/kg (ref)</span>
-          <span className="font-bold text-lg">{formatarPreco(infoPreco.precoKg)}</span>
+          <span className="font-bold text-lg text-orange-700 dark:text-orange-400">{formatarPreco(infoPreco.precoKg)}</span>
         </div>
-        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-          <span className="text-sm">{iconEmb} {nomeEmb} {infoPreco.pesoEmbalagem}kg</span>
-          <span className="font-bold text-lg">{formatarPreco(infoPreco.precoEmbalagem)}</span>
+        <div className="flex justify-between items-center p-2.5 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950 dark:to-yellow-950 rounded-lg border border-amber-200 dark:border-amber-800">
+          <span className="text-xs text-amber-900 dark:text-amber-200">{iconEmb} {nomeEmb} ({infoPreco.pesoEmbalagem}kg)</span>
+          <span className="font-semibold text-sm text-amber-700 dark:text-amber-400">{formatarPreco(infoPreco.precoEmbalagem)}</span>
         </div>
         <p className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
           ⚠️ Preço sujeito a variação
@@ -187,14 +172,9 @@ export const PrecoCard = ({
 
     return (
       <div className="space-y-2">
-        {nomeTabela && (
-          <Badge variant="outline" className="text-xs mb-1">
-            📋 {nomeTabela}
-          </Badge>
-        )}
-        <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg">
+        <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-sky-50 dark:from-blue-950 dark:to-sky-950 rounded-lg border border-blue-100 dark:border-blue-800">
           <span className="text-sm">{iconEmb} {nomeEmb} ({infoPreco.pesoEmbalagem}kg)</span>
-          <span className="font-bold text-lg">{formatarPreco(infoPreco.precoEmbalagem)}</span>
+          <span className="font-bold text-lg text-blue-700 dark:text-blue-400">{formatarPreco(infoPreco.precoEmbalagem)}</span>
         </div>
       </div>
     );
@@ -216,18 +196,13 @@ export const PrecoCard = ({
 
   return (
     <div className="space-y-2">
-      {nomeTabela && (
-        <Badge variant="outline" className="text-xs mb-1">
-          📋 {nomeTabela}
-        </Badge>
-      )}
-      <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg">
+      <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-sky-50 dark:from-blue-950 dark:to-sky-950 rounded-lg border border-blue-100 dark:border-blue-800">
         <span className="text-sm">💰 Preço/kg</span>
-        <span className="font-bold text-lg">{formatarPreco(infoPreco.precoKg)}</span>
+        <span className="font-bold text-lg text-blue-700 dark:text-blue-400">{formatarPreco(infoPreco.precoKg)}</span>
       </div>
-      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-        <span className="text-sm">{iconEmb} {nomeEmb} {infoPreco.pesoEmbalagem}kg</span>
-        <span className="font-bold text-lg">{formatarPreco(infoPreco.precoEmbalagem)}</span>
+      <div className="flex justify-between items-center p-2.5 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950 dark:to-yellow-950 rounded-lg border border-amber-200 dark:border-amber-800">
+        <span className="text-xs text-amber-900 dark:text-amber-200">{iconEmb} {nomeEmb} ({infoPreco.pesoEmbalagem}kg)</span>
+        <span className="font-semibold text-sm text-amber-700 dark:text-amber-400">{formatarPreco(infoPreco.precoEmbalagem)}</span>
       </div>
     </div>
   );
