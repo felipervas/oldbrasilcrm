@@ -65,13 +65,13 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
     <Card className="group relative overflow-hidden border-0 bg-white shadow-loja-card hover:shadow-loja-hover transition-all duration-500 hover:-translate-y-2">
       {/* Badge Destaque */}
       {produto.destaque_loja && (
-        <div className="absolute top-4 right-4 z-10 bg-gradient-to-r from-[hsl(16_100%_57%)] to-[hsl(16_100%_67%)] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+        <div className="absolute top-4 right-4 z-10 bg-gradient-to-r from-[hsl(340_82%_70%)] to-[hsl(340_82%_80%)] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
           ⭐ Destaque
         </div>
       )}
 
       {/* Imagem com Efeito Zoom */}
-      <div ref={imgRef} className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+      <div ref={imgRef} className="relative aspect-square overflow-hidden bg-gradient-to-br from-sky-50 to-blue-50">
         {isVisible ? (
           <img
             src={imagemPrincipal}
@@ -95,7 +95,7 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
           <Button 
             size="sm" 
-            className="bg-white text-[hsl(16_100%_57%)] hover:bg-[hsl(16_100%_57%)] hover:text-white font-semibold transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
+            className="bg-white text-[hsl(199_89%_58%)] hover:bg-[hsl(199_89%_58%)] hover:text-white font-semibold transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
           >
             Ver Detalhes
           </Button>
@@ -107,19 +107,19 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
         <div className="flex items-center gap-2">
           <Badge 
             variant="secondary" 
-            className="text-xs bg-gradient-to-r from-[hsl(16_100%_57%)]/10 to-[hsl(16_100%_67%)]/10 text-[hsl(16_100%_57%)] border-[hsl(16_100%_57%)]/20"
+            className="text-xs bg-gradient-to-r from-blue-50 to-sky-50 text-blue-700 border-blue-200"
           >
             {marca}
           </Badge>
         </div>
 
         {/* Nome do Produto */}
-        <h3 className="font-bold text-lg leading-tight text-gray-900 line-clamp-2 group-hover:text-[hsl(16_100%_57%)] transition-colors">
+        <h3 className="font-bold text-lg leading-tight text-gray-900 line-clamp-2 group-hover:text-[hsl(199_89%_58%)] transition-colors">
           {produto.nome_loja || produto.nome}
         </h3>
 
         {/* Preço com Destaque */}
-        <div className="bg-gradient-to-br from-[#FFF5F2] to-[#FFF9E6] border border-[hsl(16_100%_57%)]/20 p-4 rounded-xl">
+        <div className="bg-gradient-to-br from-sky-50 to-blue-50 border border-blue-100 p-4 rounded-xl">
           <PrecoCard produto={produto} />
         </div>
 

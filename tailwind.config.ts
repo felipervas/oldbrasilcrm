@@ -79,6 +79,7 @@ export default {
           "primary-light": "hsl(var(--loja-primary-light))",
           secondary: "hsl(var(--loja-secondary))",
           accent: "hsl(var(--loja-accent))",
+          cream: "hsl(var(--loja-cream))",
         },
         crm: {
           primary: "hsl(var(--crm-primary))",

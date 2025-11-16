@@ -46,16 +46,16 @@ export const LojaHeader = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/90 border-b border-[hsl(16_100%_57%)]/10 shadow-lg">
+      <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/90 border-b border-blue-200/50 shadow-lg">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             {/* Logo com Gradiente */}
             <Link to="/loja" className="flex items-center space-x-3 group">
               <div className="relative">
                 <img src={logo} alt="OLD BRASIL" className="h-12 w-auto transition-transform group-hover:scale-110" />
-                <div className="absolute -inset-1 bg-gradient-to-r from-[hsl(16_100%_57%)] to-[hsl(142_76%_45%)] rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity" />
+                <div className="absolute -inset-1 bg-gradient-to-r from-[hsl(199_89%_58%)] to-[hsl(142_70%_65%)] rounded-full blur opacity-20 group-hover:opacity-40 transition-opacity" />
               </div>
-              <span className="font-black text-xl hidden sm:inline bg-gradient-to-r from-[hsl(16_100%_57%)] to-[hsl(16_100%_67%)] bg-clip-text text-transparent" translate="no">
+              <span className="font-black text-xl hidden sm:inline bg-gradient-to-r from-[hsl(199_89%_58%)] to-[hsl(142_70%_65%)] bg-clip-text text-transparent" translate="no">
                 Loja OLD BRASIL
               </span>
             </Link>
