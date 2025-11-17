@@ -79,7 +79,7 @@ const defaultMenuItems = [
   { id: "gestor-dashboard", title: "Dashboard Gestor", url: "/gestor/dashboard", icon: BarChart3, restricted: true },
 ];
 
-function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; open: boolean }) {
+function SortableMenuItem({ item, open, onNavigate }: { item: typeof defaultMenuItems[0]; open: boolean; onNavigate?: () => void }) {
   const {
     attributes,
     listeners,
@@ -100,6 +100,7 @@ function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; op
           <NavLink
             to={item.url}
             end
+            onClick={onNavigate}
             className={({ isActive }) =>
               `group relative overflow-hidden rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 ${
                 isActive
@@ -249,6 +250,12 @@ export function AppSidebar() {
     }
   };
 
+  const handleNavClick = () => {
+    if (isMobile && open) {
+      setOpen(false);
+    }
+  };
+
   const visibleMenuItems = menuItems.filter(item => 
     !item.restricted || (item.restricted && canViewFinanceiro)
   );
@@ -303,7 +310,7 @@ export function AppSidebar() {
               >
                 <SidebarMenu>
                   {visibleMenuItems.map((item) => (
-                    <SortableMenuItem key={item.id} item={item} open={open} />
+                    <SortableMenuItem key={item.id} item={item} open={open} onNavigate={handleNavClick} />
                   ))}
                 </SidebarMenu>
               </SortableContext>
@@ -318,26 +325,53 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild className="group rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:shadow-lg">
-                    <NavLink to={gerenciarLojaItem.url}>
-                      <gerenciarLojaItem.icon className="h-4 w-4 text-slate-300 group-hover:text-white transition-colors" />
-                      {open && <span className="text-slate-300 group-hover:text-white font-medium transition-colors whitespace-nowrap">{gerenciarLojaItem.title}</span>}
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={gerenciarLojaItem.url}
+                      className={({ isActive }) =>
+                        `group relative overflow-hidden rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 ${
+                          isActive
+                            ? "bg-blue-600 shadow-lg text-white"
+                            : "text-slate-300 hover:text-white"
+                        }`
+                      }
+                    >
+                      <gerenciarLojaItem.icon className="h-4 w-4 transition-colors" />
+                      {open && <span className="font-medium transition-colors whitespace-nowrap">{gerenciarLojaItem.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild className="group rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:shadow-lg">
-                    <NavLink to="/gerenciar-equipe">
-                      <Users className="h-4 w-4 text-slate-300 group-hover:text-white transition-colors" />
-                      {open && <span className="text-slate-300 group-hover:text-white font-medium transition-colors whitespace-nowrap">Gerenciar Equipe</span>}
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/gerenciar-equipe"
+                      className={({ isActive }) =>
+                        `group relative overflow-hidden rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 ${
+                          isActive
+                            ? "bg-blue-600 shadow-lg text-white"
+                            : "text-slate-300 hover:text-white"
+                        }`
+                      }
+                    >
+                      <Users className="h-4 w-4 transition-colors" />
+                      {open && <span className="font-medium transition-colors whitespace-nowrap">Gerenciar Equipe</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild className="group rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:shadow-lg">
-                    <NavLink to="/administracao">
-                      <Shield className="h-4 w-4 text-slate-300 group-hover:text-white transition-colors" />
-                      {open && <span className="text-slate-300 group-hover:text-white font-medium transition-colors whitespace-nowrap">Administração</span>}
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/administracao"
+                      className={({ isActive }) =>
+                        `group relative overflow-hidden rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 ${
+                          isActive
+                            ? "bg-blue-600 shadow-lg text-white"
+                            : "text-slate-300 hover:text-white"
+                        }`
+                      }
+                    >
+                      <Shield className="h-4 w-4 transition-colors" />
+                      {open && <span className="font-medium transition-colors whitespace-nowrap">Administração</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
