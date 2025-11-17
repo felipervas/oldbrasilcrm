@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -41,8 +40,7 @@ export default function LeadsLoja() {
   };
 
   return (
-    <AppLayout>
-      <div className="flex-1 space-y-6 p-4 md:p-8">
+    <div className="space-y-6 p-4 md:p-8">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             Leads da Loja
@@ -142,6 +140,5 @@ export default function LeadsLoja() {
           </Card>
         </div>
       </div>
-    </AppLayout>
   );
 }

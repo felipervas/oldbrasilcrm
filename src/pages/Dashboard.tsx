@@ -8,7 +8,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useDashboardStats, useDashboardEntregas } from "@/hooks/useDashboardStats";
 import { Skeleton } from "@/components/ui/skeleton";
-import AppLayout from "@/components/layout/AppLayout";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -26,9 +25,8 @@ const Dashboard = () => {
   ];
 
   return (
-    <AppLayout>
-      <div className="flex-1 min-h-screen bg-slate-50 p-6">
-        <div className="flex items-center gap-4 mb-8">
+    <div className="p-6">
+      <div className="flex items-center gap-4 mb-8">
           <SidebarTrigger />
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
@@ -127,7 +125,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
   );
 };
 

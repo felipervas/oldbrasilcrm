@@ -1,4 +1,3 @@
-import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAnalisePerda, usePerdaPorVendedor, usePerformanceVendedores } from "@/hooks/useAnalytics";
@@ -22,8 +21,7 @@ export default function PerformanceVendas() {
   };
 
   return (
-    <AppLayout>
-      <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Performance de Vendas</h1>
@@ -341,6 +339,5 @@ export default function PerformanceVendas() {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
   );
 }

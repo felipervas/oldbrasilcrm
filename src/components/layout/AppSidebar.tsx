@@ -270,8 +270,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className="w-16 data-[state=expanded]:w-64 transition-all duration-300 ease-in-out relative overflow-hidden bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700"
-      collapsible={isMobile ? "offcanvas" : "icon"}>
+      className="h-screen sticky top-0 w-16 data-[state=expanded]:w-64 transition-all duration-300 bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700"
+      collapsible="icon"
+    >
       {/* Background Pattern Removido para Melhor Legibilidade */}
       
       <SidebarHeader className="relative z-10 p-6 border-b border-slate-700">

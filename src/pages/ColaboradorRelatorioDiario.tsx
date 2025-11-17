@@ -1,5 +1,4 @@
 import { useState, memo } from 'react';
-import AppLayout from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -71,8 +70,7 @@ export default function ColaboradorRelatorioDiario() {
   };
 
   return (
-    <AppLayout>
-      <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4">
         <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold mb-2">📅 Meu Dia</h1>
@@ -228,7 +226,6 @@ export default function ColaboradorRelatorioDiario() {
           )}
         </div>
       </div>
-      </div>
-    </AppLayout>
+    </div>
   );
 }
