@@ -297,7 +297,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem onClick={handleNavClick}>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/admin" className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary">
+                    <NavLink to="/admin" className={({ isActive }) => `hover:bg-sidebar-accent ${isActive ? 'bg-sidebar-accent text-sidebar-primary' : ''}`}>
                       <Shield className="h-5 w-5 flex-shrink-0" />
                       {open && <span className="ml-3 font-medium">Administração</span>}
                     </NavLink>
