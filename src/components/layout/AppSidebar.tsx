@@ -106,8 +106,11 @@ const SortableMenuItem = ({ item, open }: { item: MenuItem; open: boolean }) => 
         <NavLink 
           to={item.url} 
           end
-          className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          activeClassName="bg-sidebar-accent text-sidebar-primary"
+          className={({ isActive }) => 
+            `hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${
+              isActive ? 'bg-sidebar-accent text-sidebar-primary' : ''
+            }`
+          }
         >
           <item.icon className="h-5 w-5 flex-shrink-0" />
           {open && <span className="ml-3 font-medium">{item.title}</span>}
@@ -157,7 +160,7 @@ export function AppSidebar() {
       .eq('id', user.id)
       .single();
 
-    setHasFinanceAccess(profile?.perfil === 'admin' || profile?.perfil === 'financeiro');
+    setHasFinanceAccess(profile?.perfil === 'admin');
   };
 
   const loadMenuOrder = () => {
@@ -274,7 +277,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem onClick={handleNavClick}>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/gerenciar-equipe" className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary">
+                    <NavLink to="/gerenciar-equipe" className={({ isActive }) => `hover:bg-sidebar-accent ${isActive ? 'bg-sidebar-accent text-sidebar-primary' : ''}`}>
                       <Users className="h-5 w-5 flex-shrink-0" />
                       {open && <span className="ml-3 font-medium">Gerenciar Equipe</span>}
                     </NavLink>
