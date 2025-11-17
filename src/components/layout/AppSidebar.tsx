@@ -101,22 +101,19 @@ function SortableMenuItem({ item, showText }: { item: typeof defaultMenuItems[0]
             to={item.url}
             end
             className={({ isActive }) =>
-              `group relative overflow-hidden rounded-xl mb-1 transition-all duration-300 hover:bg-white/10 hover:shadow-lg ${
+              `group relative overflow-hidden rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 ${
                 isActive
-                  ? "bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(217_91%_60%)] shadow-xl text-white"
-                  : "text-white/70"
+                  ? "bg-blue-600 shadow-lg text-white"
+                  : "text-slate-300 hover:text-white"
               }`
             }
           >
             {({ isActive }) => (
               <>
-                {/* Hover Glow */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[hsl(262_83%_58%)]/20 to-[hsl(217_91%_60%)]/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                
-                <item.icon className={`h-4 w-4 transition-colors ${isActive ? "text-white scale-110" : "text-white/70 group-hover:text-white group-hover:scale-110"}`} />
+                <item.icon className={`h-4 w-4 transition-colors ${isActive ? "text-white" : "text-slate-300 group-hover:text-white"}`} />
                 
                 {showText && (
-                  <span className={`font-medium transition-colors ${isActive ? "text-white" : "text-white/70 group-hover:text-white"}`}>
+                  <span className={`font-medium transition-colors ${isActive ? "text-white" : "text-slate-300 group-hover:text-white"}`}>
                     {item.title}
                   </span>
                 )}
@@ -268,36 +265,27 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className={`relative overflow-hidden bg-gradient-to-b from-[hsl(262_90%_15%)] to-[hsl(217_91%_20%)] border-r border-white/10 ${isMobile ? "w-[280px]" : (open ? "w-64" : "w-16")}`}
+      className={`relative overflow-hidden bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700 ${isMobile ? "w-[280px]" : (open ? "w-64" : "w-16")}`}
       collapsible={isMobile ? "offcanvas" : "icon"}>
-      {/* Background Pattern Sutil */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[hsl(262_83%_58%)] rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-[hsl(217_91%_60%)] rounded-full blur-3xl" />
-      </div>
+      {/* Background Pattern Removido para Melhor Legibilidade */}
       
-      <SidebarHeader className="relative z-10 p-6 border-b border-white/10">
+      <SidebarHeader className="relative z-10 p-6 border-b border-slate-700">
         {open && (
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <img src={oldLogo} alt="OLD Brasil" className="h-10 w-auto" />
-              {/* Glow Effect */}
-              <div className="absolute -inset-2 bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(217_91%_60%)] rounded-full blur opacity-40" />
-            </div>
+            <img src={oldLogo} alt="OLD Brasil" className="h-10 w-auto" />
             <div className="overflow-hidden">
-              <h2 className="font-black text-lg text-white whitespace-nowrap animate-fade-in">
+              <h2 className="font-bold text-lg text-white whitespace-nowrap">
                 OLD BRASIL
               </h2>
-              <p className="text-xs text-white/70 animate-fade-in">
+              <p className="text-xs text-slate-400">
                 CRM Profissional
               </p>
             </div>
           </div>
         )}
         {!open && !isMobile && (
-          <div className="flex items-center justify-center mx-auto relative">
+          <div className="flex items-center justify-center mx-auto">
             <img src={oldLogo} alt="OLD" className="h-8 w-auto" />
-            <div className="absolute -inset-2 bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(217_91%_60%)] rounded-full blur opacity-40" />
           </div>
         )}
       </SidebarHeader>
@@ -328,33 +316,30 @@ export function AppSidebar() {
         {/* Menu Admin - Não ordenável */}
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-white/70 text-xs font-semibold uppercase tracking-wider">Administração</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Administração</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild className="group relative overflow-hidden rounded-xl mb-1 transition-all duration-300 hover:bg-white/10 hover:shadow-lg data-[active=true]:bg-gradient-to-r data-[active=true]:from-[hsl(262_83%_58%)] data-[active=true]:to-[hsl(217_91%_60%)] data-[active=true]:shadow-xl">
+                  <SidebarMenuButton asChild className="group rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:shadow-lg">
                     <NavLink to={gerenciarLojaItem.url}>
-                      <div className="absolute inset-0 bg-gradient-to-r from-[hsl(262_83%_58%)]/20 to-[hsl(217_91%_60%)]/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <gerenciarLojaItem.icon className="h-4 w-4 text-white/70 group-hover:text-white transition-colors" />
-                      {showText && <span className="text-white/70 group-hover:text-white font-medium transition-colors">{gerenciarLojaItem.title}</span>}
+                      <gerenciarLojaItem.icon className="h-4 w-4 text-slate-300 group-hover:text-white transition-colors" />
+                      {showText && <span className="text-slate-300 group-hover:text-white font-medium transition-colors">{gerenciarLojaItem.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild className="group relative overflow-hidden rounded-xl mb-1 transition-all duration-300 hover:bg-white/10 hover:shadow-lg data-[active=true]:bg-gradient-to-r data-[active=true]:from-[hsl(262_83%_58%)] data-[active=true]:to-[hsl(217_91%_60%)] data-[active=true]:shadow-xl">
+                  <SidebarMenuButton asChild className="group rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:shadow-lg">
                     <NavLink to="/gerenciar-equipe">
-                      <div className="absolute inset-0 bg-gradient-to-r from-[hsl(262_83%_58%)]/20 to-[hsl(217_91%_60%)]/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <Users className="h-4 w-4 text-white/70 group-hover:text-white transition-colors" />
-                      {showText && <span className="text-white/70 group-hover:text-white font-medium transition-colors">Gerenciar Equipe</span>}
+                      <Users className="h-4 w-4 text-slate-300 group-hover:text-white transition-colors" />
+                      {showText && <span className="text-slate-300 group-hover:text-white font-medium transition-colors">Gerenciar Equipe</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild className="group relative overflow-hidden rounded-xl mb-1 transition-all duration-300 hover:bg-white/10 hover:shadow-lg data-[active=true]:bg-gradient-to-r data-[active=true]:from-[hsl(262_83%_58%)] data-[active=true]:to-[hsl(217_91%_60%)] data-[active=true]:shadow-xl">
+                  <SidebarMenuButton asChild className="group rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:shadow-lg">
                     <NavLink to="/administracao">
-                      <div className="absolute inset-0 bg-gradient-to-r from-[hsl(262_83%_58%)]/20 to-[hsl(217_91%_60%)]/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <Shield className="h-4 w-4 text-white/70 group-hover:text-white transition-colors" />
-                      {showText && <span className="text-white/70 group-hover:text-white font-medium transition-colors">Administração</span>}
+                      <Shield className="h-4 w-4 text-slate-300 group-hover:text-white transition-colors" />
+                      {showText && <span className="text-slate-300 group-hover:text-white font-medium transition-colors">Administração</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -364,10 +349,10 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="relative z-10 p-4 border-t border-white/10 bg-white/5 backdrop-blur-sm">
+      <SidebarFooter className="relative z-10 p-4 border-t border-slate-700 bg-slate-800/50">
         <Button
           variant="ghost"
-          className="w-full justify-start text-white/70 hover:bg-white/10 hover:text-white"
+          className="w-full justify-start text-slate-300 hover:bg-slate-700 hover:text-white"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />

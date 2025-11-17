@@ -49,25 +49,25 @@ All colors MUST be HSL.
     --gradient-subtle: linear-gradient(135deg, hsl(210, 20%, 98%) 0%, hsl(221, 83%, 97%) 100%);
     --shadow-elegant: 0 10px 30px -10px hsl(221 83% 53% / 0.15);
     
-    /* LOJA PÚBLICA - Paleta Sorvete Natural */
-    --loja-primary: 199 89% 58%;
-    --loja-primary-light: 199 89% 92%;
-    --loja-secondary: 340 82% 70%;
-    --loja-accent: 142 70% 65%;
-    --loja-cream: 45 100% 90%;
-    --loja-shadow-card: 0 4px 20px rgba(133, 193, 233, 0.15);
-    --loja-shadow-hover: 0 8px 30px rgba(133, 193, 233, 0.25);
+    /* LOJA PÚBLICA - Paleta Profissional Moderna */
+    --loja-primary: 215 85% 50%;        /* Azul profissional #1572E8 */
+    --loja-primary-light: 215 85% 96%;  /* Azul claro */
+    --loja-secondary: 20 95% 55%;       /* Laranja confiança #F25C2E */
+    --loja-accent: 142 71% 45%;         /* Verde sucesso */
+    --loja-cream: 0 0% 98%;             /* Off-white clean */
+    --loja-shadow-card: 0 4px 20px rgba(21, 114, 232, 0.10);
+    --loja-shadow-hover: 0 8px 30px rgba(21, 114, 232, 0.18);
     
-    /* CRM INTERNO - Paleta Profissional e Corporativa */
-    --crm-primary: 262 83% 58%;
-    --crm-primary-dark: 262 90% 50%;
-    --crm-secondary: 217 91% 60%;
-    --crm-accent: 142 76% 45%;
-    --crm-sidebar-from: 262 90% 15%;
-    --crm-sidebar-to: 217 91% 20%;
-    --crm-card-glass: rgba(255, 255, 255, 0.7);
-    --crm-shadow-card: 0 4px 20px rgba(124, 58, 237, 0.12);
-    --crm-shadow-hover: 0 8px 30px rgba(124, 58, 237, 0.2);
+    /* CRM INTERNO - Paleta Profissional Corporativa */
+    --crm-primary: 215 85% 50%;         /* Azul corporativo */
+    --crm-primary-dark: 215 90% 42%;    /* Azul escuro */
+    --crm-secondary: 220 70% 50%;       /* Azul steel */
+    --crm-accent: 142 71% 45%;          /* Verde sucesso */
+    --crm-sidebar-from: 220 30% 12%;    /* Slate escuro */
+    --crm-sidebar-to: 220 25% 15%;      /* Slate médio */
+    --crm-card-glass: rgba(255, 255, 255, 0.95);
+    --crm-shadow-card: 0 4px 20px rgba(15, 23, 42, 0.08);
+    --crm-shadow-hover: 0 8px 30px rgba(15, 23, 42, 0.12);
   }
 
   .dark {

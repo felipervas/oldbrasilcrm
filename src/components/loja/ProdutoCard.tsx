@@ -62,21 +62,21 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
   }, []);
 
   return (
-    <Card className="group relative overflow-hidden border-0 bg-white shadow-loja-card hover:shadow-loja-hover transition-all duration-500 hover:-translate-y-2">
+    <Card className="group relative overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
       {/* Badge Destaque */}
       {produto.destaque_loja && (
-        <div className="absolute top-4 right-4 z-10 bg-gradient-to-r from-[hsl(340_82%_70%)] to-[hsl(340_82%_80%)] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+        <div className="absolute top-3 right-3 z-10 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
           ⭐ Destaque
         </div>
       )}
 
       {/* Imagem com Efeito Zoom */}
-      <div ref={imgRef} className="relative aspect-square overflow-hidden bg-gradient-to-br from-sky-50 to-blue-50">
+      <div ref={imgRef} className="relative aspect-square overflow-hidden bg-slate-50">
         {isVisible ? (
           <img
             src={imagemPrincipal}
             alt={produto.nome_loja || produto.nome}
-            className="w-full h-full transition-transform duration-700 group-hover:scale-110"
+            className="w-full h-full transition-transform duration-500 group-hover:scale-105"
             style={{
               objectFit: (imagemConfig?.object_fit || 'cover') as any,
               width: imagemConfig?.largura ? `${imagemConfig.largura}px` : '100%',
@@ -91,37 +91,39 @@ export const ProdutoCard = memo(({ produto }: ProdutoCardProps) => {
           <Skeleton className="w-full h-full" />
         )}
         
-        {/* Overlay com Gradiente no Hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
-          <Button 
-            size="sm" 
-            className="bg-white text-[hsl(199_89%_58%)] hover:bg-[hsl(199_89%_58%)] hover:text-white font-semibold transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
-          >
-            Ver Detalhes
-          </Button>
+        {/* Overlay no Hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+          <Link to={`/loja/produto/${produto.id}`}>
+            <Button 
+              size="sm" 
+              className="bg-white text-blue-600 hover:bg-blue-50 font-semibold transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
+            >
+              Ver Detalhes
+            </Button>
+          </Link>
         </div>
       </div>
 
-      <CardContent className="p-5 space-y-3">
+      <CardContent className="p-4 space-y-3">
         {/* Badge da Marca */}
         <div className="flex items-center gap-2">
           <Badge 
             variant="secondary" 
-            className="text-xs bg-gradient-to-r from-blue-50 to-sky-50 text-blue-700 border-blue-200"
+            className={`text-xs ${corMarca} text-white border-0`}
           >
             {marca}
           </Badge>
         </div>
 
         {/* Nome do Produto */}
-        <h3 className="font-bold text-lg leading-tight text-gray-900 line-clamp-2 group-hover:text-[hsl(199_89%_58%)] transition-colors">
-          {produto.nome_loja || produto.nome}
-        </h3>
+        <Link to={`/loja/produto/${produto.id}`}>
+          <h3 className="font-semibold text-base leading-tight text-slate-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
+            {produto.nome_loja || produto.nome}
+          </h3>
+        </Link>
 
-        {/* Preço com Destaque */}
-        <div className="bg-gradient-to-br from-sky-50 to-blue-50 border border-blue-100 p-4 rounded-xl">
-          <PrecoCard produto={produto} />
-        </div>
+        {/* Preço */}
+        <PrecoCard produto={produto} compact />
 
         {/* Botão de Ação */}
         <Button 
