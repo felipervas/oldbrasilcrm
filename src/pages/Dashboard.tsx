@@ -100,44 +100,30 @@ const Dashboard = () => {
         {statCards.map((stat) => (
           <Card 
             key={stat.title}
-            className="group relative overflow-hidden border-0 bg-white/70 backdrop-blur-md shadow-crm-card hover:shadow-crm-hover transition-all duration-500 hover:-translate-y-1 cursor-pointer"
+            className="group relative overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer"
             onClick={() => navigate(stat.link)}
           >
-            {/* Gradiente de Fundo Sutil */}
-            <div className="absolute inset-0 bg-gradient-to-br from-transparent to-[hsl(262_83%_58%)]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            
-            <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-gray-700">
+            <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-semibold text-slate-700">
                 {stat.title}
               </CardTitle>
               
-              {/* Ícone com Glassmorphism */}
-              <div className="relative">
-                <div className={`p-3 rounded-2xl backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 ${stat.bgColor}`}>
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                </div>
-                {/* Glow Effect */}
-                <div className={`absolute -inset-2 rounded-2xl blur-lg opacity-0 group-hover:opacity-50 transition-opacity ${stat.bgColor}`} />
+              <div className={`p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110 ${stat.bgColor}`}>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
               </div>
             </CardHeader>
             
             <CardContent className="relative">
-              {/* Número com Gradiente */}
-              <div className="text-4xl font-black bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(217_91%_60%)] bg-clip-text text-transparent mb-1">
-                {loadingStats ? <Skeleton className="h-10 w-20" /> : stat.value}
+              <div className="text-3xl font-bold text-blue-600 mb-1">
+                {loadingStats ? <Skeleton className="h-9 w-16" /> : stat.value}
               </div>
               
-              <p className="text-xs text-gray-600 font-medium flex items-center gap-1">
+              <p className="text-xs text-slate-600 font-medium">
                 {stat.description}
-                <svg className="h-3 w-3 text-[hsl(142_76%_45%)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                  <polyline points="17 6 23 6 23 12"></polyline>
-                </svg>
               </p>
             </CardContent>
             
-            {/* Borda Animada no Hover */}
-            <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(217_91%_60%)] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
+            <div className="absolute inset-x-0 bottom-0 h-1 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
           </Card>
         ))}
       </div>
