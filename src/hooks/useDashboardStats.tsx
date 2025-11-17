@@ -21,8 +21,9 @@ export const useDashboardStats = () => {
       
       return data as unknown as DashboardStats;
     },
-    staleTime: 15 * 60 * 1000, // 15 minutos - cache agressivo
-    gcTime: 30 * 60 * 1000, // 30 minutos
+    staleTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 15 * 60 * 1000, // 15 minutos
+    refetchOnWindowFocus: false, // Não recarregar ao focar janela
   });
 };
 

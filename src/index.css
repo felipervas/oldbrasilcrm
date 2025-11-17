@@ -148,4 +148,13 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Sidebar collapsed - esconder texto */
+  .sidebar[data-state="collapsed"] span {
+    @apply hidden;
+  }
+  
+  .sidebar[data-state="collapsed"] {
+    @apply overflow-hidden;
+  }
 }

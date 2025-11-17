@@ -91,7 +91,7 @@ export const LojaHeader = () => {
               rel="noopener noreferrer"
               className="hidden md:flex"
             >
-              <Button className="bg-[#25d366] hover:bg-[#20ba5a] text-white">
+              <Button className="bg-[#25d366] hover:bg-[#20ba5a] text-white min-h-[44px]">
                 <MessageCircle className="mr-2 h-4 w-4" />
                 WhatsApp
               </Button>
@@ -99,7 +99,7 @@ export const LojaHeader = () => {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2"
+              className="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
