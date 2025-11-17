@@ -81,12 +81,12 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8 bg-gradient-to-br from-[hsl(262_90%_98%)] via-white to-[hsl(217_91%_98%)]">
+    <div className="flex-1 space-y-6 p-4 md:p-8 bg-slate-50">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-[hsl(262_83%_58%)] to-[hsl(217_91%_60%)] bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-foreground">
               Dashboard
             </h1>
             <p className="text-muted-foreground">
@@ -100,7 +100,7 @@ const Dashboard = () => {
         {statCards.map((stat) => (
           <Card 
             key={stat.title}
-            className="group relative overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+            className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white transition-all duration-200 hover:shadow-md cursor-pointer"
             onClick={() => navigate(stat.link)}
           >
             <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">

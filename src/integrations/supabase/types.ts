@@ -2018,6 +2018,7 @@ export type Database = {
           ultima_compra: string
         }[]
       }
+      get_dashboard_stats_optimized: { Args: never; Returns: Json }
       get_loja_home_otimizada: {
         Args: { limite_produtos_por_marca?: number }
         Returns: {

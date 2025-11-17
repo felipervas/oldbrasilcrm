@@ -7,37 +7,57 @@ All colors MUST be HSL.
 */
 
 @layer base {
+  /* === CRM INTERNO === */
   :root {
-    --background: 210 20% 98%;
+    /* Paleta Profissional Minimalista */
+    --background: 0 0% 100%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
+
+    /* Primary - Azul Royal Clean */
     --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
     --primary-glow: 221 83% 70%;
+
+    /* Secondary - Cinza Azulado */
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
+
+    /* Muted - Neutro Suave */
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
+
+    /* Accent - Mesmo Secondary */
     --accent: 210 40% 96%;
     --accent-foreground: 222 47% 11%;
+
+    /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
+
+    /* Success, Warning, Info */
     --success: 142 76% 36%;
     --success-foreground: 355 100% 97%;
     --warning: 38 92% 50%;
     --warning-foreground: 48 96% 89%;
+    --info: 221 83% 53%;
+
+    /* Border e Input */
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 221 83% 53%;
+
+    /* Chart Colors */
     --chart-1: 221 83% 53%;
     --chart-2: 142 76% 36%;
     --chart-3: 38 92% 50%;
     --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --radius: 0.75rem;
+    --chart-5: 173 58% 39%;
+
+    /* Sidebar - Azul Escuro Sólido */
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 221 83% 53%;
@@ -46,28 +66,35 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 215 28% 17%;
     --sidebar-ring: 221 83% 53%;
-    --gradient-subtle: linear-gradient(135deg, hsl(210, 20%, 98%) 0%, hsl(221, 83%, 97%) 100%);
+
+    --radius: 0.5rem;
+    --gradient-subtle: linear-gradient(135deg, hsl(0, 0%, 100%) 0%, hsl(210, 40%, 99%) 100%);
     --shadow-elegant: 0 10px 30px -10px hsl(221 83% 53% / 0.15);
+  }
+
+  /* === LOJA PÚBLICA === */
+  .loja-theme {
+    /* Paleta Loja - Profissional Limpa */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
     
-    /* LOJA PÚBLICA - Paleta Profissional Moderna */
-    --loja-primary: 215 85% 50%;        /* Azul profissional #1572E8 */
-    --loja-primary-light: 215 85% 96%;  /* Azul claro */
-    --loja-secondary: 20 95% 55%;       /* Laranja confiança #F25C2E */
-    --loja-accent: 142 71% 45%;         /* Verde sucesso */
-    --loja-cream: 0 0% 98%;             /* Off-white clean */
-    --loja-shadow-card: 0 4px 20px rgba(21, 114, 232, 0.10);
-    --loja-shadow-hover: 0 8px 30px rgba(21, 114, 232, 0.18);
+    /* Primary - Azul Profissional */
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
     
-    /* CRM INTERNO - Paleta Profissional Corporativa */
-    --crm-primary: 215 85% 50%;         /* Azul corporativo */
-    --crm-primary-dark: 215 90% 42%;    /* Azul escuro */
-    --crm-secondary: 220 70% 50%;       /* Azul steel */
-    --crm-accent: 142 71% 45%;          /* Verde sucesso */
-    --crm-sidebar-from: 220 30% 12%;    /* Slate escuro */
-    --crm-sidebar-to: 220 25% 15%;      /* Slate médio */
-    --crm-card-glass: rgba(255, 255, 255, 0.95);
-    --crm-shadow-card: 0 4px 20px rgba(15, 23, 42, 0.08);
-    --crm-shadow-hover: 0 8px 30px rgba(15, 23, 42, 0.12);
+    /* Secondary - Laranja Complementar */
+    --secondary: 24 95% 53%;
+    --secondary-foreground: 210 40% 98%;
+    
+    /* Accent - Cinza Claro */
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
   }
 
   .dark {
