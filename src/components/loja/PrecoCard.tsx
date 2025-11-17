@@ -20,10 +20,30 @@ export const PrecoCard = ({
   produto,
   compact = false,
 }: PrecoCardProps) => {
-  // Usar preço da tabela_site se existir, senão usar preco_por_kg
+  const precoFinal = produto.tabela_site?.preco_por_kg || produto.preco_por_kg || 0;
+  
+  console.log('PrecoCard Debug:', {
+    produtoId: produto.id,
+    nome: produto.nome,
+    precoKg: produto.preco_por_kg,
+    tabelaSite: produto.tabela_site,
+    precoFinal
+  });
+
+  if (!precoFinal || precoFinal === 0) {
+    return (
+      <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+        <div className="flex items-center gap-2 text-blue-700">
+          <MessageCircle className="h-5 w-5" />
+          <span className="font-semibold">Consultar Preço</span>
+        </div>
+      </div>
+    );
+  }
+
   const produtoComPreco = {
     ...produto,
-    preco_por_kg: produto.tabela_site?.preco_por_kg || produto.preco_por_kg
+    preco_por_kg: precoFinal
   };
   
   const infoPreco = formatarInfoPreco(produtoComPreco);

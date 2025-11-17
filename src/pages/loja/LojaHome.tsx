@@ -56,7 +56,7 @@ export default function LojaHome() {
   }, [marcas, buscaDebounced]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50 loja-theme">
       {/* Modal de Atendimento Exclusivo */}
       <ModalAtendimentoExclusivo />
       

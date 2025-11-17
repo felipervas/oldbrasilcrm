@@ -79,7 +79,7 @@ const defaultMenuItems = [
   { id: "gestor-dashboard", title: "Dashboard Gestor", url: "/gestor/dashboard", icon: BarChart3, restricted: true },
 ];
 
-function SortableMenuItem({ item, showText }: { item: typeof defaultMenuItems[0]; showText: boolean }) {
+function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; open: boolean }) {
   const {
     attributes,
     listeners,
@@ -112,8 +112,8 @@ function SortableMenuItem({ item, showText }: { item: typeof defaultMenuItems[0]
               <>
                 <item.icon className={`h-4 w-4 transition-colors ${isActive ? "text-white" : "text-slate-300 group-hover:text-white"}`} />
                 
-                {showText && (
-                  <span className={`font-medium transition-colors ${isActive ? "text-white" : "text-slate-300 group-hover:text-white"}`}>
+                {open && (
+                  <span className={`font-medium transition-colors whitespace-nowrap ${isActive ? "text-white" : "text-slate-300 group-hover:text-white"}`}>
                     {item.title}
                   </span>
                 )}
@@ -132,8 +132,6 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // No mobile, sempre mostrar texto quando aberto
-  const showText = isMobile ? true : open;
   const { toast } = useToast();
   const { data: isAdmin } = useIsAdmin();
   const [menuItems, setMenuItems] = useState(defaultMenuItems);
@@ -265,7 +263,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className={`relative overflow-hidden bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700 ${isMobile ? "w-[280px]" : (open ? "w-64" : "w-16")}`}
+      className="w-16 data-[state=expanded]:w-64 transition-all duration-300 ease-in-out relative overflow-hidden bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700"
       collapsible={isMobile ? "offcanvas" : "icon"}>
       {/* Background Pattern Removido para Melhor Legibilidade */}
       
@@ -305,7 +303,7 @@ export function AppSidebar() {
               >
                 <SidebarMenu>
                   {visibleMenuItems.map((item) => (
-                    <SortableMenuItem key={item.id} item={item} showText={showText} />
+                    <SortableMenuItem key={item.id} item={item} open={open} />
                   ))}
                 </SidebarMenu>
               </SortableContext>
@@ -323,7 +321,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild className="group rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:shadow-lg">
                     <NavLink to={gerenciarLojaItem.url}>
                       <gerenciarLojaItem.icon className="h-4 w-4 text-slate-300 group-hover:text-white transition-colors" />
-                      {showText && <span className="text-slate-300 group-hover:text-white font-medium transition-colors">{gerenciarLojaItem.title}</span>}
+                      {open && <span className="text-slate-300 group-hover:text-white font-medium transition-colors whitespace-nowrap">{gerenciarLojaItem.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -331,7 +329,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild className="group rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:shadow-lg">
                     <NavLink to="/gerenciar-equipe">
                       <Users className="h-4 w-4 text-slate-300 group-hover:text-white transition-colors" />
-                      {showText && <span className="text-slate-300 group-hover:text-white font-medium transition-colors">Gerenciar Equipe</span>}
+                      {open && <span className="text-slate-300 group-hover:text-white font-medium transition-colors whitespace-nowrap">Gerenciar Equipe</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -339,7 +337,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild className="group rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:shadow-lg">
                     <NavLink to="/administracao">
                       <Shield className="h-4 w-4 text-slate-300 group-hover:text-white transition-colors" />
-                      {showText && <span className="text-slate-300 group-hover:text-white font-medium transition-colors">Administração</span>}
+                      {open && <span className="text-slate-300 group-hover:text-white font-medium transition-colors whitespace-nowrap">Administração</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -356,7 +354,7 @@ export function AppSidebar() {
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
-          {showText && <span className="ml-2">Sair</span>}
+          {open && <span className="ml-2 whitespace-nowrap">Sair</span>}
         </Button>
       </SidebarFooter>
 
