@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, memo, useCallback } from 'react';
-import AppLayout from '@/components/layout/AppLayout';
 import { useCreateProspect, useBulkCreateProspects, useUpdateProspect, Prospect, ProspectStatus } from '@/hooks/useProspects';
 import { useProspectsOptimized } from '@/hooks/useProspectsOptimized';
 import { useDebounce } from '@/hooks/useDebounce';

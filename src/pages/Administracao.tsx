@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import AppLayout from "@/components/layout/AppLayout";
 
 const Administracao = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -106,8 +105,7 @@ const Administracao = () => {
   };
 
   return (
-    <AppLayout>
-      <div className="flex-1 space-y-6 p-4 md:p-8">
+    <div className="space-y-6 p-4 md:p-8">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
@@ -235,7 +233,7 @@ const Administracao = () => {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
+    </div>
   );
 };
 

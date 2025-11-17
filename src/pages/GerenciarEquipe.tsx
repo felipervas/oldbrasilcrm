@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Users, Plus, Mail, Shield, Trash2, UserCheck, UserX, Edit, Phone, Eye } from "lucide-react";
-import AppLayout from "@/components/layout/AppLayout";
 import { useNavigate } from "react-router-dom";
 
 type UserRole = 'admin' | 'gestor' | 'colaborador';
