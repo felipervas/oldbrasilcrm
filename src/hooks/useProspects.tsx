@@ -88,6 +88,8 @@ export const useProspects = () => {
       
       return prospectsComCriador as Prospect[];
     },
+    staleTime: 10 * 60 * 1000, // 10 minutos
+    refetchOnWindowFocus: false,
   });
 };
 

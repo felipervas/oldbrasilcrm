@@ -416,7 +416,7 @@ const Clientes = () => {
     <div className="space-y-6 p-4 md:p-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <SidebarTrigger />
+          <SidebarTrigger className="md:hidden" />
           <div>
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Clientes
