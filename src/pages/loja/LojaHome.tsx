@@ -16,10 +16,12 @@ export default function LojaHome() {
   const [busca, setBusca] = useState("");
   const buscaDebounced = useDebounce(busca, 300);
 
-  // 🚀 PREFETCH: Carregar detalhes dos produtos mais acessados
+  // 🚀 PREFETCH INTELIGENTE: Aguarda 500ms de inatividade antes de prefetch
   useEffect(() => {
-    if (marcas && marcas.length > 0) {
-      // Prefetch dos primeiros 3 produtos das 5 primeiras marcas
+    if (!marcas || marcas.length === 0) return;
+    
+    const timer = setTimeout(() => {
+      // Prefetch apenas dos primeiros 3 produtos das 5 primeiras marcas
       marcas.slice(0, 5).forEach(marca => {
         marca.produtos.slice(0, 3).forEach(produto => {
           queryClient.prefetchQuery({
@@ -34,11 +36,13 @@ export default function LojaHome() {
               );
               return data;
             },
-            staleTime: 5 * 60 * 1000,
+            staleTime: 10 * 60 * 1000,
           });
         });
       });
-    }
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, [marcas, queryClient]);
 
   // Filtrar produtos por busca

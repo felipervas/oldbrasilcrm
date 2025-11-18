@@ -23,6 +23,9 @@ export const useProdutos = (page: number = 0, pageSize: number = 50, searchTerm:
       if (error) throw error;
       return { data: data || [], count: count || 0 };
     },
-    staleTime: 15 * 60 * 1000, // 15 minutos - produtos mudam pouco
+    staleTime: 15 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };

@@ -46,12 +46,12 @@ export const useLojaAgrupada = () => {
         (imagensResult.data || []).map(img => [img.produto_id, img])
       );
 
-      // 🚀 BUSCAR PREÇOS APENAS DOS PRIMEIROS 20 PRODUTOS (carregamento inicial mais rápido)
-      const primeiros20Ids = produtos.slice(0, 20).map(p => p.id);
+      // 🚀 OTIMIZAÇÃO: Buscar TODAS as tabelas em UMA query só (elimina N+1)
+      const todosProdutoIds = produtos.map(p => p.id);
       const { data: tabelasPreco } = await supabase
         .from('produto_tabelas_preco')
         .select('produto_id, id, nome_tabela, preco_por_kg, unidade_medida')
-        .in('produto_id', primeiros20Ids)
+        .in('produto_id', todosProdutoIds)
         .eq('usar_no_site', true);
 
       const tabelasPrecoMap = new Map(
