@@ -70,26 +70,32 @@ export const useProdutosLoja = (filtros?: {
 
       if (error) throw error;
       
-      // Para cada produto, buscar a tabela com usar_no_site = true
-      const produtosComTabela = await Promise.all((data || []).map(async (produto: any) => {
-        const { data: tabelaSite } = await supabase
-          .from('produto_tabelas_preco')
-          .select('id, nome_tabela, preco_por_kg, unidade_medida')
-          .eq('produto_id', produto.id)
-          .eq('usar_no_site', true)
-          .maybeSingle();
-        
-        return {
-          ...produto,
-          tabela_site: tabelaSite,
-          produto_imagens: (produto.produto_imagens || []).sort((a: any, b: any) => a.ordem - b.ordem)
-        };
+      // 🚀 OTIMIZAÇÃO: Buscar TODAS as tabelas em UMA query só (elimina N+1)
+      const produtoIds = (data || []).map((p: any) => p.id);
+      const { data: todasTabelas } = await supabase
+        .from('produto_tabelas_preco')
+        .select('produto_id, id, nome_tabela, preco_por_kg, unidade_medida')
+        .in('produto_id', produtoIds)
+        .eq('usar_no_site', true);
+
+      // Criar map para lookup O(1)
+      const tabelasMap = new Map(
+        (todasTabelas || []).map((t: any) => [t.produto_id, t])
+      );
+
+      // Adicionar tabela aos produtos (sem await)
+      const produtosComTabela = (data || []).map((produto: any) => ({
+        ...produto,
+        tabela_site: tabelasMap.get(produto.id),
+        produto_imagens: (produto.produto_imagens || []).sort((a: any, b: any) => a.ordem - b.ordem)
       }));
       
       return produtosComTabela;
     },
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };
 

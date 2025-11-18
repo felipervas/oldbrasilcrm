@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect, memo, useMemo } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -38,10 +38,14 @@ const Pedidos = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const pedidosFiltrados = pedidosRecentes.filter(pedido =>
-    pedido.clientes?.nome_fantasia?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-    pedido.numero_pedido?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-    pedido.clientes?.profiles?.nome?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+  // 🚀 OTIMIZAÇÃO: Memoizar filtros para evitar re-renders desnecessários
+  const pedidosFiltrados = useMemo(() => 
+    pedidosRecentes.filter(pedido =>
+      pedido.clientes?.nome_fantasia?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      pedido.numero_pedido?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      pedido.clientes?.profiles?.nome?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+    ),
+    [pedidosRecentes, debouncedSearchTerm]
   );
 
   useEffect(() => {

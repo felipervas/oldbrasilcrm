@@ -25,14 +25,15 @@ export const MarcaSection = ({ marca }: MarcaSectionProps) => {
             className="absolute inset-0 w-full h-full"
             style={{
               objectFit: banner_object_fit || 'cover',
-              width: banner_largura ? `${banner_largura}px` : '100%',
-              height: banner_altura ? `${banner_altura}px` : '100%',
+              aspectRatio: `${banner_largura || 1200} / ${banner_altura || 256}`,
             }}
             alt={nome}
             loading="lazy"
             decoding="async"
             width={banner_largura || 1200}
             height={banner_altura || 256}
+            srcSet={`${imagem_banner}?w=600 600w, ${imagem_banner}?w=1200 1200w`}
+            sizes="(max-width: 768px) 600px, 1200px"
           />
         ) : null}
         
