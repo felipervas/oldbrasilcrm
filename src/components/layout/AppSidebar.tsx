@@ -102,19 +102,30 @@ function SortableMenuItem({ item, open, onNavigate }: { item: typeof defaultMenu
             end
             onClick={onNavigate}
             className={({ isActive }) =>
-              `group relative overflow-hidden rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 ${
+              `group relative overflow-hidden rounded-lg mb-1 px-2 py-2 transition-all duration-200 ${
                 isActive
-                  ? "bg-blue-600 shadow-lg text-white"
-                  : "text-slate-300 hover:text-white"
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-crm-hover"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <item.icon className={`h-4 w-4 transition-colors ${isActive ? "text-white" : "text-slate-300 group-hover:text-white"}`} />
-                
+                <item.icon
+                  className={`h-5 w-5 transition-colors ${
+                    isActive
+                      ? "text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground"
+                  }`}
+                />
                 {open && (
-                  <span className={`font-medium transition-colors whitespace-nowrap ${isActive ? "text-white" : "text-slate-300 group-hover:text-white"}`}>
+                  <span
+                    className={`font-medium transition-colors whitespace-nowrap ${
+                      isActive
+                        ? "text-sidebar-primary-foreground"
+                        : "text-sidebar-foreground/80 group-hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
                     {item.title}
                   </span>
                 )}
@@ -270,12 +281,12 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className="h-screen sticky top-0 w-16 data-[state=expanded]:w-64 transition-all duration-300 bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700"
+      className="h-screen sticky top-0 w-16 data-[state=expanded]:w-64 transition-all duration-300 bg-gradient-to-b from-crm-sidebar-from to-crm-sidebar-to border-r border-sidebar-border text-sidebar-foreground"
       collapsible="icon"
     >
       {/* Background Pattern Removido para Melhor Legibilidade */}
       
-      <SidebarHeader className="relative z-10 p-6 border-b border-slate-700">
+      <SidebarHeader className="relative z-10 p-6 border-b border-sidebar-border bg-sidebar">
         {open && (
           <div className="flex items-center gap-3">
             <img src={oldLogo} alt="OLD Brasil" className="h-10 w-auto" />
@@ -298,7 +309,7 @@ export function AppSidebar() {
 
       <SidebarContent className="relative z-10 px-3">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-white/70 text-xs font-semibold uppercase tracking-wider">Menu Principal</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs font-semibold uppercase tracking-wider">Menu principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <DndContext
               sensors={sensors}
@@ -322,7 +333,7 @@ export function AppSidebar() {
         {/* Menu Admin - Não ordenável */}
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Administração</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs font-semibold uppercase tracking-wider">Administração</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -330,15 +341,19 @@ export function AppSidebar() {
                     <NavLink
                       to={gerenciarLojaItem.url}
                       className={({ isActive }) =>
-                        `group relative overflow-hidden rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 ${
+                        `group relative overflow-hidden rounded-lg mb-1 px-2 py-2 transition-all duration-200 ${
                           isActive
-                            ? "bg-blue-600 shadow-lg text-white"
-                            : "text-slate-300 hover:text-white"
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-crm-hover"
+                            : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`
                       }
                     >
-                      <gerenciarLojaItem.icon className="h-4 w-4 transition-colors" />
-                      {open && <span className="font-medium transition-colors whitespace-nowrap">{gerenciarLojaItem.title}</span>}
+                      <gerenciarLojaItem.icon className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
+                      {open && (
+                        <span className="font-medium transition-colors whitespace-nowrap">
+                          {gerenciarLojaItem.title}
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -347,15 +362,19 @@ export function AppSidebar() {
                     <NavLink
                       to="/gerenciar-equipe"
                       className={({ isActive }) =>
-                        `group relative overflow-hidden rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 ${
+                        `group relative overflow-hidden rounded-lg mb-1 px-2 py-2 transition-all duration-200 ${
                           isActive
-                            ? "bg-blue-600 shadow-lg text-white"
-                            : "text-slate-300 hover:text-white"
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-crm-hover"
+                            : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`
                       }
                     >
-                      <Users className="h-4 w-4 transition-colors" />
-                      {open && <span className="font-medium transition-colors whitespace-nowrap">Gerenciar Equipe</span>}
+                      <Users className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
+                      {open && (
+                        <span className="font-medium transition-colors whitespace-nowrap">
+                          Gerenciar Equipe
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -364,15 +383,19 @@ export function AppSidebar() {
                     <NavLink
                       to="/administracao"
                       className={({ isActive }) =>
-                        `group relative overflow-hidden rounded-lg mb-1 transition-all duration-200 hover:bg-slate-700 ${
+                        `group relative overflow-hidden rounded-lg mb-1 px-2 py-2 transition-all duration-200 ${
                           isActive
-                            ? "bg-blue-600 shadow-lg text-white"
-                            : "text-slate-300 hover:text-white"
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-crm-hover"
+                            : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`
                       }
                     >
-                      <Shield className="h-4 w-4 transition-colors" />
-                      {open && <span className="font-medium transition-colors whitespace-nowrap">Administração</span>}
+                      <Shield className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
+                      {open && (
+                        <span className="font-medium transition-colors whitespace-nowrap">
+                          Administração
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -382,10 +405,10 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="relative z-10 p-4 border-t border-slate-700 bg-slate-800/50">
+      <SidebarFooter className="relative z-10 p-4 border-t border-sidebar-border bg-sidebar/80">
         <Button
           variant="ghost"
-          className="w-full justify-start text-slate-300 hover:bg-slate-700 hover:text-white"
+          className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
