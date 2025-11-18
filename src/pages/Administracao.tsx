@@ -233,7 +233,6 @@ const Administracao = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
   );
 };
 

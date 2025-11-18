@@ -363,7 +363,6 @@ export default function RotasPlanejar() {
   };
 
   return (
-    <AppLayout>
       <div className="container mx-auto py-8 px-4">
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
@@ -678,6 +677,5 @@ export default function RotasPlanejar() {
           </div>
         </div>
       </div>
-    </AppLayout>
   );
 }
