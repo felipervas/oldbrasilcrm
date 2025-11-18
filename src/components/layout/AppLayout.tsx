@@ -18,6 +18,13 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   // Hook de teste para notificações de tarefas (verifica a cada 1 minuto)
   useTestNotification();
 
+  // Força sidebar aberto no primeiro acesso
+  useEffect(() => {
+    // Limpa o cookie para garantir que o sidebar inicia aberto
+    const cookieName = "sidebar:state";
+    document.cookie = `${cookieName}=true; path=/; max-age=${60 * 60 * 24 * 7}`;
+  }, []);
+
   useEffect(() => {
     // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -56,7 +63,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex flex-row w-full bg-background">
         <AppSidebar />
         <main className="flex-1 w-full overflow-auto">
