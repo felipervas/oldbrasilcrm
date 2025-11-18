@@ -340,8 +340,7 @@ export default function Prospects() {
   // Removido isLoading - React Query gerencia isso automaticamente
 
   return (
-    <AppLayout>
-      <DndContext 
+      <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
@@ -670,6 +669,5 @@ export default function Prospects() {
         }}
       />
       </DndContext>
-    </AppLayout>
   );
 }

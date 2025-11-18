@@ -147,7 +147,6 @@ export default function GerenciarLoja() {
   };
 
   return (
-    <AppLayout>
       <div className="container mx-auto py-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold">🛍️ Gerenciar Loja Online</h1>
@@ -505,23 +504,22 @@ export default function GerenciarLoja() {
             )}
           </TabsContent>
         </Tabs>
+
+        {selectedProduto && (
+          <ProdutoEditDialog
+            produto={selectedProduto}
+            open={showProdutoDialog}
+            onOpenChange={setShowProdutoDialog}
+          />
+        )}
+
+        {showMarcaDialog && (
+          <MarcaEditDialog
+            marca={selectedMarca}
+            open={showMarcaDialog}
+            onOpenChange={setShowMarcaDialog}
+          />
+        )}
       </div>
-
-      {selectedProduto && (
-        <ProdutoEditDialog
-          produto={selectedProduto}
-          open={showProdutoDialog}
-          onOpenChange={setShowProdutoDialog}
-        />
-      )}
-
-      {showMarcaDialog && (
-        <MarcaEditDialog
-          marca={selectedMarca}
-          open={showMarcaDialog}
-          onOpenChange={setShowMarcaDialog}
-        />
-      )}
-    </AppLayout>
   );
 }
