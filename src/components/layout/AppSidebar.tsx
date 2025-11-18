@@ -15,6 +15,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   LayoutDashboard,
   Users,
@@ -34,6 +35,8 @@ import {
   Target,
   CalendarDays,
   Route,
+  Menu,
+  ChevronLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -281,17 +284,33 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className="h-screen sticky top-0 w-16 data-[state=expanded]:w-64 transition-all duration-300 bg-gradient-to-b from-crm-sidebar-from to-crm-sidebar-to border-r border-sidebar-border text-sidebar-foreground"
+      className="h-screen sticky top-0 w-20 data-[state=expanded]:w-72 transition-all duration-300 bg-gradient-to-b from-crm-sidebar-from to-crm-sidebar-to border-r border-sidebar-border text-sidebar-foreground shadow-xl"
       collapsible="icon"
     >
-      {/* Background Pattern Removido para Melhor Legibilidade */}
-      
-      <SidebarHeader className="relative z-10 p-6 border-b border-sidebar-border bg-sidebar">
-        {open && (
+      {/* 🎯 BOTÃO SUPER VISÍVEL PARA ABRIR/FECHAR */}
+      <div className="sticky top-0 z-20 bg-sidebar border-b border-sidebar-border">
+        <SidebarTrigger className="w-full h-14 flex items-center justify-center hover:bg-sidebar-accent transition-colors group">
           <div className="flex items-center gap-3">
-            <img src={oldLogo} alt="OLD Brasil" className="h-10 w-auto" />
+            {open ? (
+              <>
+                <ChevronLeft className="h-6 w-6 text-sidebar-foreground group-hover:text-sidebar-accent-foreground transition-colors" />
+                <span className="text-sm font-medium text-sidebar-foreground group-hover:text-sidebar-accent-foreground">
+                  Fechar Menu
+                </span>
+              </>
+            ) : (
+              <Menu className="h-7 w-7 text-sidebar-foreground group-hover:text-sidebar-accent-foreground animate-pulse" />
+            )}
+          </div>
+        </SidebarTrigger>
+      </div>
+      
+      <SidebarHeader className="relative z-10 p-4 border-b border-sidebar-border bg-sidebar">
+        {open ? (
+          <div className="flex items-center gap-3">
+            <img src={oldLogo} alt="OLD Brasil" className="h-12 w-auto" />
             <div className="overflow-hidden">
-              <h2 className="font-bold text-lg text-white whitespace-nowrap">
+              <h2 className="font-bold text-xl text-white whitespace-nowrap">
                 OLD BRASIL
               </h2>
               <p className="text-xs text-slate-400">
@@ -299,17 +318,23 @@ export function AppSidebar() {
               </p>
             </div>
           </div>
-        )}
-        {!open && !isMobile && (
-          <div className="flex items-center justify-center mx-auto">
-            <img src={oldLogo} alt="OLD" className="h-8 w-auto" />
+        ) : (
+          <div className="flex items-center justify-center">
+            <img src={oldLogo} alt="OLD" className="h-10 w-auto animate-pulse" />
           </div>
         )}
       </SidebarHeader>
 
-      <SidebarContent className="relative z-10 px-3">
+      <SidebarContent className={`relative z-10 ${open ? 'px-3' : 'px-2'}`}>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs font-semibold uppercase tracking-wider">Menu principal</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/70 text-xs font-semibold uppercase tracking-wider flex items-center justify-between">
+            Menu principal
+            {open && (
+              <span className="text-[10px] text-sidebar-foreground/50 normal-case">
+                Arraste para reordenar
+              </span>
+            )}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <DndContext
               sensors={sensors}
