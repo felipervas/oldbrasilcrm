@@ -27,7 +27,7 @@ const Dashboard = () => {
   return (
     <div className="p-6">
       <div className="flex items-center gap-4 mb-8">
-          <SidebarTrigger />
+          <SidebarTrigger className="md:hidden" />
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
             <p className="text-sm text-slate-600 mt-1">Visão geral das atividades</p>
