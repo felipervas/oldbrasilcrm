@@ -86,3 +86,22 @@ export const useUpdateTarefa = () => {
     },
   });
 };
+
+export const useDeleteTarefa = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('tarefas').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tarefas'] });
+      toast({ title: 'Tarefa excluída com sucesso!' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro ao excluir tarefa', description: error.message, variant: 'destructive' });
+    },
+  });
+};

@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useTarefas } from "@/hooks/useTarefas";
+import { useTarefas, useDeleteTarefa } from "@/hooks/useTarefas";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, CheckSquare, Calendar, CheckCircle2, XCircle, Clock, Edit, Search, User } from "lucide-react";
+import { Plus, CheckSquare, Calendar, CheckCircle2, XCircle, Clock, Edit, Search, User, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const Tarefas = () => {
   const [open, setOpen] = useState(false);
@@ -35,6 +36,7 @@ const Tarefas = () => {
   const { data: tarefasData, isLoading: tarefasLoading } = useTarefas(page, 20);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const deleteTarefa = useDeleteTarefa();
 
   // Usar hook otimizado
   const tarefas = tarefasData?.data || [];
@@ -483,6 +485,30 @@ const Tarefas = () => {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteTarefa.mutate(tarefa.id)}>
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                       <div className="flex gap-2">
                         {tarefa.status === 'pendente' && (
                           <>
@@ -514,8 +540,9 @@ const Tarefas = () => {
                             >
                               ✓ Concluir
                             </Button>
-                          </>
-                        )}
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
