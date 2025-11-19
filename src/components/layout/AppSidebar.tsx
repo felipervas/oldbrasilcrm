@@ -94,6 +94,12 @@ function SortableMenuItem({ item, open, onNavigate }: { item: typeof defaultMenu
     transition,
   };
 
+  const handleClick = () => {
+    if (onNavigate) {
+      onNavigate();
+    }
+  };
+
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <SidebarMenuItem>
@@ -101,7 +107,7 @@ function SortableMenuItem({ item, open, onNavigate }: { item: typeof defaultMenu
           <NavLink
             to={item.url}
             end
-            onClick={onNavigate}
+            onClick={handleClick}
             className={({ isActive }) =>
               `group relative overflow-hidden rounded-lg mb-1 px-2 py-2 transition-all duration-200 ${
                 isActive
@@ -174,12 +180,12 @@ export function AppSidebar() {
     };
   }, []);
 
-  // Auto-minimizar sidebar ao navegar (apenas no mobile)
+  // Fechar sidebar automaticamente no mobile ao navegar
   useEffect(() => {
     if (isMobile && open && setOpen) {
       setOpen(false);
     }
-  }, [location.pathname, isMobile]);
+  }, [location.pathname, isMobile, open, setOpen]);
 
   const checkFinanceiroAccess = async () => {
     try {
