@@ -509,41 +509,38 @@ const Tarefas = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                      <div className="flex gap-2">
-                        {tarefa.status === 'pendente' && (
-                          <>
-                            <Button 
-                              size="sm" 
-                              onClick={() => {
-                                setTarefaSelecionada(tarefa);
-                                setConclusaoOpen(true);
-                              }}
-                            >
-                              Executar
-                            </Button>
-                            <Button 
-                              size="sm"
-                              variant="outline"
-                              onClick={async () => {
-                                const { error } = await supabase
-                                  .from("tarefas")
-                                  .update({ 
-                                    status: "concluida",
-                                    data_conclusao: new Date().toISOString()
-                                  })
-                                  .eq("id", tarefa.id);
-                                if (!error) {
-                                  toast({ title: "Tarefa concluída!" });
-                                  queryClient.invalidateQueries({ queryKey: ['tarefas'] });
-                                }
-                              }}
-                            >
-                              ✓ Concluir
-                            </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                      {tarefa.status === 'pendente' && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            onClick={() => {
+                              setTarefaSelecionada(tarefa);
+                              setConclusaoOpen(true);
+                            }}
+                          >
+                            Executar
+                          </Button>
+                          <Button 
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              const { error } = await supabase
+                                .from("tarefas")
+                                .update({ 
+                                  status: "concluida",
+                                  data_conclusao: new Date().toISOString()
+                                })
+                                .eq("id", tarefa.id);
+                              if (!error) {
+                                toast({ title: "Tarefa concluída!" });
+                                queryClient.invalidateQueries({ queryKey: ['tarefas'] });
+                              }
+                            }}
+                          >
+                            ✓ Concluir
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
