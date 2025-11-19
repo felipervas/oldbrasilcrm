@@ -179,7 +179,18 @@ export default function Prospects() {
     });
   }, [prospects, debouncedSearchTerm, filterEstado, filterCidade, filterPorte, filterPrioridade]);
 
-  // 🚀 OTIMIZAÇÃO: Agrupar prospects por status
+  // 🚀 OTIMIZAÇÃO: Agrupar prospects por status com limitação inicial
+  const [columnsLimit, setColumnsLimit] = useState<Record<ProspectStatus, number>>({
+    novo: 30,
+    em_contato: 30,
+    aguardando_retorno: 30,
+    em_negociacao: 30,
+    proposta_enviada: 30,
+    ganho: 30,
+    perdido: 30,
+    futuro: 30,
+  });
+
   const prospectsByStatus = useMemo(() => {
     const grouped: Record<ProspectStatus, Prospect[]> = {
       novo: [],
@@ -198,6 +209,13 @@ export default function Prospects() {
 
     return grouped;
   }, [filteredProspects]);
+
+  const handleLoadMore = useCallback((status: ProspectStatus) => {
+    setColumnsLimit(prev => ({
+      ...prev,
+      [status]: prev[status] + 30
+    }));
+  }, []);
 
   const estados = useMemo(() => {
     if (!prospects) return [];
@@ -600,11 +618,15 @@ export default function Prospects() {
         >
           {statusColumns.map((status) => {
             const statusProspects = prospectsByStatus[status] || [];
+            const limit = columnsLimit[status];
+            const displayedProspects = statusProspects.slice(0, limit);
+            const hasMore = statusProspects.length > limit;
+            
             return (
               <SortableContext
                 key={status}
                 id={status}
-                items={statusProspects.map(p => p.id)}
+                items={displayedProspects.map(p => p.id)}
                 strategy={verticalListSortingStrategy}
               >
                 <div className="flex flex-col min-w-[280px] sm:min-w-[320px] flex-1 snap-start transform-gpu h-full">
@@ -615,13 +637,24 @@ export default function Prospects() {
                     <h3 className="font-semibold text-sm sm:text-base">{statusLabels[status]}</h3>
                     <p className="text-xs text-muted-foreground">
                       {statusProspects.length} {statusProspects.length === 1 ? 'lead' : 'leads'}
+                      {hasMore && ` (mostrando ${limit})`}
                     </p>
                   </div>
                   <ScrollArea className="flex-1 border border-t-0 rounded-b-lg p-2 sm:p-3 h-[calc(100vh-360px)] md:h-[calc(100vh-320px)]">
                     <div className="space-y-3">
-                      {statusProspects.map((prospect) => (
+                      {displayedProspects.map((prospect) => (
                         <SortableProspectCard key={prospect.id} prospect={prospect} />
                       ))}
+                      {hasMore && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleLoadMore(status)}
+                          className="w-full"
+                        >
+                          Carregar mais ({statusProspects.length - limit} restantes)
+                        </Button>
+                      )}
                     </div>
                   </ScrollArea>
                 </div>

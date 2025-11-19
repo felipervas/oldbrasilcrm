@@ -31,8 +31,10 @@ export const useClientes = (page: number = 0, pageSize: number = 50, searchTerm:
       if (error) throw error;
       return { data: data || [], count: count || 0 };
     },
-    staleTime: 15 * 60 * 1000, // 15 minutos - clientes mudam pouco
+    staleTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };
 
@@ -52,5 +54,9 @@ export const useClienteCompleto = (clienteId: string | null) => {
       return data;
     },
     enabled: !!clienteId,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };

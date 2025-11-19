@@ -55,8 +55,8 @@ export const useTestNotification = () => {
     };
 
     checkRecentTasks();
-    // Verificar a cada 5 minutos (reduzido de 1 minuto) para reduzir carga
-    const interval = setInterval(checkRecentTasks, 5 * 60 * 1000);
+    // Verificar a cada 10 minutos para reduzir carga significativamente
+    const interval = setInterval(checkRecentTasks, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [toast]);

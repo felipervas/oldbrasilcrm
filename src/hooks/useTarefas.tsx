@@ -19,7 +19,10 @@ export const useTarefas = (page: number = 0, pageSize: number = 20) => {
       if (error) throw error;
       return { data: data || [], count: count || 0 };
     },
-    staleTime: 2 * 60 * 1000, // 2 minutos para tarefas (dados mais dinâmicos)
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };
 
