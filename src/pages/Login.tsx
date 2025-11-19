@@ -23,7 +23,7 @@ const Login = () => {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       toast({
@@ -31,11 +31,13 @@ const Login = () => {
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      navigate("/dashboard");
+      setIsLoading(false);
+    } else if (data.session) {
+      // Aguarda a sessão ser estabelecida antes de navegar
+      setTimeout(() => {
+        navigate("/dashboard", { replace: true });
+      }, 100);
     }
-
-    setIsLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
