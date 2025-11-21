@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import oldLogo from "@/assets/old-brasil-logo.png";
 import {
@@ -152,10 +152,9 @@ export function AppSidebar() {
   const location = useLocation();
   
   const { toast } = useToast();
-  const { data: isAdmin } = useIsAdmin();
+  const { isAdmin, roles } = useAuth();
   const [menuItems, setMenuItems] = useState(defaultMenuItems);
-  const [canViewFinanceiro, setCanViewFinanceiro] = useState(false);
-  const [userRoles, setUserRoles] = useState<string[]>([]);
+  const canViewFinanceiro = roles.includes('gestor') || roles.includes('admin');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -165,19 +164,7 @@ export function AppSidebar() {
   );
 
   useEffect(() => {
-    checkFinanceiroAccess();
     loadMenuOrder();
-    
-    // Listener para mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        checkFinanceiroAccess();
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   // Fechar sidebar automaticamente no mobile ao navegar
@@ -186,41 +173,6 @@ export function AppSidebar() {
       setOpen(false);
     }
   }, [location.pathname, isMobile, open, setOpen]);
-
-  const checkFinanceiroAccess = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setCanViewFinanceiro(false);
-        setUserRoles([]);
-        return;
-      }
-
-      const { data: roles, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Erro ao buscar roles:', error);
-        setCanViewFinanceiro(false);
-        setUserRoles([]);
-        return;
-      }
-
-      const rolesList = roles?.map(r => r.role) || [];
-      setUserRoles(rolesList);
-      
-      const hasGestorRole = rolesList.some(r => r === 'gestor' || r === 'admin');
-      setCanViewFinanceiro(hasGestorRole);
-      
-      console.log('Roles carregados:', rolesList, 'Pode ver financeiro:', hasGestorRole);
-    } catch (error) {
-      console.error('Erro ao verificar acesso financeiro:', error);
-      setCanViewFinanceiro(false);
-      setUserRoles([]);
-    }
-  };
 
   const loadMenuOrder = () => {
     const saved = localStorage.getItem('menuOrder');
