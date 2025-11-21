@@ -1,7 +1,7 @@
 // Service Worker para cache agressivo de imagens e API
-const CACHE_NAME = 'old-brasil-cache-v2';
-const IMAGE_CACHE = 'images-cache-v2';
-const API_CACHE = 'api-cache-v2';
+const CACHE_NAME = 'old-brasil-cache-v3';
+const IMAGE_CACHE = 'images-cache-v3';
+const API_CACHE = 'api-cache-v3';
 
 // Cache de imagens
 self.addEventListener('fetch', (event) => {
@@ -27,9 +27,10 @@ self.addEventListener('fetch', (event) => {
   }
   
   // Cache de leitura da API (GET apenas) - cache agressivo
-  if (request.method === 'GET' && url.hostname.includes('supabase.co')) {
-    // Não cachear auth endpoints
-    if (url.pathname.includes('/auth/')) return;
+  // NÃO cachear auth endpoints (crítico para Safari)
+  if (request.method === 'GET' && 
+      url.hostname.includes('supabase.co') && 
+      !url.pathname.includes('/auth/')) {
     
     event.respondWith(
       caches.open(API_CACHE).then(cache => {

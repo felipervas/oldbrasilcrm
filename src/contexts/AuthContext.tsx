@@ -21,26 +21,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Verificar sessão inicial
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        // Buscar roles uma única vez
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', currentSession.user.id)
-          .then(({ data }) => {
-            const userRoles = data?.map(r => r.role) || [];
-            setRoles(userRoles);
-            setIsAdmin(userRoles.includes('admin'));
-            setLoading(false);
-          });
-      } else {
+    supabase.auth.getSession()
+      .then(({ data: { session: currentSession } }) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          // Buscar roles uma única vez
+          return supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', currentSession.user.id)
+            .then(({ data }) => {
+              const userRoles = data?.map(r => r.role) || [];
+              setRoles(userRoles);
+              setIsAdmin(userRoles.includes('admin'));
+            });
+        }
+      })
+      .catch((error) => {
+        console.error('Erro ao carregar sessão:', error);
+      })
+      .finally(() => {
         setLoading(false);
-      }
-    });
+      });
 
     // Listener para mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
