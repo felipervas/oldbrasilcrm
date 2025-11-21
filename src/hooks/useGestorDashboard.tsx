@@ -5,17 +5,20 @@ export const useGestorDashboard = () => {
   return useQuery({
     queryKey: ['gestor-dashboard'],
     queryFn: async () => {
-      // Usar views materializadas para performance máxima
+      // Usar funções otimizadas e seguras para acessar dados
       const [faturamentoClientes, faturamentoMarcas, vendedores, pedidosRecentes, financeiro] = 
         await Promise.all([
-          supabase.from('mv_faturamento_clientes').select('*').order('faturamento_total', { ascending: false }).limit(20),
-          supabase.from('mv_faturamento_marcas').select('*').order('faturamento_total', { ascending: false }).limit(20),
-          supabase.from('mv_performance_vendedores').select('*').order('faturamento_total', { ascending: false }).limit(20),
+          supabase.rpc('get_faturamento_clientes').limit(20),
+          supabase.rpc('get_faturamento_marcas').limit(20),
+          supabase.rpc('get_performance_vendedores').limit(20),
           supabase.from('pedidos')
-            .select('id, numero_pedido, valor_total, data_pedido, status, cliente_id, responsavel_venda_id, clientes(nome_fantasia), profiles(nome)')
+            .select('id, numero_pedido, valor_total, data_pedido, status, cliente_id, responsavel_venda_id, clientes(nome_fantasia)')
             .order('data_pedido', { ascending: false })
             .limit(10),
-          supabase.from('financeiro').select('*').order('data', { ascending: true }).limit(100),
+          supabase.from('financeiro')
+            .select('id, data, descricao, valor, tipo, status_pagamento, categoria, observacoes')
+            .order('data', { ascending: true })
+            .limit(100),
         ]);
 
       return {
@@ -26,7 +29,7 @@ export const useGestorDashboard = () => {
         financeiro: financeiro.data || [],
       };
     },
-    staleTime: 30 * 60 * 1000, // 30 minutos - dados gerenciais podem ficar em cache
-    gcTime: 60 * 60 * 1000, // 1 hora
+    staleTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 30 * 60 * 1000,
   });
 };

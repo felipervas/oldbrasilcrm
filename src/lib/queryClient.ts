@@ -3,18 +3,18 @@ import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30 * 60 * 1000, // 30 minutos - cache agressivo
-      gcTime: 60 * 60 * 1000, // 1 hora
+      staleTime: 5 * 60 * 1000, // 5 minutos - mais agressivo
+      gcTime: 15 * 60 * 1000, // 15 minutos
       refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      retry: 0, // Sem retry automático
+      refetchOnReconnect: true, // Reconectar quando online novamente
+      retry: 1, // 1 retry para falhas de rede
       refetchOnMount: false,
       placeholderData: (previousData) => previousData,
-      networkMode: 'offlineFirst',
+      networkMode: 'online', // Melhor para detectar erros
     },
     mutations: {
-      retry: 0,
-      networkMode: 'offlineFirst',
+      retry: 1,
+      networkMode: 'online',
     },
   },
 });

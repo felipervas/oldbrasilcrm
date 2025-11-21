@@ -10,10 +10,11 @@ export const usePedidos = (page: number = 0, pageSize: number = 20, searchTerm: 
     queryFn: async () => {
       let query = supabase
         .from('pedidos')
-        .select('*, clientes(nome_fantasia, responsavel_id, profiles(nome))', { count: 'exact' });
+        .select('id, numero_pedido, data_pedido, valor_total, status, cliente_id, responsavel_venda_id, clientes(nome_fantasia)', { count: 'exact' });
 
       if (searchTerm) {
-        query = query.or(`numero_pedido.ilike.%${searchTerm}%`);
+        const term = searchTerm.trim();
+        query = query.ilike('numero_pedido', `%${term}%`);
       }
 
       const { data, error, count } = await query
@@ -23,9 +24,7 @@ export const usePedidos = (page: number = 0, pageSize: number = 20, searchTerm: 
       if (error) throw error;
       return { data: data || [], count: count || 0 };
     },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };
