@@ -16,6 +16,7 @@ import { ClienteProdutosHistorico } from "@/components/ClienteProdutosHistorico"
 import { useClientes } from "@/hooks/useClientes";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Pagination } from "@/components/Pagination";
 
 const Clientes = () => {
   const [open, setOpen] = useState(false);
@@ -400,10 +401,11 @@ const Clientes = () => {
   };
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  const { data: clientesData, isLoading: clientesLoading } = useClientes(page, 50, debouncedSearchTerm, filtroStatus);
+  const { data: clientesData, isLoading: clientesLoading } = useClientes(page, 10, debouncedSearchTerm, filtroStatus);
   
   const clientes = clientesData?.data || [];
   const totalClientes = clientesData?.count || 0;
+  const totalPages = Math.ceil(totalClientes / 10);
   
   // Filtrar clientes localmente (já vem do backend)
   const clientesFiltrados = clientes;
@@ -411,6 +413,11 @@ const Clientes = () => {
   useEffect(() => {
     loadResponsaveis();
   }, []);
+
+  // Resetar página ao mudar busca ou filtro
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearchTerm, filtroStatus]);
 
   return (
     <div className="space-y-6 p-4 md:p-8">
@@ -641,7 +648,13 @@ const Clientes = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {clientesFiltrados.length === 0 ? (
+          {clientesLoading ? (
+            <div className="space-y-4">
+              {[...Array(10)].map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
+          ) : clientesFiltrados.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">Nenhum cliente cadastrado</p>
@@ -775,6 +788,16 @@ const Clientes = () => {
                 </div>
               ))}
             </div>
+          )}
+          
+          {clientesFiltrados.length > 0 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={totalClientes}
+              pageSize={10}
+            />
           )}
         </CardContent>
       </Card>
