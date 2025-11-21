@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useProdutos } from "@/hooks/useProdutos";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Pagination } from "@/components/Pagination";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -44,7 +45,7 @@ const Produtos = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(0);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  const { data: produtosData, isLoading: produtosLoading } = useProdutos(page, 50, debouncedSearchTerm);
+  const { data: produtosData, isLoading: produtosLoading } = useProdutos(page, 10, debouncedSearchTerm);
   const [imagensLoja, setImagensLoja] = useState<any[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string; preco?: number; usarNoSite?: boolean }>>([]);
@@ -92,6 +93,7 @@ const Produtos = () => {
   // Usar hook otimizado em vez de loadProdutos
   const produtosLista = produtosData?.data || [];
   const totalProdutos = produtosData?.count || 0;
+  const totalPages = Math.ceil(totalProdutos / 10);
 
   const loadMarcas = async () => {
     const { data } = await supabase.from("marcas").select("*").eq("ativa", true);
@@ -101,6 +103,11 @@ const Produtos = () => {
   useEffect(() => {
     loadMarcas();
   }, []);
+
+  // Resetar página ao mudar busca
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearchTerm]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -938,6 +945,16 @@ const Produtos = () => {
                 </div>
               ))}
             </div>
+          )}
+          
+          {produtosLista.length > 0 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={totalProdutos}
+              pageSize={10}
+            />
           )}
         </CardContent>
       </Card>
