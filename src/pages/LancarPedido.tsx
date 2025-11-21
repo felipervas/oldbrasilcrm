@@ -23,6 +23,7 @@ interface ProdutoItem {
   preco_unitario: number;
   observacoes?: string;
   tabela_preco_id?: string;
+  tabela_preco_nome?: string;
 }
 
 const LancarPedido = () => {
@@ -175,6 +176,8 @@ const LancarPedido = () => {
     const produto = produtos.find(p => p.id === selectedProduto);
     if (!produto) return;
 
+    const tabelaUsada = tabelasProduto.find(t => t.id === tabelaSelecionada);
+
     const novoProduto: ProdutoItem = {
       produto_id: selectedProduto,
       nome: produto.nome,
@@ -182,6 +185,7 @@ const LancarPedido = () => {
       preco_unitario: precoUnitario || produto.preco_base || 0,
       observacoes: observacoesProduto || undefined,
       tabela_preco_id: tabelaSelecionada || undefined,
+      tabela_preco_nome: tabelaUsada?.nome_tabela || undefined,
     };
 
     setProdutosEscolhidos([...produtosEscolhidos, novoProduto]);
@@ -755,7 +759,7 @@ const LancarPedido = () => {
                   
                     <div className="space-y-3">
                       <div className="grid grid-cols-12 gap-2">
-                         <div className="col-span-5">
+                         <div className="col-span-4">
                           <Label className="text-xs">Produto</Label>
                           <Combobox
                             options={produtos.map(p => ({
@@ -780,6 +784,7 @@ const LancarPedido = () => {
                                 .order('nome_tabela');
                               
                               setTabelasProduto(tabelas || []);
+                              setTabelaSelecionada("");
                               
                               // Definir preço baseado no tipo de venda
                               if (tabelas && tabelas.length > 0) {
@@ -801,7 +806,6 @@ const LancarPedido = () => {
                                   setPrecoUnitario(tabelas[0].preco_por_kg * pesoEmb);
                                 }
                               } else if (prod?.preco_por_kg) {
-                                setTabelaSelecionada("");
                                 if (vendePorKg) {
                                   setPrecoUnitario(parseFloat(prod.preco_por_kg));
                                 } else {
@@ -809,7 +813,6 @@ const LancarPedido = () => {
                                   setPrecoUnitario(parseFloat(prod.preco_por_kg) * pesoEmb);
                                 }
                               } else if (prod?.preco_base) {
-                                setTabelaSelecionada("");
                                 setPrecoUnitario(parseFloat(prod.preco_base));
                               }
                             }}
@@ -835,26 +838,38 @@ const LancarPedido = () => {
                                 ) : !vendePorKg && (
                                   <p className="text-amber-600">⚠️ Peso da embalagem não definido</p>
                                 )}
+                                {tabelasProduto.length > 0 && (
+                                  <p className="text-green-600 font-medium">✨ {tabelasProduto.length} tabela(s) disponível(eis)</p>
+                                )}
                               </div>
                             );
                           })()}
                         </div>
                         {tabelasProduto.length > 0 && (
-                          <div className="col-span-5">
-                            <Label className="text-xs">Tabela de Preço</Label>
+                          <div className="col-span-3">
+                            <Label className="text-xs">Tabela de Preço 💰</Label>
                             <Select 
                               value={tabelaSelecionada}
                               onValueChange={(id) => {
                                 setTabelaSelecionada(id);
                                 const tabela = tabelasProduto.find(t => t.id === id);
-                                if (tabela) {
-                                  // O preço da tabela já representa o valor correto para aquela unidade
-                                  setPrecoUnitario(tabela.preco_por_kg);
+                                const prod = produtos.find(p => p.id === selectedProduto);
+                                
+                                if (tabela && prod) {
+                                  const vendePorKg = (prod as any)?.tipo_venda === 'kg';
+                                  const precoJaETotal = !prod?.preco_por_kg && !vendePorKg;
+                                  
+                                  if (vendePorKg || precoJaETotal) {
+                                    setPrecoUnitario(tabela.preco_por_kg);
+                                  } else {
+                                    const pesoEmb = prod?.peso_embalagem_kg || 1;
+                                    setPrecoUnitario(tabela.preco_por_kg * pesoEmb);
+                                  }
                                 }
                               }}
                             >
-                              <SelectTrigger>
-                                <SelectValue />
+                              <SelectTrigger className="border-green-200 bg-green-50/50">
+                                <SelectValue placeholder="Escolher tabela..." />
                               </SelectTrigger>
                               <SelectContent>
                                 {tabelasProduto.map(t => {
@@ -933,10 +948,15 @@ const LancarPedido = () => {
                             <TableRow key={index}>
                               <TableCell>
                                 <div>
-                                  <div>{item.nome}</div>
+                                  <div className="font-medium">{item.nome}</div>
+                                  {item.tabela_preco_nome && (
+                                    <div className="text-xs text-green-600 font-medium mt-0.5">
+                                      💰 {item.tabela_preco_nome}
+                                    </div>
+                                  )}
                                   {item.observacoes && (
-                                    <div className="text-xs text-muted-foreground italic">
-                                      Obs: {item.observacoes}
+                                    <div className="text-xs text-muted-foreground italic mt-0.5">
+                                      📝 {item.observacoes}
                                     </div>
                                   )}
                                 </div>
