@@ -72,21 +72,30 @@ class ErrorBoundary extends Component<
   }
 
   handleReload = () => {
-    // Limpar caches e forçar reload
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        registrations.forEach(reg => reg.unregister());
-      });
-    }
-    
-    caches.keys().then(names => {
-      names.forEach(name => caches.delete(name));
-    });
+    (async () => {
+      try {
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map((reg) => reg.unregister()));
+        }
 
-    localStorage.clear();
-    sessionStorage.clear();
-    
-    window.location.href = '/';
+        if ("caches" in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map((name) => caches.delete(name)));
+        }
+      } catch (error) {
+        console.warn("Erro ao limpar cache no reload forçado:", error);
+      } finally {
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+        } catch {
+          // alguns modos privativos não permitem
+        }
+
+        window.location.reload();
+      }
+    })();
   };
 
   render() {

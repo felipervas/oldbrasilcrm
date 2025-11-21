@@ -4,24 +4,21 @@ import { queryClient } from "./lib/queryClient";
 import App from "./App.tsx";
 import "./index.css";
 
-// 🚀 Limpar service workers antigos e registrar novo
+// 🚀 Apenas limpar service workers antigos e caches em produção (sem registrar novo SW)
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', async () => {
     try {
-      // Desregistrar TODOS os service workers antigos
       const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map(reg => reg.unregister()));
-      
-      // Registrar novo service worker com versão
-      await navigator.serviceWorker.register('/sw.js?v=4');
-      
-      // Limpar todos os caches antigos
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map(name => caches.delete(name)));
-      
-      console.log('✅ Service worker atualizado e caches limpos');
+      await Promise.all(registrations.map((reg) => reg.unregister()));
+
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((name) => caches.delete(name)));
+      }
+
+      console.log('✅ Service workers removidos e caches limpos');
     } catch (error) {
-      console.warn('Erro ao atualizar service worker:', error);
+      console.warn('Erro ao limpar service workers/caches:', error);
     }
   });
 }
