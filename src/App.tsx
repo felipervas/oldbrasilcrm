@@ -8,6 +8,7 @@ import { LojaHeader } from "./components/loja/LojaHeader";
 import { LojaFooter } from "./components/loja/LojaFooter";
 import { WhatsAppButton } from "./components/loja/WhatsAppButton";
 import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute";
+import { AuthProvider } from "./contexts/AuthContext";
 
 // Lazy load para melhorar performance
 const Login = lazy(() => import("./pages/Login"));
@@ -55,8 +56,9 @@ const App = () => (
     <Toaster />
     <Sonner />
     <BrowserRouter>
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
+      <AuthProvider>
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
             {/* Rota de Login */}
             <Route path="/login" element={<Login />} />
 
@@ -347,8 +349,9 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
-      </BrowserRouter>
-    </TooltipProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  </TooltipProvider>
 );
 
 export default App;
