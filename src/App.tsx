@@ -2,13 +2,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, Component, ReactNode } from "react";
 import AppLayout from "./components/layout/AppLayout";
 import { LojaHeader } from "./components/loja/LojaHeader";
 import { LojaFooter } from "./components/loja/LojaFooter";
 import { WhatsAppButton } from "./components/loja/WhatsAppButton";
 import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute";
 import { AuthProvider } from "./contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 // Lazy load para melhorar performance
 const Login = lazy(() => import("./pages/Login"));
@@ -51,13 +53,91 @@ const LoadingFallback = () => (
   </div>
 );
 
+// Error Boundary para capturar erros de carregamento
+class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('❌ Erro capturado pelo ErrorBoundary:', error, errorInfo);
+  }
+
+  handleReload = () => {
+    // Limpar caches e forçar reload
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(reg => reg.unregister());
+      });
+    }
+    
+    caches.keys().then(names => {
+      names.forEach(name => caches.delete(name));
+    });
+
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    window.location.href = '/';
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-background p-4">
+          <div className="max-w-md w-full space-y-6 text-center">
+            <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-destructive" />
+            </div>
+            
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-foreground">
+                Erro ao carregar a aplicação
+              </h1>
+              <p className="text-muted-foreground">
+                Detectamos um problema ao carregar a página. Isso pode ser causado por cache desatualizado.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <Button 
+                onClick={this.handleReload}
+                className="w-full"
+                size="lg"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Recarregar sem cache
+              </Button>
+              
+              <p className="text-xs text-muted-foreground">
+                Se o problema persistir, tente limpar o cache do navegador manualmente
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 const App = () => (
-  <TooltipProvider>
-    <Toaster />
-    <Sonner />
-    <BrowserRouter>
-      <AuthProvider>
-        <Suspense fallback={<LoadingFallback />}>
+  <ErrorBoundary>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
+          <Suspense fallback={<LoadingFallback />}>
           <Routes>
             {/* Rota de Login */}
             <Route path="/login" element={<Login />} />
@@ -348,10 +428,11 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </Suspense>
-      </AuthProvider>
-    </BrowserRouter>
-  </TooltipProvider>
+          </Suspense>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </ErrorBoundary>
 );
 
 export default App;
