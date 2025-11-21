@@ -10,7 +10,7 @@ export const useClientes = (page: number = 0, pageSize: number = 50, searchTerm:
     queryFn: async () => {
       let query = supabase
         .from('clientes')
-        .select('*, profiles(nome)', { count: 'exact' });
+        .select('id, nome_fantasia, razao_social, cnpj_cpf, telefone, email, cidade, uf, ativo, total_comprado, compra_mensal_media, ultima_compra_data, total_pedidos, responsavel_id, created_at, profiles(nome)', { count: 'exact' });
 
       // Filtro de status
       if (filtroStatus === 'ativo') {
@@ -19,22 +19,21 @@ export const useClientes = (page: number = 0, pageSize: number = 50, searchTerm:
         query = query.eq('ativo', false);
       }
 
-      // Busca por texto
+      // Busca otimizada - usar índices
       if (searchTerm) {
-        query = query.or(`nome_fantasia.ilike.%${searchTerm}%,razao_social.ilike.%${searchTerm}%,cnpj_cpf.ilike.%${searchTerm}%,telefone.ilike.%${searchTerm}%`);
+        const term = searchTerm.trim();
+        query = query.or(`nome_fantasia.ilike.%${term}%,razao_social.ilike.%${term}%,cnpj_cpf.ilike.%${term}%,telefone.ilike.%${term}%`);
       }
 
       const { data, error, count } = await query
-        .order('created_at', { ascending: false })
+        .order('nome_fantasia', { ascending: true })
         .range(start, end);
 
       if (error) throw error;
       return { data: data || [], count: count || 0 };
     },
-    staleTime: 10 * 60 * 1000, // 10 minutos
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    staleTime: 3 * 60 * 1000, // 3 minutos
+    gcTime: 10 * 60 * 1000,
   });
 };
 
