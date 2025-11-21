@@ -70,12 +70,33 @@ const LancarPedido = () => {
   };
 
   const loadClientes = async () => {
-    const { data } = await supabase
-      .from("clientes")
-      .select("*, profiles(nome)")
-      .eq("ativo", true)
-      .order("nome_fantasia");
-    setClientes(data || []);
+    try {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("id, nome_fantasia, razao_social, cnpj_cpf, telefone, email, logradouro, numero, cidade, uf, cep, responsavel_id")
+        .eq("ativo", true)
+        .order("nome_fantasia");
+      
+      if (error) {
+        console.error("Erro ao carregar clientes:", error);
+        toast({
+          title: "Erro ao carregar clientes",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log("Clientes carregados:", data?.length || 0);
+      setClientes(data || []);
+    } catch (err) {
+      console.error("Erro inesperado ao carregar clientes:", err);
+      toast({
+        title: "Erro ao carregar clientes",
+        description: "Ocorreu um erro inesperado",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleClienteChange = async (clienteId: string) => {
@@ -84,7 +105,7 @@ const LancarPedido = () => {
     // Carregar dados completos do cliente com endereço
     const { data: clienteCompleto } = await supabase
       .from("clientes")
-      .select("*, profiles(nome)")
+      .select("*")
       .eq("id", clienteId)
       .single();
     
