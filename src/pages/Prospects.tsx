@@ -94,7 +94,7 @@ export default function Prospects() {
   const [bulkResponsavel, setBulkResponsavel] = useState('');
 
   // Carregar colaboradores e usuário atual
-  useState(() => {
+  useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -110,7 +110,7 @@ export default function Prospects() {
       setColaboradores(colabs || []);
     };
     loadData();
-  });
+  }, []);
 
   // Removido: agora a view prospects_with_last_interaction já traz ultima_interacao otimizada
 
