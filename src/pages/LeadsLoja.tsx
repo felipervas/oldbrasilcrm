@@ -1,29 +1,31 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mail, Phone, MessageCircle, Store } from 'lucide-react';
+import { Mail, Phone, MessageCircle, Trash2, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useLojaLeads } from '@/hooks/useLojaLeads';
+import { ConvertLeadDialog } from '@/components/loja/ConvertLeadDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function LeadsLoja() {
   const [searchTerm, setSearchTerm] = useState('');
-
-  const { data: leads, isLoading } = useQuery({
-    queryKey: ['loja-leads'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('loja_leads')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-  });
+  const [leadToDelete, setLeadToDelete] = useState<string | null>(null);
+  const [leadToConvert, setLeadToConvert] = useState<any>(null);
+  
+  const { leads, isLoading, deleteLead, convertToClient } = useLojaLeads();
 
   const filteredLeads = leads?.filter(lead => 
     lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -78,6 +80,7 @@ export default function LeadsLoja() {
                         <TableHead>Contato</TableHead>
                         <TableHead>Origem</TableHead>
                         <TableHead>Mensagem</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -126,6 +129,26 @@ export default function LeadsLoja() {
                               <span className="text-xs text-muted-foreground italic">Sem mensagem</span>
                             )}
                           </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setLeadToConvert(lead)}
+                                title="Converter em Cliente"
+                              >
+                                <UserPlus className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setLeadToDelete(lead.id)}
+                                title="Excluir Lead"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -139,6 +162,45 @@ export default function LeadsLoja() {
             </CardContent>
           </Card>
         </div>
+
+      <AlertDialog open={!!leadToDelete} onOpenChange={(open) => !open && setLeadToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este lead? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (leadToDelete) {
+                  deleteLead.mutate(leadToDelete);
+                  setLeadToDelete(null);
+                }
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <ConvertLeadDialog
+        lead={leadToConvert}
+        open={!!leadToConvert}
+        onOpenChange={(open) => !open && setLeadToConvert(null)}
+        onConvert={(data) => {
+          if (leadToConvert) {
+            convertToClient.mutate({
+              leadId: leadToConvert.id,
+              clientData: data,
+            });
+            setLeadToConvert(null);
+          }
+        }}
+      />
       </div>
   );
 }
