@@ -706,6 +706,45 @@ export type Database = {
           },
         ]
       }
+      leads_landing: {
+        Row: {
+          created_at: string | null
+          email: string
+          empresa: string
+          id: string
+          mensagem: string | null
+          nome: string
+          origem: string | null
+          status: string | null
+          telefone: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          empresa: string
+          id?: string
+          mensagem?: string | null
+          nome: string
+          origem?: string | null
+          status?: string | null
+          telefone: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          empresa?: string
+          id?: string
+          mensagem?: string | null
+          nome?: string
+          origem?: string | null
+          status?: string | null
+          telefone?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       loja_audit_log: {
         Row: {
           acao: string
