@@ -6,43 +6,43 @@ import { trackEvent, CONVERSION_EVENTS } from '@/lib/analytics';
 const features = [
   {
     icon: BarChart3,
-    title: 'Dashboard em Tempo Real',
-    description: 'Visualize todas as métricas importantes em um painel intuitivo e atualizado automaticamente.',
+    title: 'Veja Tudo em Um Painel Visual',
+    description: 'Sem planilhas! Todas as suas vendas, leads e métricas em tempo real em um dashboard bonito e fácil de usar.',
     color: 'text-blue-600',
     bg: 'bg-blue-50',
   },
   {
     icon: Smartphone,
-    title: 'Mobile-First',
-    description: 'Acesse de qualquer lugar, a qualquer momento. App otimizado para dispositivos móveis.',
+    title: 'Trabalhe de Qualquer Lugar',
+    description: 'Na rua, em casa ou no escritório. Acesse pelo celular, tablet ou computador com sincronização automática.',
     color: 'text-purple-600',
     bg: 'bg-purple-50',
   },
   {
     icon: Target,
-    title: 'Pipeline de Vendas Kanban',
-    description: 'Gerencie leads e prospects visualmente com sistema de arrastar e soltar.',
+    title: 'Nunca Mais Perca Um Lead',
+    description: 'Visualize todo o funil de vendas em cards arrastáveis. Organize prospects e acompanhe cada negociação até o fechamento.',
     color: 'text-green-600',
     bg: 'bg-green-50',
   },
   {
     icon: TrendingUp,
-    title: 'Relatórios Automatizados',
-    description: 'Análises detalhadas de performance, conversão e resultados da equipe.',
+    title: 'Relatórios Prontos Todo Dia',
+    description: 'Sem precisar fazer nada! Receba análises automáticas de performance, conversão e resultados da sua equipe.',
     color: 'text-orange-600',
     bg: 'bg-orange-50',
   },
   {
     icon: Truck,
-    title: 'Gestão de Rotas',
-    description: 'Otimize entregas e visitas com planejamento inteligente de rotas.',
+    title: 'Economize Combustível e Tempo',
+    description: 'Planeje rotas inteligentes para visitas e entregas. GPS integrado mostra o caminho mais rápido e barato.',
     color: 'text-cyan-600',
     bg: 'bg-cyan-50',
   },
   {
     icon: Wallet,
-    title: 'Controle Financeiro',
-    description: 'Gestão completa de contas a pagar, receber e fluxo de caixa integrado.',
+    title: 'Controle Financeiro Automático',
+    description: 'Esqueça planilhas financeiras! Gerencie contas a pagar, receber e fluxo de caixa em um só lugar.',
     color: 'text-pink-600',
     bg: 'bg-pink-50',
   },
@@ -55,7 +55,7 @@ export const FeaturesGrid = () => {
   });
 
   return (
-    <section id="recursos" ref={ref} className="py-20 md:py-32 bg-gradient-to-b from-white to-blue-50/30">
+    <section id="recursos" ref={ref} className="py-20 md:py-32" style={{ background: 'var(--section-gradient)' }}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -65,8 +65,8 @@ export const FeaturesGrid = () => {
             transition={{ duration: 0.6 }}
             className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4"
           >
-            Tudo que você precisa em{' '}
-            <span className="text-primary">um só lugar</span>
+            6 Ferramentas Poderosas em{' '}
+            <span className="text-primary">Uma Única Plataforma</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -74,7 +74,7 @@ export const FeaturesGrid = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-lg text-muted-foreground"
           >
-            Funcionalidades poderosas para impulsionar suas vendas e otimizar a gestão do seu negócio
+            Tudo que você precisa para <strong className="text-foreground">vender mais e trabalhar menos</strong>
           </motion.p>
         </div>
 

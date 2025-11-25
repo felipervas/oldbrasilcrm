@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackEvent, CONVERSION_EVENTS } from '@/lib/analytics';
+import { gerarLinkWhatsAppContextual } from '@/lib/whatsapp';
 
 export const HeroSection = () => {
   const handleDemoClick = () => {
@@ -10,13 +11,17 @@ export const HeroSection = () => {
   };
 
   const handleWhatsAppClick = () => {
-    trackEvent(CONVERSION_EVENTS.WHATSAPP_CLICK, { origin: 'hero' });
+    trackEvent(CONVERSION_EVENTS.WHATSAPP_HERO, { origin: 'hero' });
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50 pt-20">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20" style={{ background: 'var(--hero-gradient)' }}>
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-900/[0.04] -z-10" />
+      
+      {/* Blur Orbs */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl animate-pulse delay-700" />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -38,14 +43,13 @@ export const HeroSection = () => {
 
             {/* Headline */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-              Venda Mais, Gerencie Melhor com{' '}
-              <span className="text-primary">CRM Completo</span>
+              Venda <span className="text-primary">3x Mais</span>, Trabalhe <span className="text-green-600">50% Menos</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
-              Sistema profissional de gestão de vendas, clientes e equipe em uma única plataforma.
-              Aumente sua produtividade em <strong className="text-foreground">3x</strong>.
+              CRM Completo que <strong className="text-foreground">Automatiza 80% do Seu Trabalho</strong>.
+              Gerencie vendas, clientes, rotas e equipe em uma única plataforma profissional.
             </p>
 
             {/* CTAs */}
@@ -53,28 +57,22 @@ export const HeroSection = () => {
               <Button
                 size="lg"
                 onClick={handleDemoClick}
-                className="bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all group"
+                className="bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all group text-base h-14"
               >
-                Solicitar Demonstração Gratuita
+                🚀 Quero Aumentar Minhas Vendas Agora
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
               
-              <Button
-                size="lg"
-                variant="outline"
+              <a
+                href={gerarLinkWhatsAppContextual('hero')}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={handleWhatsAppClick}
-                asChild
+                className="inline-flex items-center justify-center gap-2 px-6 h-14 rounded-md border-2 border-[#25d366] bg-white hover:bg-[#25d366] text-[#25d366] hover:text-white font-semibold transition-all group"
               >
-                <a
-                  href="https://wa.me/5547999999999?text=Olá%2C%20quero%20saber%20mais%20sobre%20o%20CRM"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2"
-                >
-                  <Play className="h-5 w-5" />
-                  Fale com Especialista
-                </a>
-              </Button>
+                <MessageCircle className="h-5 w-5" />
+                Falar com Especialista no WhatsApp
+              </a>
             </div>
 
             {/* Social Proof */}

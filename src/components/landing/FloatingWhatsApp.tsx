@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { MessageCircle, X } from 'lucide-react';
 import { trackEvent, CONVERSION_EVENTS } from '@/lib/analytics';
+import { gerarLinkWhatsAppContextual } from '@/lib/whatsapp';
+import { supabase } from '@/integrations/supabase/client';
 
 export const FloatingWhatsApp = () => {
   const [visible, setVisible] = useState(false);
@@ -23,8 +25,20 @@ export const FloatingWhatsApp = () => {
 
   if (!visible) return null;
 
-  const handleClick = () => {
-    trackEvent(CONVERSION_EVENTS.WHATSAPP_CLICK, { origin: 'floating_button' });
+  const handleClick = async () => {
+    trackEvent(CONVERSION_EVENTS.WHATSAPP_FLOAT, { origin: 'floating_button' });
+    
+    // Save to database
+    try {
+      await supabase.from('whatsapp_clicks').insert({
+        contexto: 'floating_button',
+        user_agent: navigator.userAgent,
+        referrer: document.referrer,
+        extra_data: { type: 'float' }
+      });
+    } catch (error) {
+      console.error('Erro ao salvar clique WhatsApp:', error);
+    }
   };
 
   return (
@@ -49,11 +63,11 @@ export const FloatingWhatsApp = () => {
 
       {/* Botão Principal */}
       <a
-        href="https://wa.me/5547999999999?text=Olá%2C%20quero%20saber%20mais%20sobre%20o%20CRM"
+        href={gerarLinkWhatsAppContextual('inline')}
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleClick}
-        className="group relative bg-[#25d366] hover:bg-[#20ba5a] text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+        className="group relative bg-[#25d366] hover:bg-[#20ba5a] text-white rounded-full p-4 shadow-2xl hover:shadow-green-500/30 transition-all duration-300 hover:scale-110"
         aria-label="Fale conosco no WhatsApp"
       >
         <MessageCircle className="h-6 w-6" />
