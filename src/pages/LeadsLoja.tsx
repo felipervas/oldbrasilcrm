@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mail, Phone, MessageCircle, Trash2, UserPlus } from 'lucide-react';
+import { Mail, Phone, MessageCircle, Trash2, UserPlus, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useLojaLeads } from '@/hooks/useLojaLeads';
 import { ConvertLeadDialog } from '@/components/loja/ConvertLeadDialog';
+import { WhatsAppTemplateModal } from '@/components/loja/WhatsAppTemplateModal';
+import { useIAVendas } from '@/hooks/useIAVendas';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,13 +21,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 export default function LeadsLoja() {
   const [searchTerm, setSearchTerm] = useState('');
   const [leadToDelete, setLeadToDelete] = useState<string | null>(null);
   const [leadToConvert, setLeadToConvert] = useState<any>(null);
+  const [whatsAppLead, setWhatsAppLead] = useState<any>(null);
   
   const { leads, isLoading, deleteLead, convertToClient } = useLojaLeads();
+  const { qualificarLead } = useIAVendas();
+
+  const handleQualificarLead = async (lead: any) => {
+    try {
+      const resultado = await qualificarLead.mutateAsync(lead);
+      toast.success(`Lead qualificado: ${resultado.qualificacao.toUpperCase()} (Score: ${resultado.score})`);
+    } catch (error) {
+      // Erro já tratado no hook
+    }
+  };
 
   const filteredLeads = leads?.filter(lead => 
     lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -100,17 +114,15 @@ export default function LeadsLoja() {
                                   </a>
                                 </div>
                               )}
-                              {lead.telefone && (
+                               {lead.telefone && (
                                 <div className="flex items-center gap-1 text-sm">
                                   <Phone className="h-3 w-3 text-muted-foreground" />
-                                  <a 
-                                    href={`https://wa.me/55${lead.telefone.replace(/\D/g, '')}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  <button
+                                    onClick={() => setWhatsAppLead(lead)}
                                     className="text-primary hover:underline"
                                   >
                                     {lead.telefone}
-                                  </a>
+                                  </button>
                                 </div>
                               )}
                             </div>
@@ -131,6 +143,15 @@ export default function LeadsLoja() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleQualificarLead(lead)}
+                                title="Qualificar com IA"
+                                disabled={qualificarLead.isPending}
+                              >
+                                <Sparkles className="h-4 w-4" />
+                              </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -200,6 +221,16 @@ export default function LeadsLoja() {
             });
             setLeadToConvert(null);
           }
+        }}
+      />
+
+      <WhatsAppTemplateModal
+        open={!!whatsAppLead}
+        onOpenChange={(open) => !open && setWhatsAppLead(null)}
+        contato={{
+          nome: whatsAppLead?.nome || '',
+          telefone: whatsAppLead?.telefone || '',
+          empresa: whatsAppLead?.nome || '',
         }}
       />
       </div>

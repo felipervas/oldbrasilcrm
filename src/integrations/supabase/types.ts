@@ -1900,6 +1900,104 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_interacoes: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          id: string
+          mensagem_enviada: string | null
+          prospect_id: string | null
+          proximos_passos: string | null
+          resumo: string | null
+          template_usado: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          id?: string
+          mensagem_enviada?: string | null
+          prospect_id?: string | null
+          proximos_passos?: string | null
+          resumo?: string | null
+          template_usado?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          id?: string
+          mensagem_enviada?: string | null
+          prospect_id?: string | null
+          proximos_passos?: string | null
+          resumo?: string | null
+          template_usado?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_interacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_interacoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+          {
+            foreignKeyName: "whatsapp_interacoes_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_interacoes_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects_with_last_interaction"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_templates: {
+        Row: {
+          ativo: boolean | null
+          categoria: string
+          created_at: string | null
+          id: string
+          mensagem: string
+          nome: string
+          updated_at: string | null
+          variaveis: Json | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria: string
+          created_at?: string | null
+          id?: string
+          mensagem: string
+          nome: string
+          updated_at?: string | null
+          variaveis?: Json | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string
+          created_at?: string | null
+          id?: string
+          mensagem?: string
+          nome?: string
+          updated_at?: string | null
+          variaveis?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       mv_faturamento_clientes: {
