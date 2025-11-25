@@ -19,7 +19,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import {
   LayoutDashboard,
   Users,
-  CheckSquare,
   Package,
   Tag,
   FileText,
@@ -65,9 +64,7 @@ const defaultMenuItems = [
   { id: "meu-perfil", title: "Meu Perfil", url: "/meu-perfil", icon: User },
   { id: "loja-online", title: "Ver Loja Online", url: "/", icon: ShoppingBag },
   { id: "clientes", title: "Clientes", url: "/clientes", icon: Users },
-  { id: "prospects", title: "Pipeline de Leads", url: "/prospects", icon: Target },
-  { id: "tarefas", title: "Tarefas", url: "/tarefas", icon: CheckSquare },
-  { id: "performance", title: "Performance Vendas", url: "/performance-vendas", icon: BarChart3 },
+  { id: "vendas-hub", title: "Hub de Vendas", url: "/vendas", icon: Target },
   
   { id: "produtos", title: "Produtos", url: "/produtos", icon: Package },
   { id: "marcas", title: "Marcas", url: "/marcas", icon: Tag },

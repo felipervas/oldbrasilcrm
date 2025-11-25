@@ -38,6 +38,7 @@ const ColaboradorRelatorioDiario = lazy(() => import("./pages/ColaboradorRelator
 const RotasPlanejar = lazy(() => import("./pages/RotasPlanejar"));
 const PerformanceVendas = lazy(() => import("./pages/PerformanceVendas"));
 const LeadsLoja = lazy(() => import("./pages/LeadsLoja"));
+const VendasHub = lazy(() => import("./pages/VendasHub"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Páginas Públicas da Loja
@@ -259,10 +260,34 @@ const App = () => (
             }
           />
           <Route
+            path="/prospects"
+            element={
+              <AppLayout>
+                <VendasHub />
+              </AppLayout>
+            }
+          />
+          <Route
             path="/tarefas"
             element={
               <AppLayout>
-                <Tarefas />
+                <VendasHub />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/performance-vendas"
+            element={
+              <AppLayout>
+                <VendasHub />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/vendas"
+            element={
+              <AppLayout>
+                <VendasHub />
               </AppLayout>
             }
           />
@@ -363,10 +388,10 @@ const App = () => (
             }
           />
           <Route
-            path="/performance-vendas"
+            path="/gestor/dashboard"
             element={
               <AppLayout>
-                <PerformanceVendas />
+                <GestorDashboard />
               </AppLayout>
             }
           />

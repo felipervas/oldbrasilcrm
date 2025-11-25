@@ -6,11 +6,13 @@ export const useProspectsOptimized = () => {
     queryKey: ['prospects-optimized'],
     queryFn: async () => {
       // Usar a view otimizada que já inclui a última interação
+      // Adicionar limit para melhorar performance
       const { data, error } = await supabase
         .from('prospects_with_last_interaction')
         .select('*')
         .order('score', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(200); // Limitar para os 200 prospects mais relevantes
 
       if (error) throw error;
       return data || [];
