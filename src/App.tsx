@@ -41,9 +41,6 @@ const LeadsLoja = lazy(() => import("./pages/LeadsLoja"));
 const VendasHub = lazy(() => import("./pages/VendasHub"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-// Landing Page
-const LandingPage = lazy(() => import("./pages/LandingPage"));
-
 // Páginas Públicas da Loja
 const LojaHome = lazy(() => import("./pages/loja/LojaHome"));
 const ProdutoDetalhes = lazy(() => import("./pages/loja/ProdutoDetalhes"));
@@ -155,8 +152,17 @@ const App = () => (
             {/* Rota de Login */}
             <Route path="/login" element={<Login />} />
 
-            {/* Rota Principal - Landing Page CRM */}
-            <Route path="/" element={<LandingPage />} />
+            {/* Rota Principal - Redireciona para Loja */}
+            <Route path="/" element={
+              <div className="min-h-screen flex flex-col">
+                <LojaHeader />
+                <main className="flex-1">
+                  <LojaHome />
+                </main>
+                <LojaFooter />
+                <WhatsAppButton />
+              </div>
+            } />
             
             {/* Rotas Públicas da Loja */}
             <Route

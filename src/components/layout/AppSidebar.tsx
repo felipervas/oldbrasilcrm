@@ -62,7 +62,7 @@ const defaultMenuItems = [
   { id: "dashboard", title: "Dashboard", url: "/crm", icon: LayoutDashboard },
   { id: "meu-dia", title: "Meu Dia", url: "/meu-dia", icon: CalendarDays },
   { id: "meu-perfil", title: "Meu Perfil", url: "/meu-perfil", icon: User },
-  { id: "loja-online", title: "Ver Loja Online", url: "/", icon: ShoppingBag },
+  { id: "loja-online", title: "Ver Loja Online", url: "/loja", icon: ShoppingBag },
   { id: "clientes", title: "Clientes", url: "/clientes", icon: Users },
   { id: "vendas-hub", title: "Hub de Vendas", url: "/vendas", icon: Target },
   
@@ -77,7 +77,7 @@ const defaultMenuItems = [
   { id: "gestor-dashboard", title: "Dashboard Gestor", url: "/gestor/dashboard", icon: BarChart3, restricted: true },
 ];
 
-function SortableMenuItem({ item, open, onNavigate }: { item: typeof defaultMenuItems[0]; open: boolean; onNavigate?: () => void }) {
+function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; open: boolean }) {
   const {
     attributes,
     listeners,
@@ -91,12 +91,6 @@ function SortableMenuItem({ item, open, onNavigate }: { item: typeof defaultMenu
     transition,
   };
 
-  const handleClick = () => {
-    if (onNavigate) {
-      onNavigate();
-    }
-  };
-
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <SidebarMenuItem>
@@ -104,7 +98,6 @@ function SortableMenuItem({ item, open, onNavigate }: { item: typeof defaultMenu
           <NavLink
             to={item.url}
             end
-            onClick={handleClick}
             className={({ isActive }) =>
               `group relative overflow-hidden rounded-lg mb-1 px-2 py-2 transition-all duration-200 ${
                 isActive
@@ -122,17 +115,15 @@ function SortableMenuItem({ item, open, onNavigate }: { item: typeof defaultMenu
                       : "text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground"
                   }`}
                 />
-                {open && (
-                  <span
-                    className={`font-medium transition-colors whitespace-nowrap ${
-                      isActive
-                        ? "text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground/80 group-hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    {item.title}
-                  </span>
-                )}
+                <span
+                  className={`font-medium transition-colors whitespace-nowrap ${
+                    isActive
+                      ? "text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground/80 group-hover:text-sidebar-accent-foreground"
+                  }`}
+                >
+                  {item.title}
+                </span>
               </>
             )}
           </NavLink>
@@ -164,12 +155,6 @@ export function AppSidebar() {
     loadMenuOrder();
   }, []);
 
-  // Fechar sidebar automaticamente no mobile ao navegar
-  useEffect(() => {
-    if (isMobile && open && setOpen) {
-      setOpen(false);
-    }
-  }, [location.pathname, isMobile, open, setOpen]);
 
   const loadMenuOrder = () => {
     const saved = localStorage.getItem('menuOrder');
@@ -217,11 +202,6 @@ export function AppSidebar() {
     }
   };
 
-  const handleNavClick = () => {
-    if (isMobile && open) {
-      setOpen(false);
-    }
-  };
 
   const visibleMenuItems = menuItems.filter(item => 
     !item.restricted || (item.restricted && canViewFinanceiro)
@@ -238,7 +218,7 @@ export function AppSidebar() {
   return (
     <Sidebar 
       className="h-screen sticky top-0 transition-all duration-300 bg-gradient-to-b from-crm-sidebar-from to-crm-sidebar-to border-r border-sidebar-border text-sidebar-foreground shadow-lg"
-      collapsible={isMobile ? "offcanvas" : "none"}
+      collapsible="icon"
     >
       <SidebarHeader className="relative z-10 p-5 border-b border-sidebar-border bg-sidebar">
         <div className="flex items-center gap-3">
@@ -271,7 +251,7 @@ export function AppSidebar() {
               >
                 <SidebarMenu>
                   {visibleMenuItems.map((item) => (
-                    <SortableMenuItem key={item.id} item={item} open={open} onNavigate={handleNavClick} />
+                    <SortableMenuItem key={item.id} item={item} open={open} />
                   ))}
                 </SidebarMenu>
               </SortableContext>
@@ -298,11 +278,9 @@ export function AppSidebar() {
                       }
                     >
                       <gerenciarLojaItem.icon className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
-                      {open && (
-                        <span className="font-medium transition-colors whitespace-nowrap">
-                          {gerenciarLojaItem.title}
-                        </span>
-                      )}
+                      <span className="font-medium transition-colors whitespace-nowrap">
+                        {gerenciarLojaItem.title}
+                      </span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -319,11 +297,9 @@ export function AppSidebar() {
                       }
                     >
                       <Users className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
-                      {open && (
-                        <span className="font-medium transition-colors whitespace-nowrap">
-                          Gerenciar Equipe
-                        </span>
-                      )}
+                      <span className="font-medium transition-colors whitespace-nowrap">
+                        Gerenciar Equipe
+                      </span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -340,11 +316,9 @@ export function AppSidebar() {
                       }
                     >
                       <Shield className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
-                      {open && (
-                        <span className="font-medium transition-colors whitespace-nowrap">
-                          Administração
-                        </span>
-                      )}
+                      <span className="font-medium transition-colors whitespace-nowrap">
+                        Administração
+                      </span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -361,7 +335,7 @@ export function AppSidebar() {
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
-          {open && <span className="ml-2 whitespace-nowrap">Sair</span>}
+          <span className="ml-2 whitespace-nowrap">Sair</span>
         </Button>
       </SidebarFooter>
 
