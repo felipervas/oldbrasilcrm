@@ -38,8 +38,9 @@ export function useLojaLeads() {
   });
 
   const convertToClient = useMutation({
-    mutationFn: async ({ leadId, clientData }: { 
-      leadId: string; 
+    mutationFn: async ({ leadId, clientData, leadOriginal }: { 
+      leadId: string;
+      leadOriginal?: any;
       clientData: {
         nome_fantasia: string;
         razao_social?: string;
@@ -69,6 +70,45 @@ export function useLojaLeads() {
         .single();
 
       if (clienteError) throw clienteError;
+
+      // Registrar no histórico do cliente
+      const historicoObservacao = `Lead convertido da loja\n` +
+        `Origem: ${leadOriginal?.origem || 'Não especificada'}\n` +
+        `Data do lead: ${new Date(leadOriginal?.created_at).toLocaleDateString('pt-BR')}\n` +
+        `Mensagem original: ${leadOriginal?.mensagem || 'Sem mensagem'}`;
+
+      const { error: historicoError } = await supabase
+        .from('cliente_historico')
+        .insert({
+          cliente_id: cliente.id,
+          usuario_id: user.id,
+          tipo: 'conversao_lead',
+          observacao: historicoObservacao,
+          referencia_id: leadId,
+        });
+
+      if (historicoError) {
+        console.error('Erro ao criar histórico:', historicoError);
+      }
+
+      // Criar contato inicial se tiver telefone ou email
+      if (clientData.telefone || clientData.email) {
+        const { error: contatoError } = await supabase
+          .from('contatos_clientes')
+          .insert({
+            cliente_id: cliente.id,
+            nome: clientData.nome_fantasia,
+            telefone: clientData.telefone || null,
+            email: clientData.email || null,
+            tipo_contato: 'principal',
+            fonte: 'conversao_lead',
+            verificado: false,
+          });
+
+        if (contatoError) {
+          console.error('Erro ao criar contato:', contatoError);
+        }
+      }
 
       // Deletar o lead após conversão bem-sucedida
       const { error: deleteError } = await supabase
