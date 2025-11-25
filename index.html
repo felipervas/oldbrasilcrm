@@ -22,37 +22,35 @@
 
     <!-- Script de limpeza agressiva de cache e service workers -->
     <script>
-      (function() {
-        if (!('serviceWorker' in navigator)) {
-          return;
-        }
-
-        function cleanUp() {
-          navigator.serviceWorker.getRegistrations()
-            .then(function(registrations) {
-              registrations.forEach(function(reg) {
-                reg.unregister().catch(function() {});
-              });
-            })
-            .catch(function() {});
-
-          if ('caches' in window) {
-            caches.keys()
-              .then(function(names) {
-                return Promise.all(
-                  names.map(function(name) {
-                    return caches.delete(name).catch(function() {});
-                  })
-                );
-              })
-              .catch(function() {});
+      // 🚀 Limpeza agressiva de cache e service workers com hard refresh
+      (async function() {
+        try {
+          // Limpar todos os service workers
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map(reg => reg.unregister()));
+            console.log('✅ Service workers removidos');
           }
-        }
 
-        if (document.readyState === 'complete') {
-          cleanUp();
-        } else {
-          window.addEventListener('load', cleanUp);
+          // Limpar todos os caches
+          if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            console.log('✅ Caches limpos');
+          }
+
+          // Limpar localStorage (mas preservar flags de reload)
+          const cacheCleared = localStorage.getItem('cache_cleared');
+          localStorage.clear();
+          if (cacheCleared) localStorage.setItem('cache_cleared', cacheCleared);
+
+          // Forçar hard reload completo apenas uma vez
+          if (!localStorage.getItem('cache_cleared')) {
+            localStorage.setItem('cache_cleared', Date.now().toString());
+            window.location.reload(true);
+          }
+        } catch (error) {
+          console.warn('⚠️ Erro ao limpar cache:', error);
         }
       })();
     </script>
