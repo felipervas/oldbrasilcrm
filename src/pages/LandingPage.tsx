@@ -1,8 +1,13 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { FloatingWhatsApp } from '@/components/landing/FloatingWhatsApp';
+import { UrgencyBanner } from '@/components/landing/UrgencyBanner';
+import { LiveProof } from '@/components/landing/LiveProof';
+import { ExitIntentModal } from '@/components/landing/ExitIntentModal';
+import { WhatsAppInlineCTA } from '@/components/landing/WhatsAppInlineCTA';
 import { Helmet } from 'react-helmet-async';
+import { trackEvent, CONVERSION_EVENTS } from '@/lib/analytics';
 
 // Lazy loading de seções abaixo da dobra
 const FeaturesGrid = lazy(() => import('@/components/landing/FeaturesGrid'));
@@ -17,6 +22,45 @@ const SectionSkeleton = () => (
 );
 
 const LandingPage = () => {
+  // Scroll depth tracking
+  useEffect(() => {
+    const scrollDepth = {
+      '50': false,
+      '75': false,
+      '100': false,
+    };
+    
+    const handleScroll = () => {
+      const scrolled = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+      
+      Object.keys(scrollDepth).forEach(depth => {
+        if (scrolled >= parseInt(depth) && !scrollDepth[depth]) {
+          trackEvent(`scroll_${depth}_percent` as any);
+          scrollDepth[depth] = true;
+        }
+      });
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+  // Time on page tracking
+  useEffect(() => {
+    const timer30 = setTimeout(() => {
+      trackEvent(CONVERSION_EVENTS.TIME_ON_PAGE_30S);
+    }, 30000);
+    
+    const timer60 = setTimeout(() => {
+      trackEvent(CONVERSION_EVENTS.TIME_ON_PAGE_60S);
+    }, 60000);
+    
+    return () => {
+      clearTimeout(timer30);
+      clearTimeout(timer60);
+    };
+  }, []);
+  
   return (
     <>
       <Helmet>
@@ -72,6 +116,9 @@ const LandingPage = () => {
       </Helmet>
 
       <div className="min-h-screen bg-background">
+        {/* Urgency Banner */}
+        <UrgencyBanner />
+        
         {/* Header fixo */}
         <LandingHeader />
 
@@ -82,6 +129,11 @@ const LandingPage = () => {
         <Suspense fallback={<SectionSkeleton />}>
           <FeaturesGrid />
         </Suspense>
+        
+        {/* WhatsApp Inline CTA após features */}
+        <div className="py-12 px-4 container mx-auto">
+          <WhatsAppInlineCTA contexto="features" />
+        </div>
 
         <Suspense fallback={<SectionSkeleton />}>
           <ProofSection />
@@ -105,6 +157,12 @@ const LandingPage = () => {
 
         {/* WhatsApp Flutuante */}
         <FloatingWhatsApp />
+        
+        {/* Live Proof Notifications */}
+        <LiveProof />
+        
+        {/* Exit Intent Modal */}
+        <ExitIntentModal />
       </div>
     </>
   );

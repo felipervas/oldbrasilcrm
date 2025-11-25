@@ -1870,6 +1870,36 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_clicks: {
+        Row: {
+          contexto: string
+          created_at: string | null
+          extra_data: Json | null
+          id: string
+          referrer: string | null
+          timestamp: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          contexto: string
+          created_at?: string | null
+          extra_data?: Json | null
+          id?: string
+          referrer?: string | null
+          timestamp?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          contexto?: string
+          created_at?: string | null
+          extra_data?: Json | null
+          id?: string
+          referrer?: string | null
+          timestamp?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       mv_faturamento_clientes: {

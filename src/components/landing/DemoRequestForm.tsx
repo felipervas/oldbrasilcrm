@@ -14,6 +14,32 @@ const formSchema = z.object({
   mensagem: z.string().max(500).optional(),
 });
 
+// Rate limiting
+const RATE_LIMIT_KEY = 'form_submission_timestamps';
+const MAX_SUBMISSIONS = 3;
+const WINDOW_MS = 60 * 60 * 1000; // 1 hora
+
+const checkRateLimit = (): boolean => {
+  const now = Date.now();
+  const stored = localStorage.getItem(RATE_LIMIT_KEY);
+  
+  if (!stored) {
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify([now]));
+    return true;
+  }
+  
+  const timestamps: number[] = JSON.parse(stored);
+  const recentSubmissions = timestamps.filter(t => now - t < WINDOW_MS);
+  
+  if (recentSubmissions.length >= MAX_SUBMISSIONS) {
+    return false;
+  }
+  
+  recentSubmissions.push(now);
+  localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(recentSubmissions));
+  return true;
+};
+
 export const DemoRequestForm = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -21,9 +47,28 @@ export const DemoRequestForm = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Rate limiting check
+    if (!checkRateLimit()) {
+      toast({
+        title: 'Muitas tentativas',
+        description: 'Por favor, aguarde antes de enviar novamente.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
+    
+    // Honeypot check (anti-bot)
+    if (formData.get('website')) {
+      // É bot, ignorar silenciosamente
+      setLoading(false);
+      return;
+    }
+    
     const data = {
       nome: formData.get('nome') as string,
       empresa: formData.get('empresa') as string,
@@ -90,7 +135,16 @@ export const DemoRequestForm = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-lg mx-auto">
+    <form onSubmit={handleSubmit} id="demo-form" className="space-y-6 max-w-lg mx-auto">
+      {/* Honeypot field (hidden from users, catches bots) */}
+      <input
+        type="text"
+        name="website"
+        style={{ display: 'none' }}
+        tabIndex={-1}
+        autoComplete="off"
+      />
+      
       <div>
         <label className="block text-sm font-medium mb-2 text-foreground">
           Nome Completo *
