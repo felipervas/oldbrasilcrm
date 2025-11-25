@@ -187,11 +187,12 @@ const Pedidos = () => {
 
   const handleDeletePedido = async (pedidoId: string, status: string) => {
     if (status === 'cancelado') {
-      if (!confirm("ATENÇÃO: Excluir permanentemente este pedido cancelado? Esta ação não pode ser desfeita.")) {
+      if (!confirm("ATENÇÃO: Excluir permanentemente este pedido cancelado? Esta ação não pode ser desfeita e removerá todos os produtos relacionados.")) {
         return;
       }
       
       try {
+        // Com ON DELETE CASCADE, isso agora deleta automaticamente os pedidos_produtos
         const { error } = await supabase
           .from("pedidos")
           .delete()
@@ -205,7 +206,7 @@ const Pedidos = () => {
             variant: "destructive" 
           });
         } else {
-          toast({ title: "Pedido excluído permanentemente!" });
+          toast({ title: "Pedido e produtos relacionados excluídos permanentemente!" });
           await loadPedidos();
         }
       } catch (err) {

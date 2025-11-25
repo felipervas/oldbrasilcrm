@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useColaboradorEventos } from "@/hooks/useColaboradorEventos";
-import { useHistoricoEquipe } from "@/hooks/useHistoricoEquipe";
 import { AgendasEquipe } from "@/components/AgendasEquipe";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,7 +20,7 @@ import { useRelatorioDiario, EventoDia } from '@/hooks/useRelatorioDiario';
 import { useMapboxRotaOtimizada } from '@/hooks/useMapboxRotaOtimizada';
 import { useIAInsights } from '@/hooks/useIAInsights';
 import { AgendamentoRapidoModal } from '@/components/prospects/AgendamentoRapidoModal';
-import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, History, Trophy, List, CalendarDays, Lightbulb, Package, Navigation, ExternalLink, Route, Loader2 } from "lucide-react";
+import { Users, CheckCircle2, Clock, AlertCircle, Calendar, Phone, Mail, MapPin, Plus, Edit, Trash, Trophy, List, CalendarDays, Lightbulb, Package, Navigation, ExternalLink, Route, Loader2 } from "lucide-react";
 import { EventoVisitaCard } from '@/components/relatorio/EventoVisitaCard';
 import { EventoTarefaCard } from '@/components/relatorio/EventoTarefaCard';
 import { EventoGeralCard } from '@/components/relatorio/EventoGeralCard';
@@ -39,6 +38,7 @@ const MeuPerfil = () => {
   const [profile, setProfile] = useState<any>(null);
   const [clientes, setClientes] = useState<any[]>([]);
   const [tarefas, setTarefas] = useState<any[]>([]);
+  const [pedidos, setPedidos] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [eventoEditando, setEventoEditando] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -66,7 +66,6 @@ const MeuPerfil = () => {
   const [rotaCalculada, setRotaCalculada] = useState<any>(null);
 
   const { eventos, createEvento, updateEvento, deleteEvento, toggleConcluido, createMultipleEventos } = useColaboradorEventos();
-  const { data: historico } = useHistoricoEquipe();
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const { data: eventosRelatorioDiario, isLoading: loadingRelatorioDiario } = useRelatorioDiario(selectedDate || new Date());
   const { calcularRotaOtimizada, isCalculating } = useMapboxRotaOtimizada();
@@ -166,6 +165,15 @@ const MeuPerfil = () => {
         .order("data_prevista", { ascending: false });
 
       setTarefas(tarefasData || []);
+
+      const { data: pedidosData } = await supabase
+        .from("pedidos")
+        .select("*, clientes(nome_fantasia)")
+        .eq("responsavel_venda_id", user.id)
+        .order("data_pedido", { ascending: false })
+        .limit(20);
+
+      setPedidos(pedidosData || []);
 
     } catch (error) {
       console.error("Erro ao carregar perfil:", error);
@@ -593,7 +601,7 @@ const MeuPerfil = () => {
           <TabsTrigger value="tarefas" id="tarefas-tab">Minhas Tarefas</TabsTrigger>
           <TabsTrigger value="calendario" id="calendario-tab">Calendário</TabsTrigger>
           <TabsTrigger value="agendas" id="agendas-tab">Agendas da Equipe</TabsTrigger>
-          <TabsTrigger value="historico" id="historico-tab">Histórico</TabsTrigger>
+          <TabsTrigger value="pedidos" id="pedidos-tab">Meus Pedidos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="meudia" className="space-y-6">
@@ -1405,40 +1413,66 @@ const MeuPerfil = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="historico" className="space-y-4">
+        <TabsContent value="pedidos" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5" />
-                Histórico de Atividades
+                <Package className="h-5 w-5" />
+                Meus Pedidos
               </CardTitle>
-              <CardDescription>Últimas 50 atividades da equipe</CardDescription>
+              <CardDescription>Pedidos lançados por você (últimos 20)</CardDescription>
             </CardHeader>
             <CardContent>
-              {!historico || historico.length === 0 ? (
+              {!pedidos || pedidos.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nenhuma atividade registrada</p>
+                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum pedido lançado ainda</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {historico.map((item: any) => (
-                    <div key={item.id} className="border rounded-lg p-4">
+                  {pedidos.map((pedido: any) => (
+                    <div key={pedido.id} className="border rounded-lg p-4">
                       <div className="flex items-start justify-between">
-                        <div>
+                        <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline">{getAcaoLabel(item.acao)}</Badge>
-                            <span className="text-sm text-muted-foreground">
-                              por {item.profiles?.nome || 'Desconhecido'}
-                            </span>
+                            <h4 className="font-semibold">{pedido.clientes?.nome_fantasia}</h4>
+                            <Badge 
+                              variant={pedido.status === 'cancelado' ? 'destructive' : 'outline'}
+                            >
+                              {pedido.status}
+                            </Badge>
                           </div>
-                          {item.detalhes && (
-                            <p className="text-sm text-muted-foreground">{item.detalhes}</p>
+                          {pedido.numero_pedido && (
+                            <p className="text-sm text-muted-foreground">
+                              Pedido: {pedido.numero_pedido}
+                            </p>
                           )}
+                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                            {pedido.data_pedido && (
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(pedido.data_pedido).toLocaleDateString('pt-BR')}
+                              </div>
+                            )}
+                            {pedido.valor_total && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-semibold text-primary">
+                                  {new Intl.NumberFormat('pt-BR', {
+                                    style: 'currency',
+                                    currency: 'BRL',
+                                  }).format(parseFloat(pedido.valor_total))}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(item.created_at).toLocaleString('pt-BR')}
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/pedidos/${pedido.id}/editar`)}
+                        >
+                          Ver detalhes
+                        </Button>
                       </div>
                     </div>
                   ))}
