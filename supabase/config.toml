@@ -2,3 +2,15 @@ project_id = "uwbzrkqtwmykniijbwik"
 
 [functions.gerar-insights-prospect]
 verify_jwt = false
+
+[functions.gerar-insights-cliente]
+verify_jwt = true
+
+[functions.qualificar-lead]
+verify_jwt = true
+
+[functions.gerar-script-vendas]
+verify_jwt = true
+
+[functions.resumo-diario-vendas]
+verify_jwt = true
