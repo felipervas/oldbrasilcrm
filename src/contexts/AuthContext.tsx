@@ -22,67 +22,73 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
-    // Configurar listener PRIMEIRO
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    // Listener para mudanças de autenticação - apenas atualiza estado
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!mounted) return;
-      
       setSession(newSession);
       setUser(newSession?.user ?? null);
-      
-      if (newSession?.user) {
-        const { data } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', newSession.user.id);
-        
-        if (mounted) {
-          const userRoles = data?.map(r => r.role) || [];
-          setRoles(userRoles);
-          setIsAdmin(userRoles.includes('admin'));
-        }
-      } else {
-        if (mounted) {
-          setRoles([]);
-          setIsAdmin(false);
-        }
-      }
     });
 
-    // DEPOIS verificar sessão existente
-    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
-      if (!mounted) return;
-      
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        const { data } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', currentSession.user.id);
-        
+    // Verificar sessão existente ao inicializar
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: currentSession } }) => {
+        if (!mounted) return;
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Erro ao carregar sessão:', error);
         if (mounted) {
-          const userRoles = data?.map(r => r.role) || [];
-          setRoles(userRoles);
-          setIsAdmin(userRoles.includes('admin'));
+          setLoading(false);
         }
-      }
-      
-      if (mounted) {
-        setLoading(false);
-      }
-    }).catch((error) => {
-      console.error('Erro ao carregar sessão:', error);
-      if (mounted) {
-        setLoading(false);
-      }
-    });
+      });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadRoles = async () => {
+      if (!user) {
+        setRoles([]);
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+
+        if (!mounted) return;
+
+        const userRoles = data?.map((r) => r.role) || [];
+        setRoles(userRoles);
+        setIsAdmin(userRoles.includes('admin'));
+      } catch (error) {
+        console.error('Erro ao carregar roles do usuário:', error);
+        if (mounted) {
+          setRoles([]);
+          setIsAdmin(false);
+        }
+      }
+    };
+
+    loadRoles();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]);
 
   return (
     <AuthContext.Provider value={{ user, session, loading, isAdmin, roles }}>
