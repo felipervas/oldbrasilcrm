@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,18 +17,37 @@ interface ConvertLeadDialogProps {
 
 export function ConvertLeadDialog({ lead, open, onOpenChange, onConvert }: ConvertLeadDialogProps) {
   const [formData, setFormData] = useState({
-    nome_fantasia: lead?.nome || '',
+    nome_fantasia: '',
     razao_social: '',
     cnpj_cpf: '',
-    telefone: lead?.telefone || '',
-    email: lead?.email || '',
+    telefone: '',
+    email: '',
     cidade: '',
     uf: '',
     cep: '',
     logradouro: '',
     numero: '',
-    observacoes: lead?.mensagem || '',
+    observacoes: '',
   });
+
+  // Atualizar formData quando o lead mudar
+  useEffect(() => {
+    if (lead) {
+      setFormData({
+        nome_fantasia: lead.nome || '',
+        razao_social: '',
+        cnpj_cpf: '',
+        telefone: lead.telefone || '',
+        email: lead.email || '',
+        cidade: '',
+        uf: '',
+        cep: '',
+        logradouro: '',
+        numero: '',
+        observacoes: lead.mensagem || '',
+      });
+    }
+  }, [lead]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -196,6 +196,7 @@ export default function LeadsLoja() {
             convertToClient.mutate({
               leadId: leadToConvert.id,
               clientData: data,
+              leadOriginal: leadToConvert,
             });
             setLeadToConvert(null);
           }
