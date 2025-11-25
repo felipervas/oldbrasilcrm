@@ -1,6 +1,6 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -115,15 +115,17 @@ function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; op
                       : "text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground"
                   }`}
                 />
-                <span
-                  className={`font-medium transition-colors whitespace-nowrap ${
-                    isActive
-                      ? "text-sidebar-primary-foreground"
-                      : "text-sidebar-foreground/80 group-hover:text-sidebar-accent-foreground"
-                  }`}
-                >
-                  {item.title}
-                </span>
+                {open && (
+                  <span
+                    className={`font-medium transition-colors whitespace-nowrap ${
+                      isActive
+                        ? "text-sidebar-primary-foreground"
+                        : "text-sidebar-foreground/80 group-hover:text-sidebar-accent-foreground"
+                    }`}
+                  >
+                    {item.title}
+                  </span>
+                )}
               </>
             )}
           </NavLink>
@@ -138,6 +140,7 @@ export function AppSidebar() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
+  const prevPathRef = useRef(location.pathname);
   
   const { toast } = useToast();
   const { isAdmin, roles } = useAuth();
@@ -154,6 +157,13 @@ export function AppSidebar() {
   useEffect(() => {
     loadMenuOrder();
   }, []);
+
+  useEffect(() => {
+    if (isMobile && location.pathname !== prevPathRef.current) {
+      setOpen(false);
+      prevPathRef.current = location.pathname;
+    }
+  }, [location.pathname, isMobile, setOpen]);
 
 
   const loadMenuOrder = () => {
@@ -218,7 +228,7 @@ export function AppSidebar() {
   return (
     <Sidebar 
       className="h-screen sticky top-0 transition-all duration-300 bg-gradient-to-b from-crm-sidebar-from to-crm-sidebar-to border-r border-sidebar-border text-sidebar-foreground shadow-lg"
-      collapsible="icon"
+      collapsible={isMobile ? "offcanvas" : "none"}
     >
       <SidebarHeader className="relative z-10 p-5 border-b border-sidebar-border bg-sidebar">
         <div className="flex items-center gap-3">
@@ -276,12 +286,14 @@ export function AppSidebar() {
                             : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`
                       }
-                    >
-                      <gerenciarLojaItem.icon className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
-                      <span className="font-medium transition-colors whitespace-nowrap">
-                        {gerenciarLojaItem.title}
-                      </span>
-                    </NavLink>
+                      >
+                        <gerenciarLojaItem.icon className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
+                        {open && (
+                          <span className="font-medium transition-colors whitespace-nowrap">
+                            {gerenciarLojaItem.title}
+                          </span>
+                        )}
+                      </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -295,12 +307,14 @@ export function AppSidebar() {
                             : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`
                       }
-                    >
-                      <Users className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
-                      <span className="font-medium transition-colors whitespace-nowrap">
-                        Gerenciar Equipe
-                      </span>
-                    </NavLink>
+                      >
+                        <Users className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
+                        {open && (
+                          <span className="font-medium transition-colors whitespace-nowrap">
+                            Gerenciar Equipe
+                          </span>
+                        )}
+                      </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -314,12 +328,14 @@ export function AppSidebar() {
                             : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`
                       }
-                    >
-                      <Shield className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
-                      <span className="font-medium transition-colors whitespace-nowrap">
-                        Administração
-                      </span>
-                    </NavLink>
+                      >
+                        <Shield className="h-5 w-5 text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground transition-colors" />
+                        {open && (
+                          <span className="font-medium transition-colors whitespace-nowrap">
+                            Administração
+                          </span>
+                        )}
+                      </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -335,7 +351,7 @@ export function AppSidebar() {
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
-          <span className="ml-2 whitespace-nowrap">Sair</span>
+          {open && <span className="ml-2 whitespace-nowrap">Sair</span>}
         </Button>
       </SidebarFooter>
 
