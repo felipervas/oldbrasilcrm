@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Gift, X } from 'lucide-react';
+import { Gift, X, MessageCircle } from 'lucide-react';
 import { trackEvent, CONVERSION_EVENTS } from '@/lib/analytics';
 import { gerarLinkWhatsAppContextual } from '@/lib/whatsapp';
 
@@ -114,6 +114,3 @@ export const ExitIntentModal = () => {
     </Dialog>
   );
 };
-
-// Importar MessageCircle para o botão WhatsApp
-import { MessageCircle } from 'lucide-react';

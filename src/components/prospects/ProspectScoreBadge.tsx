@@ -39,19 +39,21 @@ export const ProspectScoreBadge = ({ score, showLabel = true }: ProspectScoreBad
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge className={`${config.color} flex items-center gap-1 cursor-help`}>
-            {showLabel ? (
-              <span className="flex items-center gap-1">
-                {config.label} {score}
-              </span>
-            ) : (
-              <>
-                <Icon className="h-3 w-3" />
-                <span className="font-bold">{score}</span>
-              </>
-            )}
-          </Badge>
+        <TooltipTrigger>
+          <div className="inline-flex">
+            <Badge className={`${config.color} flex items-center gap-1 cursor-help`}>
+              {showLabel ? (
+                <span className="flex items-center gap-1">
+                  {config.label} {score}
+                </span>
+              ) : (
+                <>
+                  <Icon className="h-3 w-3" />
+                  <span className="font-bold">{score}</span>
+                </>
+              )}
+            </Badge>
+          </div>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <p className="font-semibold">{config.description}</p>
