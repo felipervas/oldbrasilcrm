@@ -1,5 +1,3 @@
-import { createClient } from "jsr:@supabase/supabase-js@2";
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -16,14 +14,18 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Buscar estatísticas de conversão por segmento
-    const { data: stats } = await supabase
-      .from('clientes')
-      .select('segmento, total_comprado')
-      .not('prospect_origem_id', 'is', null);
+    // Buscar estatísticas de conversão por segmento usando fetch
+    const statsRes = await fetch(
+      `${supabaseUrl}/rest/v1/clientes?prospect_origem_id=not.is.null&select=segmento,total_comprado`,
+      {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+      }
+    );
+    const stats = await statsRes.json();
 
     const prompt = `Analise este lead e forneça uma qualificação:
 
@@ -77,9 +79,9 @@ Forneça em formato JSON:
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error?.message || 'Erro desconhecido' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

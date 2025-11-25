@@ -1,5 +1,3 @@
-import { createClient } from "jsr:@supabase/supabase-js@2";
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -20,25 +18,41 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Buscar dados do cliente
-    const { data: cliente } = await supabase
-      .from('clientes')
-      .select('*, pedidos(*), interacoes(*)')
-      .eq('id', clienteId)
-      .single();
+    // Buscar dados do cliente usando fetch
+    const clienteRes = await fetch(
+      `${supabaseUrl}/rest/v1/clientes?id=eq.${clienteId}&select=*,pedidos(*),interacoes(*)`,
+      {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+      }
+    );
+    
+    const clientes = await clienteRes.json();
+    const cliente = clientes[0];
 
     if (!cliente) {
       throw new Error('Cliente não encontrado');
     }
 
     // Buscar produtos mais comprados
-    const { data: produtosPedidos } = await supabase
-      .from('pedidos_produtos')
-      .select('produto_id, quantidade, produtos(nome, categoria)')
-      .in('pedido_id', cliente.pedidos?.map((p: any) => p.id) || []);
+    const pedidoIds = cliente.pedidos?.map((p: any) => p.id) || [];
+    let produtosPedidos: any[] = [];
+    
+    if (pedidoIds.length > 0) {
+      const produtosRes = await fetch(
+        `${supabaseUrl}/rest/v1/pedidos_produtos?pedido_id=in.(${pedidoIds.join(',')})&select=produto_id,quantidade,produtos(nome,categoria)`,
+        {
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+        }
+      );
+      produtosPedidos = await produtosRes.json();
+    }
 
     // Preparar contexto para a IA
     const contexto = {
@@ -74,7 +88,7 @@ Produtos mais comprados:
 ${contexto.produtosComprados.map(p => `- ${p.nome} (${p.quantidade}x)`).join('\n')}
 
 Últimas interações:
-${contexto.ultimasInteracoes.map(i => `- ${i.tipo}: ${i.resultado} em ${i.data}`).join('\n')}
+${contexto.ultimasInteracoes.map((i: any) => `- ${i.tipo}: ${i.resultado} em ${i.data}`).join('\n')}
 
 Forneça em formato JSON:
 {
@@ -119,9 +133,9 @@ Forneça em formato JSON:
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error?.message || 'Erro desconhecido' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
