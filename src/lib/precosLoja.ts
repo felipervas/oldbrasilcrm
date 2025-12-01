@@ -15,9 +15,14 @@ export const calcularPrecoCaixa = (
 // FASE 2: Nova função para calcular preço total da embalagem
 export const calcularPrecoEmbalagem = (
   precoKg: number,
-  pesoEmbalagem: number
+  pesoEmbalagem: number,
+  tipoVenda?: 'kg' | 'unidade'
 ): number => {
-  // Se não tiver peso, usar 1 como padrão para produtos vendidos por unidade
+  // Para produtos vendidos por unidade, o preço já é o total
+  if (tipoVenda === 'unidade') {
+    return precoKg;
+  }
+  // Para produtos vendidos por kg, multiplicar pelo peso
   const peso = pesoEmbalagem || 1;
   return precoKg * peso;
 };
@@ -42,14 +47,10 @@ export const formatarInfoPreco = (produto: any): {
   
   if (!precoKg) return null;
   
-  // Se produto não tem preco_por_kg original e vende por unidade,
-  // então o preço da tabela JÁ É o preço total da embalagem
-  const precoJaETotal = !produto.preco_por_kg && tipoVenda === 'unidade';
-  
   const info = {
     precoKg,
     pesoEmbalagem: pesoEmb,
-    precoEmbalagem: precoJaETotal ? precoKg : calcularPrecoEmbalagem(precoKg, pesoEmb),
+    precoEmbalagem: calcularPrecoEmbalagem(precoKg, pesoEmb, tipoVenda as 'kg' | 'unidade'),
     tipoVenda: tipoVenda as 'kg' | 'unidade',
   };
   
