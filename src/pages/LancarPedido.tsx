@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileUp, FileText, Plus, Loader2, Trash2, AlertCircle } from "lucide-react";
+import { FileUp, FileText, Plus, Loader2, Trash2, AlertCircle, Edit2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +15,9 @@ import { Combobox } from "@/components/ui/combobox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useFormPersistence } from "@/hooks/useFormPersistence";
+import { QuickClienteDialog } from "@/components/QuickClienteDialog";
+import { QuickProdutoDialog } from "@/components/QuickProdutoDialog";
+import { Badge } from "@/components/ui/badge";
 
 interface ProdutoItem {
   produto_id: string;
@@ -42,6 +45,8 @@ const LancarPedido = () => {
   const [tabelasProduto, setTabelasProduto] = useState<any[]>([]);
   const [tabelaSelecionada, setTabelaSelecionada] = useState("");
   const [isVendidoPorKg, setIsVendidoPorKg] = useState(false);
+  const [editandoProduto, setEditandoProduto] = useState<number | null>(null);
+  const [editValues, setEditValues] = useState({ quantidade: 0, preco_unitario: 0, preco_total: 0 });
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -201,6 +206,79 @@ const LancarPedido = () => {
 
   const removerProduto = (index: number) => {
     setProdutosEscolhidos(produtosEscolhidos.filter((_, i) => i !== index));
+  };
+
+  const iniciarEdicao = (index: number, produto: ProdutoItem) => {
+    setEditandoProduto(index);
+    setEditValues({
+      quantidade: produto.quantidade,
+      preco_unitario: produto.preco_unitario,
+      preco_total: produto.quantidade * produto.preco_unitario,
+    });
+  };
+
+  const cancelarEdicao = () => {
+    setEditandoProduto(null);
+  };
+
+  const salvarEdicao = (index: number) => {
+    setProdutosEscolhidos(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      return {
+        ...item,
+        quantidade: editValues.quantidade,
+        preco_unitario: editValues.preco_unitario,
+      };
+    }));
+    setEditandoProduto(null);
+  };
+
+  const handleEditQuantidade = (valor: number) => {
+    setEditValues(prev => ({
+      quantidade: valor,
+      preco_unitario: prev.preco_unitario,
+      preco_total: valor * prev.preco_unitario,
+    }));
+  };
+
+  const handleEditPrecoUnitario = (valor: number) => {
+    setEditValues(prev => ({
+      quantidade: prev.quantidade,
+      preco_unitario: valor,
+      preco_total: prev.quantidade * valor,
+    }));
+  };
+
+  const handleEditPrecoTotal = (valor: number) => {
+    setEditValues(prev => ({
+      quantidade: prev.quantidade,
+      preco_unitario: prev.quantidade > 0 ? valor / prev.quantidade : 0,
+      preco_total: valor,
+    }));
+  };
+
+  const calcularDiferencaPreco = (produto: ProdutoItem): { tipo: 'desconto' | 'acrescimo' | null, percentual: number } => {
+    const prodOriginal = produtos.find(p => p.id === produto.produto_id);
+    if (!prodOriginal) return { tipo: null, percentual: 0 };
+
+    const precoOriginal = prodOriginal.preco_por_kg || prodOriginal.preco_base || 0;
+    if (precoOriginal === 0) return { tipo: null, percentual: 0 };
+
+    const diferenca = ((produto.preco_unitario - precoOriginal) / precoOriginal) * 100;
+    
+    if (Math.abs(diferenca) < 1) return { tipo: null, percentual: 0 };
+    if (diferenca < 0) return { tipo: 'desconto', percentual: Math.abs(diferenca) };
+    return { tipo: 'acrescimo', percentual: diferenca };
+  };
+
+  const handleClienteCreated = async (clienteId: string) => {
+    await loadClientes();
+    setSelectedCliente(clienteId);
+  };
+
+  const handleProdutoCreated = async (produtoId: string) => {
+    await loadProdutos();
+    setSelectedProduto(produtoId);
   };
 
   const atualizarPrecoProduto = async () => {
@@ -587,14 +665,17 @@ const LancarPedido = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Cliente *</Label>
-                    <Combobox
-                      options={clientes.map(c => ({ value: c.id, label: c.nome_fantasia }))}
-                      value={selectedCliente}
-                      onValueChange={handleClienteChange}
-                      placeholder="Selecione um cliente..."
-                      searchPlaceholder="Buscar cliente..."
-                      emptyText="Nenhum cliente encontrado."
-                    />
+                    <div className="flex items-center">
+                      <Combobox
+                        options={clientes.map(c => ({ value: c.id, label: c.nome_fantasia }))}
+                        value={selectedCliente}
+                        onValueChange={handleClienteChange}
+                        placeholder="Selecione um cliente..."
+                        searchPlaceholder="Buscar cliente..."
+                        emptyText="Nenhum cliente encontrado."
+                      />
+                      <QuickClienteDialog onClienteCreated={handleClienteCreated} />
+                    </div>
                   </div>
                   <div>
                     <Label>Responsável pela Venda</Label>
@@ -812,77 +893,82 @@ const LancarPedido = () => {
                       <div className="grid grid-cols-12 gap-2">
                          <div className="col-span-4">
                           <Label className="text-xs">Produto</Label>
-                          <Combobox
-                            options={produtos.map(p => ({
-                              value: p.id,
-                              label: `${p.nome}${(p as any).marcas?.nome ? ` - ${(p as any).marcas.nome}` : ''}`
-                            }))}
-                            value={selectedProduto}
-                            onValueChange={async (v) => {
-                              setSelectedProduto(v);
-                              const prod = produtos.find(p => p.id === v);
-                              
-                              // Usar o campo tipo_venda do produto
-                              const vendePorKg = (prod as any)?.tipo_venda === 'kg';
-                              setIsVendidoPorKg(vendePorKg);
-                              
-                              // Carregar tabelas deste produto
-                              const { data: tabelas } = await supabase
-                                .from('produto_tabelas_preco')
-                                .select('*')
-                                .eq('produto_id', v)
-                                .eq('ativo', true)
-                                .order('nome_tabela');
-                              
-                              setTabelasProduto(tabelas || []);
-                              setTabelaSelecionada("");
-                              
-                              // Definir preço baseado no tipo de venda
-                              if (tabelas && tabelas.length > 0) {
-                                setTabelaSelecionada(tabelas[0].id);
-                                
-                                // Se produto não tem preco_por_kg e vende por unidade, 
-                                // então o preço da tabela JÁ É o preço total
-                                const precoJaETotal = !prod?.preco_por_kg && !vendePorKg;
-                                
-                                if (vendePorKg) {
-                                  // Vendido por kg: usar preço por kg direto
-                                  const preco = tabelas[0].preco_por_kg;
-                                  setPrecoUnitario(preco);
-                                  setPrecoOriginalProduto(preco);
-                                } else if (precoJaETotal) {
-                                  // Preço da tabela já é o total da caixa
-                                  const preco = tabelas[0].preco_por_kg;
-                                  setPrecoUnitario(preco);
-                                  setPrecoOriginalProduto(preco);
-                                } else {
-                                  // Vendido por caixa: calcular preço (kg * peso)
-                                  const pesoEmb = prod?.peso_embalagem_kg || 1;
-                                  const preco = tabelas[0].preco_por_kg * pesoEmb;
-                                  setPrecoUnitario(preco);
-                                  setPrecoOriginalProduto(preco);
-                                }
-                              } else if (prod?.preco_por_kg) {
-                                if (vendePorKg) {
-                                  const preco = parseFloat(prod.preco_por_kg);
-                                  setPrecoUnitario(preco);
-                                  setPrecoOriginalProduto(preco);
-                                } else {
-                                  const pesoEmb = prod?.peso_embalagem_kg || 1;
-                                  const preco = parseFloat(prod.preco_por_kg) * pesoEmb;
-                                  setPrecoUnitario(preco);
-                                  setPrecoOriginalProduto(preco);
-                                }
-                              } else if (prod?.preco_base) {
-                                const preco = parseFloat(prod.preco_base);
-                                setPrecoUnitario(preco);
-                                setPrecoOriginalProduto(preco);
-                              }
-                            }}
-                            placeholder="Buscar produto..."
-                            searchPlaceholder="Digite pistache, chocolate..."
-                            emptyText="Nenhum produto encontrado."
-                          />
+                          <div className="flex items-start gap-2">
+                            <div className="flex-1">
+                              <Combobox
+                                options={produtos.map(p => ({
+                                  value: p.id,
+                                  label: `${p.nome}${(p as any).marcas?.nome ? ` - ${(p as any).marcas.nome}` : ''}`
+                                }))}
+                                value={selectedProduto}
+                                onValueChange={async (v) => {
+                                  setSelectedProduto(v);
+                                  const prod = produtos.find(p => p.id === v);
+                                  
+                                  // Usar o campo tipo_venda do produto
+                                  const vendePorKg = (prod as any)?.tipo_venda === 'kg';
+                                  setIsVendidoPorKg(vendePorKg);
+                                  
+                                  // Carregar tabelas deste produto
+                                  const { data: tabelas } = await supabase
+                                    .from('produto_tabelas_preco')
+                                    .select('*')
+                                    .eq('produto_id', v)
+                                    .eq('ativo', true)
+                                    .order('nome_tabela');
+                                  
+                                  setTabelasProduto(tabelas || []);
+                                  setTabelaSelecionada("");
+                                  
+                                  // Definir preço baseado no tipo de venda
+                                  if (tabelas && tabelas.length > 0) {
+                                    setTabelaSelecionada(tabelas[0].id);
+                                    
+                                    // Se produto não tem preco_por_kg e vende por unidade, 
+                                    // então o preço da tabela JÁ É o preço total
+                                    const precoJaETotal = !prod?.preco_por_kg && !vendePorKg;
+                                    
+                                    if (vendePorKg) {
+                                      // Vendido por kg: usar preço por kg direto
+                                      const preco = tabelas[0].preco_por_kg;
+                                      setPrecoUnitario(preco);
+                                      setPrecoOriginalProduto(preco);
+                                    } else if (precoJaETotal) {
+                                      // Preço da tabela já é o total da caixa
+                                      const preco = tabelas[0].preco_por_kg;
+                                      setPrecoUnitario(preco);
+                                      setPrecoOriginalProduto(preco);
+                                    } else {
+                                      // Vendido por caixa: calcular preço (kg * peso)
+                                      const pesoEmb = prod?.peso_embalagem_kg || 1;
+                                      const preco = tabelas[0].preco_por_kg * pesoEmb;
+                                      setPrecoUnitario(preco);
+                                      setPrecoOriginalProduto(preco);
+                                    }
+                                  } else if (prod?.preco_por_kg) {
+                                    if (vendePorKg) {
+                                      const preco = parseFloat(prod.preco_por_kg);
+                                      setPrecoUnitario(preco);
+                                      setPrecoOriginalProduto(preco);
+                                    } else {
+                                      const pesoEmb = prod?.peso_embalagem_kg || 1;
+                                      const preco = parseFloat(prod.preco_por_kg) * pesoEmb;
+                                      setPrecoUnitario(preco);
+                                      setPrecoOriginalProduto(preco);
+                                    }
+                                  } else if (prod?.preco_base) {
+                                    const preco = parseFloat(prod.preco_base);
+                                    setPrecoUnitario(preco);
+                                    setPrecoOriginalProduto(preco);
+                                  }
+                                }}
+                                placeholder="Buscar produto..."
+                                searchPlaceholder="Digite pistache, chocolate..."
+                                emptyText="Nenhum produto encontrado."
+                              />
+                            </div>
+                            <QuickProdutoDialog onProdutoCreated={handleProdutoCreated} />
+                          </div>
                           {selectedProduto && (() => {
                             const prod = produtos.find(p => p.id === selectedProduto);
                             if (!prod) return null;
@@ -1024,49 +1110,139 @@ const LancarPedido = () => {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Produto</TableHead>
-                            <TableHead className="text-right">Qtd</TableHead>
-                            <TableHead className="text-right">Preço</TableHead>
-                            <TableHead className="text-right">Subtotal</TableHead>
-                            <TableHead className="w-[50px]"></TableHead>
+                            <TableHead className="text-right w-24">Qtd</TableHead>
+                            <TableHead className="text-right w-32">Preço Unit.</TableHead>
+                            <TableHead className="text-right w-32">Preço Total</TableHead>
+                            <TableHead className="w-24">Ações</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {produtosEscolhidos.map((item, index) => (
-                            <TableRow key={index}>
-                              <TableCell>
-                                <div>
-                                  <div className="font-medium">{item.nome}</div>
-                                  {item.tabela_preco_nome && (
-                                    <div className="text-xs text-green-600 font-medium mt-0.5">
-                                      💰 {item.tabela_preco_nome}
+                          {produtosEscolhidos.map((item, index) => {
+                            const isEditing = editandoProduto === index;
+                            const diff = calcularDiferencaPreco(item);
+                            
+                            return (
+                              <TableRow key={index}>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium flex items-center gap-2">
+                                      {item.nome}
+                                      {diff.tipo === 'desconto' && (
+                                        <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">
+                                          🏷️ -{diff.percentual.toFixed(0)}%
+                                        </Badge>
+                                      )}
+                                      {diff.tipo === 'acrescimo' && (
+                                        <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50">
+                                          📈 +{diff.percentual.toFixed(0)}%
+                                        </Badge>
+                                      )}
                                     </div>
+                                    {item.tabela_preco_nome && (
+                                      <div className="text-xs text-green-600 font-medium mt-0.5">
+                                        💰 {item.tabela_preco_nome}
+                                      </div>
+                                    )}
+                                    {item.observacoes && (
+                                      <div className="text-xs text-muted-foreground italic mt-0.5">
+                                        📝 {item.observacoes}
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {isEditing ? (
+                                    <Input
+                                      type="number"
+                                      step="0.1"
+                                      value={editValues.quantidade}
+                                      onChange={(e) => handleEditQuantidade(parseFloat(e.target.value) || 0)}
+                                      className="w-20 text-right"
+                                      autoFocus
+                                    />
+                                  ) : (
+                                    item.quantidade
                                   )}
-                                  {item.observacoes && (
-                                    <div className="text-xs text-muted-foreground italic mt-0.5">
-                                      📝 {item.observacoes}
-                                    </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {isEditing ? (
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={editValues.preco_unitario}
+                                      onChange={(e) => handleEditPrecoUnitario(parseFloat(e.target.value) || 0)}
+                                      className="w-28 text-right"
+                                    />
+                                  ) : (
+                                    `R$ ${item.preco_unitario.toFixed(2)}`
                                   )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">{item.quantidade}</TableCell>
-                              <TableCell className="text-right">
-                                R$ {item.preco_unitario.toFixed(2)}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                R$ {(item.quantidade * item.preco_unitario).toFixed(2)}
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removerProduto(index)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {isEditing ? (
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={editValues.preco_total}
+                                      onChange={(e) => handleEditPrecoTotal(parseFloat(e.target.value) || 0)}
+                                      className="w-28 text-right bg-blue-50"
+                                      placeholder="Edite o total"
+                                    />
+                                  ) : (
+                                    <span className="font-medium">
+                                      R$ {(item.quantidade * item.preco_unitario).toFixed(2)}
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-1">
+                                    {isEditing ? (
+                                      <>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => salvarEdicao(index)}
+                                          className="text-green-600 hover:text-green-700"
+                                        >
+                                          <Check className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={cancelarEdicao}
+                                          className="text-muted-foreground"
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => iniciarEdicao(index, item)}
+                                          title="Editar"
+                                        >
+                                          <Edit2 className="h-4 w-4 text-blue-600" />
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removerProduto(index)}
+                                          title="Remover"
+                                        >
+                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                      </>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                           <TableRow>
                             <TableCell colSpan={3} className="text-right font-bold">Total:</TableCell>
                             <TableCell className="text-right font-bold text-primary text-lg">
