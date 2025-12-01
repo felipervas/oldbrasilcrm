@@ -272,6 +272,7 @@ export type Database = {
         Row: {
           aniversario: string | null
           ativo: boolean
+          bairro: string | null
           cep: string | null
           cidade: string | null
           cnpj_cpf: string | null
@@ -289,6 +290,7 @@ export type Database = {
           prospect_origem_id: string | null
           prospect_status_origem: string | null
           razao_social: string | null
+          referencia: string | null
           responsavel_id: string | null
           segmento: string | null
           tags: string[] | null
@@ -303,6 +305,7 @@ export type Database = {
         Insert: {
           aniversario?: string | null
           ativo?: boolean
+          bairro?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj_cpf?: string | null
@@ -320,6 +323,7 @@ export type Database = {
           prospect_origem_id?: string | null
           prospect_status_origem?: string | null
           razao_social?: string | null
+          referencia?: string | null
           responsavel_id?: string | null
           segmento?: string | null
           tags?: string[] | null
@@ -334,6 +338,7 @@ export type Database = {
         Update: {
           aniversario?: string | null
           ativo?: boolean
+          bairro?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj_cpf?: string | null
@@ -351,6 +356,7 @@ export type Database = {
           prospect_origem_id?: string | null
           prospect_status_origem?: string | null
           razao_social?: string | null
+          referencia?: string | null
           responsavel_id?: string | null
           segmento?: string | null
           tags?: string[] | null
