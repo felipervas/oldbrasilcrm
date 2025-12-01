@@ -544,6 +544,7 @@ export type Database = {
           arquivo_url: string | null
           beneficiario: string | null
           categoria: string | null
+          cliente_id: string | null
           codigo_barras: string | null
           created_at: string
           data: string
@@ -564,6 +565,7 @@ export type Database = {
           arquivo_url?: string | null
           beneficiario?: string | null
           categoria?: string | null
+          cliente_id?: string | null
           codigo_barras?: string | null
           created_at?: string
           data?: string
@@ -584,6 +586,7 @@ export type Database = {
           arquivo_url?: string | null
           beneficiario?: string | null
           categoria?: string | null
+          cliente_id?: string | null
           codigo_barras?: string | null
           created_at?: string
           data?: string
@@ -599,7 +602,22 @@ export type Database = {
           valor?: number
           valor_boleto?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "mv_faturamento_clientes"
+            referencedColumns: ["cliente_id"]
+          },
+        ]
       }
       historico_equipe: {
         Row: {

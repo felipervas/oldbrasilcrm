@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ClienteProdutosHistorico } from "@/components/ClienteProdutosHistorico";
+import { ClienteBoletos } from "@/components/ClienteBoletos";
 import { useClientes } from "@/hooks/useClientes";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -837,11 +838,12 @@ const Clientes = () => {
             <DialogTitle>Editar Cliente</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="info">Informações</TabsTrigger>
               <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
               <TabsTrigger value="contatos">Contatos</TabsTrigger>
               <TabsTrigger value="historico">Histórico</TabsTrigger>
+              <TabsTrigger value="boletos">Boletos</TabsTrigger>
             </TabsList>
 
             <TabsContent value="info">
@@ -1090,6 +1092,12 @@ const Clientes = () => {
                     clienteId={clienteSelecionado.id}
                     clienteNome={clienteSelecionado.nome_fantasia}
                   />
+                )}
+              </TabsContent>
+
+              <TabsContent value="boletos">
+                {clienteSelecionado && (
+                  <ClienteBoletos clienteId={clienteSelecionado.id} />
                 )}
               </TabsContent>
             </Tabs>

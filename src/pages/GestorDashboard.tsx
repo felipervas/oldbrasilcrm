@@ -2,13 +2,16 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, TrendingUp, Users, Package, DollarSign, BarChart3, PieChart as PieChartIcon } from "lucide-react";
+import { Calendar, TrendingUp, Users, Package, DollarSign, BarChart3, PieChart as PieChartIcon, FileText, AlertCircle, Clock } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useGestorDashboard } from "@/hooks/useGestorDashboard";
+import { useBoletosGestor } from "@/hooks/useBoletosGestor";
+import { BoletosGestorSection } from "@/components/BoletosGestorSection";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { format, isPast, isToday, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 // Lazy load Recharts para reduzir bundle inicial
@@ -523,6 +526,20 @@ const GestorDashboard = () => {
 
         {/* Balanço Financeiro */}
         <TabsContent value="financeiro" className="space-y-4">
+          {/* Seção de Boletos a Receber */}
+          <Card className="border-primary/20 shadow-elegant">
+            <CardHeader className="bg-gradient-to-r from-chart-3/10 to-transparent">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Boletos a Receber
+              </CardTitle>
+              <CardDescription>Controle de boletos pendentes e vencimentos</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <BoletosGestorSection />
+            </CardContent>
+          </Card>
+
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="border-primary/20 shadow-elegant">
               <CardHeader>
