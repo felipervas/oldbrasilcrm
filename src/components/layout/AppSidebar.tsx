@@ -34,6 +34,7 @@ import {
   Target,
   CalendarDays,
   Route,
+  GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -92,14 +93,14 @@ function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; op
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
+    <div ref={setNodeRef} style={style}>
       <SidebarMenuItem>
         <SidebarMenuButton asChild>
           <NavLink
             to={item.url}
             end
             className={({ isActive }) =>
-              `group relative overflow-hidden rounded-lg mb-1 px-2 py-2 transition-all duration-200 ${
+              `group relative overflow-hidden rounded-lg mb-1 px-2 py-2 transition-all duration-200 flex items-center gap-2 ${
                 isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-crm-hover"
                   : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -108,15 +109,21 @@ function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; op
           >
             {({ isActive }) => (
               <>
-                <div {...listeners} className="cursor-grab active:cursor-grabbing p-1 -ml-1 mr-1">
-                  <item.icon
-                    className={`h-5 w-5 transition-colors ${
-                      isActive
-                        ? "text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground"
-                    }`}
-                  />
+                <div 
+                  {...attributes}
+                  {...listeners}
+                  className="cursor-grab active:cursor-grabbing p-1 hover:bg-sidebar-accent/50 rounded transition-colors"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <GripVertical className="h-4 w-4 text-sidebar-foreground/40" />
                 </div>
+                <item.icon
+                  className={`h-5 w-5 transition-colors ${
+                    isActive
+                      ? "text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground"
+                  }`}
+                />
                 {open && (
                   <span
                     className={`font-medium transition-colors whitespace-nowrap ${

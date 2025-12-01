@@ -2030,7 +2030,6 @@ export type Database = {
           faturamento_total: number | null
           nome_fantasia: string | null
           total_pedidos: number | null
-          ultima_compra: string | null
         }
         Relationships: []
       }
@@ -2040,7 +2039,6 @@ export type Database = {
           marca: string | null
           marca_id: string | null
           quantidade_total: number | null
-          total_pedidos: number | null
         }
         Relationships: []
       }
@@ -2210,38 +2208,6 @@ export type Database = {
         }[]
       }
       get_dashboard_stats_optimized: { Args: never; Returns: Json }
-      get_faturamento_clientes: {
-        Args: never
-        Returns: {
-          cliente_id: string | null
-          faturamento_total: number | null
-          nome_fantasia: string | null
-          total_pedidos: number | null
-          ultima_compra: string | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "mv_faturamento_clientes"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      get_faturamento_marcas: {
-        Args: never
-        Returns: {
-          faturamento_total: number | null
-          marca: string | null
-          marca_id: string | null
-          quantidade_total: number | null
-          total_pedidos: number | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "mv_faturamento_marcas"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
       get_loja_home_otimizada: {
         Args: { limite_produtos_por_marca?: number }
         Returns: {
@@ -2274,22 +2240,6 @@ export type Database = {
           produto_tipo_calculo: string
           produto_visivel_loja: boolean
         }[]
-      }
-      get_performance_vendedores: {
-        Args: never
-        Returns: {
-          faturamento_total: number | null
-          nome: string | null
-          ticket_medio: number | null
-          total_pedidos: number | null
-          vendedor_id: string | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "mv_performance_vendedores"
-          isOneToOne: false
-          isSetofReturn: true
-        }
       }
       has_any_role: {
         Args: {

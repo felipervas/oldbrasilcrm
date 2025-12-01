@@ -8,12 +8,12 @@ export const useGestorDashboard = () => {
       // Atualizar views materializadas para garantir dados frescos no dashboard
       await supabase.rpc('refresh_dashboard_views');
 
-      // Usar funções otimizadas e seguras para acessar dados
+      // Usar views materializadas diretamente para performance
       const [faturamentoClientes, faturamentoMarcas, vendedores, pedidosRecentes, financeiro] = 
         await Promise.all([
-          supabase.rpc('get_faturamento_clientes').limit(20),
-          supabase.rpc('get_faturamento_marcas').limit(20),
-          supabase.rpc('get_performance_vendedores').limit(20),
+          supabase.from('mv_faturamento_clientes').select('*').order('faturamento_total', { ascending: false }).limit(20),
+          supabase.from('mv_faturamento_marcas').select('*').order('faturamento_total', { ascending: false }).limit(20),
+          supabase.from('mv_performance_vendedores').select('*').order('faturamento_total', { ascending: false }).limit(20),
           supabase.from('pedidos')
             .select('id, numero_pedido, valor_total, data_pedido, status, cliente_id, responsavel_venda_id, clientes(nome_fantasia)')
             .order('data_pedido', { ascending: false })
