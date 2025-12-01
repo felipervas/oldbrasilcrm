@@ -15,8 +15,16 @@ import { Combobox } from "@/components/ui/combobox";
 export const FinanceiroBoletos = () => {
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [dadosExtraidos, setDadosExtraidos] = useState<any>(null);
   const [clienteSelecionado, setClienteSelecionado] = useState<string>("");
+  const [formData, setFormData] = useState({
+    valor: '',
+    data_vencimento: '',
+    beneficiario: '',
+    codigo_barras: '',
+    descricao: '',
+    arquivo_url: '',
+    arquivo_nome: '',
+  });
   
   const { boletos, isLoading, totais, analisarBoleto, adicionarBoleto, marcarComoPago, deletarBoleto, isAdicionando } = useFinanceiroBoletos();
   const { data: clientesData } = useClientes();
@@ -29,7 +37,15 @@ export const FinanceiroBoletos = () => {
     setUploading(true);
     try {
       const dados = await analisarBoleto(file);
-      setDadosExtraidos(dados);
+      setFormData({
+        valor: dados.valor?.toString() || '',
+        data_vencimento: dados.data_vencimento || '',
+        beneficiario: dados.beneficiario || '',
+        codigo_barras: dados.codigo_barras || '',
+        descricao: formData.descricao,
+        arquivo_url: dados.arquivo_url || '',
+        arquivo_nome: dados.arquivo_nome || '',
+      });
     } catch (error) {
       console.error('Erro ao analisar boleto:', error);
     } finally {
@@ -37,16 +53,31 @@ export const FinanceiroBoletos = () => {
     }
   };
 
-  const handleSubmit = () => {
-    if (!dadosExtraidos) return;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.valor || !formData.data_vencimento) return;
 
     adicionarBoleto({
-      ...dadosExtraidos,
+      valor: parseFloat(formData.valor),
+      data_vencimento: formData.data_vencimento,
+      beneficiario: formData.beneficiario,
+      codigo_barras: formData.codigo_barras,
+      descricao: formData.descricao || 'Boleto',
       cliente_id: clienteSelecionado || null,
+      arquivo_url: formData.arquivo_url || null,
+      arquivo_nome: formData.arquivo_nome || null,
     });
 
     setOpen(false);
-    setDadosExtraidos(null);
+    setFormData({
+      valor: '',
+      data_vencimento: '',
+      beneficiario: '',
+      codigo_barras: '',
+      descricao: '',
+      arquivo_url: '',
+      arquivo_nome: '',
+    });
     setClienteSelecionado("");
   };
 
@@ -142,23 +173,23 @@ export const FinanceiroBoletos = () => {
           <DialogTrigger asChild>
             <Button className="shadow-sm">
               <Plus className="h-4 w-4 mr-2" />
-              Novo Boleto com IA
+              Novo Boleto
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Adicionar Boleto com Análise IA</DialogTitle>
+              <DialogTitle>Adicionar Boleto</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <Alert>
                 <Upload className="h-4 w-4" />
                 <AlertDescription>
-                  Faça upload da imagem ou PDF do boleto. Nossa IA analisará automaticamente os dados.
+                  Upload é opcional. A IA tentará extrair dados, mas você pode preencher manualmente.
                 </AlertDescription>
               </Alert>
 
               <div>
-                <Label>Upload do Boleto</Label>
+                <Label>Upload do Boleto (Opcional)</Label>
                 <Input 
                   type="file" 
                   accept="image/*,.pdf" 
@@ -168,83 +199,79 @@ export const FinanceiroBoletos = () => {
               </div>
 
               {uploading && (
-                <div className="flex items-center justify-center gap-2 py-8">
+                <div className="flex items-center justify-center gap-2 py-4">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  <span className="text-muted-foreground">Analisando boleto com IA...</span>
+                  <span className="text-muted-foreground">Analisando com IA...</span>
                 </div>
               )}
 
-              {dadosExtraidos && (
-                <>
-                  <Alert className="bg-success/10 border-success/20">
-                    <Check className="h-4 w-4 text-success" />
-                    <AlertDescription className="text-success">
-                      Boleto analisado com sucesso! Confira os dados abaixo.
-                    </AlertDescription>
-                  </Alert>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Valor (R$) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.valor}
+                    onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                    required
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label>Vencimento *</Label>
+                  <Input
+                    type="date"
+                    value={formData.data_vencimento}
+                    onChange={(e) => setFormData({ ...formData, data_vencimento: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
 
-                  <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
-                    <div>
-                      <Label>Cliente (Opcional)</Label>
-                      <Combobox
-                        options={clientesOptions}
-                        value={clienteSelecionado}
-                        onValueChange={setClienteSelecionado}
-                        placeholder="Selecione um cliente (opcional)"
-                        emptyText="Nenhum cliente encontrado"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Vincule a um cliente para rastreamento
-                      </p>
-                    </div>
+              <div>
+                <Label>Beneficiário</Label>
+                <Input
+                  value={formData.beneficiario}
+                  onChange={(e) => setFormData({ ...formData, beneficiario: e.target.value })}
+                  placeholder="Nome do beneficiário"
+                />
+              </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Valor</Label>
-                        <div className="text-lg font-bold text-primary">
-                          R$ {dadosExtraidos.valor?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || 'N/A'}
-                        </div>
-                      </div>
-                      <div>
-                        <Label>Vencimento</Label>
-                        <div className="text-lg font-semibold">
-                          {dadosExtraidos.data_vencimento ? new Date(dadosExtraidos.data_vencimento).toLocaleDateString('pt-BR') : 'N/A'}
-                        </div>
-                      </div>
-                    </div>
+              <div>
+                <Label>Código de Barras</Label>
+                <Input
+                  value={formData.codigo_barras}
+                  onChange={(e) => setFormData({ ...formData, codigo_barras: e.target.value })}
+                  placeholder="Código do boleto"
+                />
+              </div>
 
-                    <div>
-                      <Label>Beneficiário</Label>
-                      <div className="font-medium">{dadosExtraidos.beneficiario || 'N/A'}</div>
-                    </div>
+              <div>
+                <Label>Cliente (Opcional)</Label>
+                <Combobox
+                  options={clientesOptions}
+                  value={clienteSelecionado}
+                  onValueChange={setClienteSelecionado}
+                  placeholder="Selecione um cliente"
+                  emptyText="Nenhum cliente encontrado"
+                />
+              </div>
 
-                    {dadosExtraidos.codigo_barras && (
-                      <div>
-                        <Label>Código de Barras</Label>
-                        <div className="font-mono text-xs bg-background p-2 rounded border">
-                          {dadosExtraidos.codigo_barras}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <Button 
-                    onClick={handleSubmit} 
-                    disabled={isAdicionando}
-                    className="w-full"
-                  >
-                    {isAdicionando ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Salvando...
-                      </>
-                    ) : (
-                      'Confirmar e Salvar Boleto'
-                    )}
-                  </Button>
-                </>
-              )}
-            </div>
+              <Button 
+                type="submit"
+                disabled={isAdicionando}
+                className="w-full"
+              >
+                {isAdicionando ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  'Adicionar Boleto'
+                )}
+              </Button>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
