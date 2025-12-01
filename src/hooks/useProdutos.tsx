@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useProdutos = (page: number = 0, pageSize: number = 50, searchTerm: string = '') => {
+export const useProdutos = (page: number = 0, pageSize: number = 50, searchTerm: string = '', marcaId?: string) => {
   const start = page * pageSize;
   const end = start + pageSize - 1;
 
   return useQuery({
-    queryKey: ['produtos', page, searchTerm],
+    queryKey: ['produtos', page, searchTerm, marcaId],
     queryFn: async () => {
       let query = supabase
         .from('produtos')
@@ -15,6 +15,10 @@ export const useProdutos = (page: number = 0, pageSize: number = 50, searchTerm:
       if (searchTerm) {
         const term = searchTerm.trim();
         query = query.ilike('nome', `%${term}%`);
+      }
+
+      if (marcaId) {
+        query = query.eq('marca_id', marcaId);
       }
 
       const { data, error, count } = await query

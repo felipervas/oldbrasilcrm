@@ -34,6 +34,7 @@ const Produtos = () => {
   const [marcas, setMarcas] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [marcaSelecionada, setMarcaSelecionada] = useState("");
+  const [marcaFiltro, setMarcaFiltro] = useState("");
   const [editFormData, setEditFormData] = useState<any>({});
   const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
   const [estoqueOpen, setEstoqueOpen] = useState(false);
@@ -45,7 +46,7 @@ const Produtos = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(0);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  const { data: produtosData, isLoading: produtosLoading } = useProdutos(page, 10, debouncedSearchTerm);
+  const { data: produtosData, isLoading: produtosLoading } = useProdutos(page, 10, debouncedSearchTerm, marcaFiltro || undefined);
   const [imagensLoja, setImagensLoja] = useState<any[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string; preco?: number; usarNoSite?: boolean }>>([]);
@@ -104,10 +105,10 @@ const Produtos = () => {
     loadMarcas();
   }, []);
 
-  // Resetar página ao mudar busca
+  // Resetar página ao mudar busca ou filtro de marca
   useEffect(() => {
     setPage(0);
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, marcaFiltro]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -829,12 +830,26 @@ const Produtos = () => {
           <CardDescription>
             Todos os produtos disponíveis
           </CardDescription>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-col sm:flex-row gap-3">
             <Input
               placeholder="Buscar por nome ou marca..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1"
             />
+            <Select value={marcaFiltro} onValueChange={setMarcaFiltro}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Filtrar por marca" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todas as marcas</SelectItem>
+                {marcas.map((marca) => (
+                  <SelectItem key={marca.id} value={marca.id}>
+                    {marca.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
