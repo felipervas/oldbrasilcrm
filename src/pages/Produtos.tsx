@@ -837,12 +837,15 @@ const Produtos = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
             />
-            <Select value={marcaFiltro} onValueChange={setMarcaFiltro}>
+            <Select 
+              value={marcaFiltro || "all"} 
+              onValueChange={(val) => setMarcaFiltro(val === "all" ? "" : val)}
+            >
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Filtrar por marca" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as marcas</SelectItem>
+                <SelectItem value="all">Todas as marcas</SelectItem>
                 {marcas.map((marca) => (
                   <SelectItem key={marca.id} value={marca.id}>
                     {marca.nome}
