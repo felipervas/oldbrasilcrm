@@ -5,6 +5,9 @@ export const useGestorDashboard = () => {
   return useQuery({
     queryKey: ['gestor-dashboard'],
     queryFn: async () => {
+      // Atualizar views materializadas para garantir dados frescos no dashboard
+      await supabase.rpc('refresh_dashboard_views');
+
       // Usar funções otimizadas e seguras para acessar dados
       const [faturamentoClientes, faturamentoMarcas, vendedores, pedidosRecentes, financeiro] = 
         await Promise.all([
@@ -20,6 +23,7 @@ export const useGestorDashboard = () => {
             .order('data', { ascending: true })
             .limit(100),
         ]);
+
 
       return {
         faturamentoClientes: faturamentoClientes.data || [],
