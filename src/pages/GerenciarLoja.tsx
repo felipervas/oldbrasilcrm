@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Image as ImageIcon, Edit, Eye, EyeOff, Star } from 'lucide-react';
+import { Search, Plus, Image as ImageIcon, Edit, Eye, EyeOff, Star, ArrowUp, ArrowDown } from 'lucide-react';
 import { useGerenciarProdutos, useGerenciarMarcas, useToggleVisibilidadeProduto, useToggleDestaqueProduto } from '@/hooks/useGerenciarLoja';
 import { ProdutoEditDialog } from '@/components/loja/ProdutoEditDialog';
 import { MarcaEditDialog } from '@/components/loja/MarcaEditDialog';
@@ -27,7 +27,7 @@ export default function GerenciarLoja() {
   });
 
   const { data: produtosRaw, isLoading: loadingProdutos } = useGerenciarProdutos(searchTerm);
-  const { data: marcas, isLoading: loadingMarcas } = useGerenciarMarcas();
+  const { data: marcas, isLoading: loadingMarcas, refetch: refetchMarcas } = useGerenciarMarcas();
   const toggleVisibilidade = useToggleVisibilidadeProduto();
   const toggleDestaque = useToggleDestaqueProduto();
 
@@ -122,6 +122,37 @@ export default function GerenciarLoja() {
   const handleNovaMarca = () => {
     setSelectedMarca(null);
     setShowMarcaDialog(true);
+  };
+
+  const handleMoverMarca = async (marcaId: string, direcao: 'up' | 'down') => {
+    if (!marcas) return;
+    
+    const marcasOrdenadas = [...marcas].sort((a, b) => 
+      (a.ordem_exibicao || 0) - (b.ordem_exibicao || 0)
+    );
+    
+    const index = marcasOrdenadas.findIndex(m => m.id === marcaId);
+    if (index === -1) return;
+    
+    if (direcao === 'up' && index === 0) return;
+    if (direcao === 'down' && index === marcasOrdenadas.length - 1) return;
+    
+    const targetIndex = direcao === 'up' ? index - 1 : index + 1;
+    const marcaAtual = marcasOrdenadas[index];
+    const marcaAlvo = marcasOrdenadas[targetIndex];
+    
+    // Trocar as ordens
+    await supabase
+      .from('marcas')
+      .update({ ordem_exibicao: marcaAlvo.ordem_exibicao || targetIndex })
+      .eq('id', marcaAtual.id);
+    
+    await supabase
+      .from('marcas')
+      .update({ ordem_exibicao: marcaAtual.ordem_exibicao || index })
+      .eq('id', marcaAlvo.id);
+    
+    refetchMarcas();
   };
 
   const handleToggleVisibilidade = (id: string, visivel: boolean) => {
@@ -437,7 +468,10 @@ export default function GerenciarLoja() {
           </TabsContent>
 
           <TabsContent value="marcas" className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-muted-foreground">
+                Use as setas para definir a ordem de exibição das marcas na loja
+              </p>
               <Button onClick={handleNovaMarca}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nova Marca
@@ -447,54 +481,81 @@ export default function GerenciarLoja() {
             {loadingMarcas ? (
               <ListLoadingSkeleton />
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {marcas?.map((marca: any) => (
-                  <Card key={marca.id}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-xl">{marca.nome}</CardTitle>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            /{marca.slug}
-                          </p>
-                        </div>
-                        <Badge variant={marca.ativa ? "default" : "secondary"}>
-                          {marca.ativa ? 'Ativa' : 'Inativa'}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {marca.descricao && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {marca.descricao}
-                        </p>
-                      )}
-                      {marca.site && (
-                        <p className="text-sm">
-                          <a 
-                            href={marca.site} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
+              <div className="grid gap-4">
+                {marcas?.sort((a, b) => (a.ordem_exibicao || 0) - (b.ordem_exibicao || 0)).map((marca: any, index: number) => (
+                  <Card key={marca.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        {/* Botões de Ordenação */}
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => handleMoverMarca(marca.id, 'up')}
+                            disabled={index === 0}
                           >
-                            {marca.site}
-                          </a>
-                        </p>
-                      )}
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => handleEditMarca(marca)}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar Marca
-                      </Button>
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => handleMoverMarca(marca.id, 'down')}
+                            disabled={index === (marcas?.length || 0) - 1}
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        {/* Badge de Posição */}
+                        <div className="flex-shrink-0">
+                          <Badge variant="secondary" className="text-lg font-bold w-10 h-10 flex items-center justify-center rounded-full">
+                            {index + 1}
+                          </Badge>
+                        </div>
+
+                        {/* Info da Marca */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-lg">{marca.nome}</h3>
+                            <Badge variant={marca.ativa ? "default" : "secondary"}>
+                              {marca.ativa ? 'Ativa' : 'Inativa'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">/{marca.slug}</p>
+                          {marca.descricao && (
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                              {marca.descricao}
+                            </p>
+                          )}
+                          {marca.site && (
+                            <a 
+                              href={marca.site} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline mt-1 inline-block"
+                            >
+                              {marca.site}
+                            </a>
+                          )}
+                        </div>
+
+                        {/* Botão Editar */}
+                        <Button
+                          variant="outline"
+                          onClick={() => handleEditMarca(marca)}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
 
                 {marcas?.length === 0 && (
-                  <Card className="col-span-full">
+                  <Card>
                     <CardContent className="p-8 text-center text-muted-foreground">
                       Nenhuma marca cadastrada
                     </CardContent>

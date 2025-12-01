@@ -41,8 +41,10 @@ export const useGerenciarMarcas = () => {
           slug,
           descricao,
           site,
-          ativa
+          ativa,
+          ordem_exibicao
         `)
+        .order('ordem_exibicao', { ascending: true, nullsFirst: false })
         .order('nome');
 
       if (error) throw error;

@@ -897,6 +897,7 @@ export type Database = {
           logo_url: string | null
           mostrar_texto_banner: boolean | null
           nome: string
+          ordem_exibicao: number | null
           site: string | null
           slug: string | null
           telefone: string | null
@@ -916,6 +917,7 @@ export type Database = {
           logo_url?: string | null
           mostrar_texto_banner?: boolean | null
           nome: string
+          ordem_exibicao?: number | null
           site?: string | null
           slug?: string | null
           telefone?: string | null
@@ -935,6 +937,7 @@ export type Database = {
           logo_url?: string | null
           mostrar_texto_banner?: boolean | null
           nome?: string
+          ordem_exibicao?: number | null
           site?: string | null
           slug?: string | null
           telefone?: string | null
