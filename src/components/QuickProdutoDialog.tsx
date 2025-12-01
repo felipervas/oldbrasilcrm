@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +39,7 @@ export const QuickProdutoDialog = ({ onProdutoCreated }: QuickProdutoDialogProps
     try {
       const formData = new FormData(e.currentTarget);
       const tipoVenda = formData.get("tipo_venda") as string;
+      const visivelLoja = formData.get("visivel_loja") === "on";
       
       const { data, error } = await supabase
         .from("produtos")
@@ -48,7 +50,7 @@ export const QuickProdutoDialog = ({ onProdutoCreated }: QuickProdutoDialogProps
           peso_embalagem_kg: parseFloat(formData.get("peso_embalagem_kg") as string) || null,
           tipo_venda: tipoVenda || 'kg',
           ativo: true,
-          visivel_loja: false,
+          visivel_loja: visivelLoja,
         })
         .select()
         .single();
@@ -148,6 +150,12 @@ export const QuickProdutoDialog = ({ onProdutoCreated }: QuickProdutoDialogProps
               step="0.001"
               placeholder="Ex: 1.5"
             />
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <Switch id="visivel_loja" name="visivel_loja" defaultChecked={false} />
+            <Label htmlFor="visivel_loja" className="cursor-pointer">
+              Mostrar na loja pública
+            </Label>
           </div>
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
