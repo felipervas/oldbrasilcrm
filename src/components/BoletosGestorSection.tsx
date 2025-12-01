@@ -260,7 +260,7 @@ export function BoletosGestorSection() {
       </div>
 
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="p-4 border-green-500/20">
           <div className="text-sm text-muted-foreground mb-1">A Receber</div>
           <div className="text-2xl font-bold text-green-600">
