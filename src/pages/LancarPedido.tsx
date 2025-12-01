@@ -1075,6 +1075,46 @@ const LancarPedido = () => {
                             </Button>
                           )}
                         </div>
+                        {precoOriginalProduto > 0 && (
+                          <div className="flex gap-1 mt-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setPrecoUnitario(precoOriginalProduto * 0.90)}
+                              className="text-xs h-7 px-2 text-green-600 hover:bg-green-50 border-green-200"
+                            >
+                              -10%
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setPrecoUnitario(precoOriginalProduto * 0.95)}
+                              className="text-xs h-7 px-2 text-green-600 hover:bg-green-50 border-green-200"
+                            >
+                              -5%
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setPrecoUnitario(precoOriginalProduto * 1.05)}
+                              className="text-xs h-7 px-2 text-orange-600 hover:bg-orange-50 border-orange-200"
+                            >
+                              +5%
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setPrecoUnitario(precoOriginalProduto * 1.10)}
+                              className="text-xs h-7 px-2 text-orange-600 hover:bg-orange-50 border-orange-200"
+                            >
+                              +10%
+                            </Button>
+                          </div>
+                        )}
                         {precoUnitario !== precoOriginalProduto && precoOriginalProduto > 0 && (
                           <p className="text-xs text-amber-600 mt-1">
                             ⚠️ Preço diferente do cadastro (era R$ {precoOriginalProduto.toFixed(2)})
@@ -1166,13 +1206,69 @@ const LancarPedido = () => {
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {isEditing ? (
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={editValues.preco_unitario}
-                                      onChange={(e) => handleEditPrecoUnitario(parseFloat(e.target.value) || 0)}
-                                      className="w-28 text-right"
-                                    />
+                                    <div className="space-y-1">
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={editValues.preco_unitario}
+                                        onChange={(e) => handleEditPrecoUnitario(parseFloat(e.target.value) || 0)}
+                                        className="w-28 text-right"
+                                      />
+                                      <div className="flex gap-1">
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            const prodOriginal = produtos.find(p => p.id === item.produto_id);
+                                            const precoBase = prodOriginal?.preco_por_kg || prodOriginal?.preco_base || editValues.preco_unitario;
+                                            handleEditPrecoUnitario(precoBase * 0.90);
+                                          }}
+                                          className="text-xs h-6 px-1.5 text-green-600 hover:bg-green-50 border-green-200"
+                                        >
+                                          -10%
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            const prodOriginal = produtos.find(p => p.id === item.produto_id);
+                                            const precoBase = prodOriginal?.preco_por_kg || prodOriginal?.preco_base || editValues.preco_unitario;
+                                            handleEditPrecoUnitario(precoBase * 0.95);
+                                          }}
+                                          className="text-xs h-6 px-1.5 text-green-600 hover:bg-green-50 border-green-200"
+                                        >
+                                          -5%
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            const prodOriginal = produtos.find(p => p.id === item.produto_id);
+                                            const precoBase = prodOriginal?.preco_por_kg || prodOriginal?.preco_base || editValues.preco_unitario;
+                                            handleEditPrecoUnitario(precoBase * 1.05);
+                                          }}
+                                          className="text-xs h-6 px-1.5 text-orange-600 hover:bg-orange-50 border-orange-200"
+                                        >
+                                          +5%
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            const prodOriginal = produtos.find(p => p.id === item.produto_id);
+                                            const precoBase = prodOriginal?.preco_por_kg || prodOriginal?.preco_base || editValues.preco_unitario;
+                                            handleEditPrecoUnitario(precoBase * 1.10);
+                                          }}
+                                          className="text-xs h-6 px-1.5 text-orange-600 hover:bg-orange-50 border-orange-200"
+                                        >
+                                          +10%
+                                        </Button>
+                                      </div>
+                                    </div>
                                   ) : (
                                     `R$ ${item.preco_unitario.toFixed(2)}`
                                   )}

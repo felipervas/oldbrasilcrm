@@ -37,7 +37,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex flex-row w-full bg-background overflow-x-hidden">
         <AppSidebar />
-        <main className="flex-1 w-full overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 w-full h-screen overflow-y-auto overflow-x-hidden">
           {children}
         </main>
       </div>
