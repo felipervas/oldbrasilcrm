@@ -37,7 +37,7 @@ export const useFinanceiroBoletos = () => {
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const page = await pdf.getPage(1);
         
-        const viewport = page.getViewport({ scale: 2.0 });
+        const viewport = page.getViewport({ scale: 1.2 });
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         if (!context) throw new Error('Não foi possível criar contexto do canvas');
@@ -50,7 +50,7 @@ export const useFinanceiroBoletos = () => {
           viewport: viewport
         } as any).promise;
         
-        imageBase64 = canvas.toDataURL('image/jpeg', 0.95);
+        imageBase64 = canvas.toDataURL('image/jpeg', 0.70);
       } else {
         // Se for imagem, converter para base64
         const reader = new FileReader();
