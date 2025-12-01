@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configurar worker do PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export const useClienteBoletos = (clienteId: string | null) => {
   const queryClient = useQueryClient();
@@ -29,7 +33,39 @@ export const useClienteBoletos = (clienteId: string | null) => {
   // Analisar boleto com IA
   const analisarBoleto = async (arquivo: File): Promise<any> => {
     try {
-      // Upload do arquivo para storage
+      let imageBase64: string;
+
+      // Se for PDF, converter primeira página para imagem
+      if (arquivo.type === 'application/pdf') {
+        const arrayBuffer = await arquivo.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1);
+        
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Não foi possível criar contexto do canvas');
+        
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        } as any).promise;
+        
+        imageBase64 = canvas.toDataURL('image/jpeg', 0.95);
+      } else {
+        // Se for imagem, converter para base64
+        const reader = new FileReader();
+        imageBase64 = await new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(arquivo);
+        });
+      }
+
+      // Upload do arquivo original para storage
       const fileExt = arquivo.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `boletos/${fileName}`;
@@ -45,9 +81,9 @@ export const useClienteBoletos = (clienteId: string | null) => {
         .from('pedidos')
         .getPublicUrl(filePath);
 
-      // Chamar Edge Function para análise
+      // Chamar Edge Function para análise com base64
       const { data, error } = await supabase.functions.invoke('analisar-boleto', {
-        body: { imageUrl: publicUrl }
+        body: { imageBase64 }
       });
 
       if (error) throw error;
