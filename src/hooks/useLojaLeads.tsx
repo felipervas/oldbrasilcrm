@@ -52,6 +52,8 @@ export function useLojaLeads() {
         cep?: string;
         logradouro?: string;
         numero?: string;
+        bairro?: string;
+        referencia?: string;
         observacoes?: string;
       };
     }) => {
