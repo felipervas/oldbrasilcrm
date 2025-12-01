@@ -331,7 +331,7 @@ const EditarPedido = () => {
 
             <div className="border-t pt-4">
               <h3 className="font-semibold mb-3">Status e Pagamento</h3>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="numero_pedido">Número do Pedido</Label>
                 <Input

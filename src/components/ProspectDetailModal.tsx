@@ -268,14 +268,16 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
         </DialogHeader>
 
         <Tabs defaultValue="info" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="info">Informações</TabsTrigger>
-            <TabsTrigger value="insights">
-              <Sparkles className="h-4 w-4 mr-1" />
-              Insights IA
-            </TabsTrigger>
-            <TabsTrigger value="historico">Histórico</TabsTrigger>
-            <TabsTrigger value="acoes">Ações Rápidas</TabsTrigger>
+          <TabsList className="w-full flex overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+            <div className="flex gap-1 min-w-max px-1">
+              <TabsTrigger value="info" className="snap-start">Informações</TabsTrigger>
+              <TabsTrigger value="insights" className="snap-start">
+                <Sparkles className="h-4 w-4 mr-1" />
+                Insights IA
+              </TabsTrigger>
+              <TabsTrigger value="historico" className="snap-start">Histórico</TabsTrigger>
+              <TabsTrigger value="acoes" className="snap-start">Ações Rápidas</TabsTrigger>
+            </div>
           </TabsList>
 
           <TabsContent value="info" className="space-y-4">
@@ -311,7 +313,7 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Status</Label>
                 <Select
@@ -355,7 +357,7 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
             </div>
 
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Cidade</Label>
                   <Input
@@ -386,7 +388,7 @@ export const ProspectDetailModal = ({ prospect, open, onOpenChange }: ProspectDe
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   {prospect.telefone && (
                     <div className="flex items-center gap-2 text-sm">
