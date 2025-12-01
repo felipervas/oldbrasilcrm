@@ -13,9 +13,12 @@ export const useMarcasLoja = () => {
           slug,
           descricao,
           site,
-          ativa
+          ativa,
+          ordem_exibicao
         `)
-        .eq('ativa', true);
+        .eq('ativa', true)
+        .order('ordem_exibicao', { ascending: true, nullsFirst: false })
+        .order('nome');
 
       if (error) throw error;
 
