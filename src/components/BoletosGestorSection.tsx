@@ -27,10 +27,16 @@ export function BoletosGestorSection() {
   const { data: clientesData } = useClientes();
   
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [arquivo, setArquivo] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [dadosExtraidos, setDadosExtraidos] = useState<any>(null);
   const [clienteSelecionado, setClienteSelecionado] = useState<string>('');
+  const [formData, setFormData] = useState({
+    valor: '',
+    data_vencimento: '',
+    beneficiario: '',
+    codigo_barras: '',
+    arquivo_url: '',
+    arquivo_nome: '',
+  });
 
   if (isLoading) {
     return (
@@ -55,39 +61,54 @@ export function BoletosGestorSection() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setArquivo(file);
     setUploading(true);
-
     try {
       const resultado = await analisarBoleto(file);
-      setDadosExtraidos(resultado);
-      toast.success('Boleto analisado com sucesso!');
+      setFormData({
+        valor: resultado.valor?.toString() || '',
+        data_vencimento: resultado.dataVencimento || '',
+        beneficiario: resultado.beneficiario || '',
+        codigo_barras: resultado.codigoBarras || '',
+        arquivo_url: resultado.arquivoUrl || '',
+        arquivo_nome: resultado.arquivoNome || '',
+      });
+      toast.success('Boleto analisado com sucesso! Confira os dados.');
     } catch (error) {
       console.error('Erro ao analisar boleto:', error);
-      toast.error('Erro ao analisar o boleto. Verifique o arquivo e tente novamente.');
+      toast.error('Análise falhou. Preencha os campos manualmente.');
     } finally {
       setUploading(false);
     }
   };
 
-  const handleSubmit = async () => {
-    if (!dadosExtraidos) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.valor || !formData.data_vencimento) {
+      toast.error('Preencha pelo menos Valor e Vencimento');
+      return;
+    }
 
     try {
       await adicionarBoleto({
-        valor: dadosExtraidos.valor || 0,
-        data_vencimento: dadosExtraidos.dataVencimento || new Date().toISOString().split('T')[0],
-        beneficiario: dadosExtraidos.beneficiario || '',
-        codigo_barras: dadosExtraidos.codigoBarras || '',
-        descricao: 'Boleto importado via IA',
+        valor: parseFloat(formData.valor),
+        data_vencimento: formData.data_vencimento,
+        beneficiario: formData.beneficiario,
+        codigo_barras: formData.codigo_barras,
+        descricao: 'Boleto adicionado',
         cliente_id: clienteSelecionado || null,
-        arquivo_url: dadosExtraidos.arquivoUrl || null,
-        arquivo_nome: dadosExtraidos.arquivoNome || null,
+        arquivo_url: formData.arquivo_url || null,
+        arquivo_nome: formData.arquivo_nome || null,
       });
 
       setDialogOpen(false);
-      setArquivo(null);
-      setDadosExtraidos(null);
+      setFormData({
+        valor: '',
+        data_vencimento: '',
+        beneficiario: '',
+        codigo_barras: '',
+        arquivo_url: '',
+        arquivo_nome: '',
+      });
       setClienteSelecionado('');
     } catch (error) {
       console.error('Erro ao adicionar boleto:', error);
@@ -144,16 +165,16 @@ export function BoletosGestorSection() {
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="w-4 h-4 mr-2" />
-              Novo Boleto com IA
+              Novo Boleto
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Adicionar Boleto com IA</DialogTitle>
+              <DialogTitle>Adicionar Boleto</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="arquivo-boleto">Upload do Boleto (PDF ou Imagem)</Label>
+                <Label htmlFor="arquivo-boleto">Upload do Boleto (Opcional - PDF ou Imagem)</Label>
                 <div className="flex items-center gap-2 mt-2">
                   <Input
                     id="arquivo-boleto"
@@ -164,60 +185,76 @@ export function BoletosGestorSection() {
                   />
                   {uploading && <Upload className="w-4 h-4 animate-spin" />}
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  IA tentará extrair dados automaticamente. Você pode editar/preencher manualmente abaixo.
+                </p>
               </div>
 
-              {dadosExtraidos && (
-                <>
-                  <div className="p-4 bg-muted rounded-lg space-y-2">
-                    <h3 className="font-semibold text-sm">Dados Extraídos pela IA:</h3>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Valor:</span>
-                        <span className="ml-2 font-medium">
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(dadosExtraidos.valor || 0)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Vencimento:</span>
-                        <span className="ml-2 font-medium">
-                          {dadosExtraidos.dataVencimento ? format(new Date(dadosExtraidos.dataVencimento), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
-                        </span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground">Beneficiário:</span>
-                        <span className="ml-2 font-medium">{dadosExtraidos.beneficiario || '-'}</span>
-                      </div>
-                      {dadosExtraidos.codigoBarras && (
-                        <div className="col-span-2">
-                          <span className="text-muted-foreground">Código de Barras:</span>
-                          <span className="ml-2 font-mono text-xs">{dadosExtraidos.codigoBarras}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="valor">Valor (R$) *</Label>
+                  <Input
+                    id="valor"
+                    type="number"
+                    step="0.01"
+                    value={formData.valor}
+                    onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                    required
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="vencimento">Vencimento *</Label>
+                  <Input
+                    id="vencimento"
+                    type="date"
+                    value={formData.data_vencimento}
+                    onChange={(e) => setFormData({ ...formData, data_vencimento: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
 
-                  <div>
-                    <Label htmlFor="cliente-select">Cliente (Opcional)</Label>
-                    <Select value={clienteSelecionado} onValueChange={setClienteSelecionado}>
-                      <SelectTrigger id="cliente-select">
-                        <SelectValue placeholder="Selecione um cliente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clientesData?.data?.map((cliente: any) => (
-                          <SelectItem key={cliente.id} value={cliente.id}>
-                            {cliente.nome_fantasia}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div>
+                <Label htmlFor="beneficiario">Beneficiário</Label>
+                <Input
+                  id="beneficiario"
+                  value={formData.beneficiario}
+                  onChange={(e) => setFormData({ ...formData, beneficiario: e.target.value })}
+                  placeholder="Nome do beneficiário"
+                />
+              </div>
 
-                  <Button onClick={handleSubmit} disabled={isAdicionando} className="w-full">
-                    {isAdicionando ? 'Salvando...' : 'Confirmar e Adicionar Boleto'}
-                  </Button>
-                </>
-              )}
-            </div>
+              <div>
+                <Label htmlFor="codigo-barras">Código de Barras</Label>
+                <Input
+                  id="codigo-barras"
+                  value={formData.codigo_barras}
+                  onChange={(e) => setFormData({ ...formData, codigo_barras: e.target.value })}
+                  placeholder="Código do boleto"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="cliente-select">Cliente (Opcional)</Label>
+                <Select value={clienteSelecionado} onValueChange={setClienteSelecionado}>
+                  <SelectTrigger id="cliente-select">
+                    <SelectValue placeholder="Selecione um cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientesData?.data?.map((cliente: any) => (
+                      <SelectItem key={cliente.id} value={cliente.id}>
+                        {cliente.nome_fantasia}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button type="submit" disabled={isAdicionando} className="w-full">
+                {isAdicionando ? 'Salvando...' : 'Adicionar Boleto'}
+              </Button>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
