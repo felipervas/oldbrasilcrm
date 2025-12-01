@@ -35,6 +35,7 @@ const LancarPedido = () => {
   const [selectedProduto, setSelectedProduto] = useState("");
   const [quantidade, setQuantidade] = useState(1);
   const [precoUnitario, setPrecoUnitario] = useState(0);
+  const [precoOriginalProduto, setPrecoOriginalProduto] = useState(0);
   const [observacoesProduto, setObservacoesProduto] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -200,6 +201,56 @@ const LancarPedido = () => {
 
   const removerProduto = (index: number) => {
     setProdutosEscolhidos(produtosEscolhidos.filter((_, i) => i !== index));
+  };
+
+  const atualizarPrecoProduto = async () => {
+    if (!selectedProduto || !tabelaSelecionada) {
+      toast({ 
+        title: "Erro", 
+        description: "Selecione um produto e uma tabela de preço",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    try {
+      const prod = produtos.find(p => p.id === selectedProduto);
+      const vendePorKg = (prod as any)?.tipo_venda === 'kg';
+      
+      // Calcular preço por kg baseado no que foi digitado
+      let precoPorKg = precoUnitario;
+      
+      if (!vendePorKg && prod?.peso_embalagem_kg) {
+        // Se vende por caixa, converter o preço da caixa para kg
+        precoPorKg = precoUnitario / prod.peso_embalagem_kg;
+      }
+
+      const { error } = await supabase
+        .from('produto_tabelas_preco')
+        .update({ preco_por_kg: precoPorKg })
+        .eq('id', tabelaSelecionada);
+
+      if (error) throw error;
+
+      // Atualizar a lista local de tabelas
+      setTabelasProduto(prev => 
+        prev.map(t => t.id === tabelaSelecionada ? { ...t, preco_por_kg: precoPorKg } : t)
+      );
+
+      // Atualizar o preço original para não mostrar mais o alerta
+      setPrecoOriginalProduto(precoUnitario);
+
+      toast({ 
+        title: "Preço atualizado!", 
+        description: `Tabela de preço atualizada: R$ ${precoPorKg.toFixed(2)}/kg`
+      });
+    } catch (error: any) {
+      toast({ 
+        title: "Erro ao atualizar preço", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
   };
 
   const calcularTotal = () => {
@@ -796,24 +847,36 @@ const LancarPedido = () => {
                                 
                                 if (vendePorKg) {
                                   // Vendido por kg: usar preço por kg direto
-                                  setPrecoUnitario(tabelas[0].preco_por_kg);
+                                  const preco = tabelas[0].preco_por_kg;
+                                  setPrecoUnitario(preco);
+                                  setPrecoOriginalProduto(preco);
                                 } else if (precoJaETotal) {
                                   // Preço da tabela já é o total da caixa
-                                  setPrecoUnitario(tabelas[0].preco_por_kg);
+                                  const preco = tabelas[0].preco_por_kg;
+                                  setPrecoUnitario(preco);
+                                  setPrecoOriginalProduto(preco);
                                 } else {
                                   // Vendido por caixa: calcular preço (kg * peso)
                                   const pesoEmb = prod?.peso_embalagem_kg || 1;
-                                  setPrecoUnitario(tabelas[0].preco_por_kg * pesoEmb);
+                                  const preco = tabelas[0].preco_por_kg * pesoEmb;
+                                  setPrecoUnitario(preco);
+                                  setPrecoOriginalProduto(preco);
                                 }
                               } else if (prod?.preco_por_kg) {
                                 if (vendePorKg) {
-                                  setPrecoUnitario(parseFloat(prod.preco_por_kg));
+                                  const preco = parseFloat(prod.preco_por_kg);
+                                  setPrecoUnitario(preco);
+                                  setPrecoOriginalProduto(preco);
                                 } else {
                                   const pesoEmb = prod?.peso_embalagem_kg || 1;
-                                  setPrecoUnitario(parseFloat(prod.preco_por_kg) * pesoEmb);
+                                  const preco = parseFloat(prod.preco_por_kg) * pesoEmb;
+                                  setPrecoUnitario(preco);
+                                  setPrecoOriginalProduto(preco);
                                 }
                               } else if (prod?.preco_base) {
-                                setPrecoUnitario(parseFloat(prod.preco_base));
+                                const preco = parseFloat(prod.preco_base);
+                                setPrecoUnitario(preco);
+                                setPrecoOriginalProduto(preco);
                               }
                             }}
                             placeholder="Buscar produto..."
@@ -860,10 +923,14 @@ const LancarPedido = () => {
                                   const precoJaETotal = !prod?.preco_por_kg && !vendePorKg;
                                   
                                   if (vendePorKg || precoJaETotal) {
-                                    setPrecoUnitario(tabela.preco_por_kg);
+                                    const preco = tabela.preco_por_kg;
+                                    setPrecoUnitario(preco);
+                                    setPrecoOriginalProduto(preco);
                                   } else {
                                     const pesoEmb = prod?.peso_embalagem_kg || 1;
-                                    setPrecoUnitario(tabela.preco_por_kg * pesoEmb);
+                                    const preco = tabela.preco_por_kg * pesoEmb;
+                                    setPrecoUnitario(preco);
+                                    setPrecoOriginalProduto(preco);
                                   }
                                 }
                               }}
@@ -900,13 +967,33 @@ const LancarPedido = () => {
                       </div>
                       <div className="col-span-3">
                         <Label className="text-xs">{isVendidoPorKg ? "R$/kg" : "R$/caixa"}</Label>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          value={precoUnitario}
-                          onChange={(e) => setPrecoUnitario(parseFloat(e.target.value) || 0)}
-                          placeholder="0.00"
-                        />
+                        <div className="flex gap-2">
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            value={precoUnitario}
+                            onChange={(e) => setPrecoUnitario(parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                            className={precoUnitario !== precoOriginalProduto && precoOriginalProduto > 0 ? "border-amber-400 bg-amber-50" : ""}
+                          />
+                          {precoUnitario !== precoOriginalProduto && precoOriginalProduto > 0 && tabelaSelecionada && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={atualizarPrecoProduto}
+                              className="border-amber-400 text-amber-700 hover:bg-amber-50"
+                              title="Atualizar preço no cadastro"
+                            >
+                              💾
+                            </Button>
+                          )}
+                        </div>
+                        {precoUnitario !== precoOriginalProduto && precoOriginalProduto > 0 && (
+                          <p className="text-xs text-amber-600 mt-1">
+                            ⚠️ Preço diferente do cadastro (era R$ {precoOriginalProduto.toFixed(2)})
+                          </p>
+                        )}
                       </div>
                       {quantidade > 0 && precoUnitario > 0 && (
                         <div className="col-span-3 flex items-end">
