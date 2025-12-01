@@ -30,13 +30,13 @@ export const useFinanceiroBoletos = () => {
       const filePath = `boletos/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('financeiro')
+        .from('pedidos')
         .upload(filePath, arquivo);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('financeiro')
+        .from('pedidos')
         .getPublicUrl(filePath);
 
       const { data, error } = await supabase.functions.invoke('analisar-boleto', {

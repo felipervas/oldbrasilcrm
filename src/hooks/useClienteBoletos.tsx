@@ -35,14 +35,14 @@ export const useClienteBoletos = (clienteId: string | null) => {
       const filePath = `boletos/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('financeiro')
+        .from('pedidos')
         .upload(filePath, arquivo);
 
       if (uploadError) throw uploadError;
 
       // Obter URL pública do arquivo
       const { data: { publicUrl } } = supabase.storage
-        .from('financeiro')
+        .from('pedidos')
         .getPublicUrl(filePath);
 
       // Chamar Edge Function para análise
