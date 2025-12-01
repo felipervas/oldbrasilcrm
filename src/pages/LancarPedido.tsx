@@ -890,8 +890,9 @@ const LancarPedido = () => {
                   <h3 className="font-semibold mb-3">Produtos do Pedido</h3>
                   
                     <div className="space-y-3">
-                      <div className="grid grid-cols-12 gap-2">
-                         <div className="col-span-4">
+                      {/* Linha 1: Produto e Tabela de Preço */}
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+                         <div className="md:col-span-7">
                           <Label className="text-xs">Produto</Label>
                           <div className="flex items-start gap-2">
                             <div className="flex-1">
@@ -960,6 +961,10 @@ const LancarPedido = () => {
                                     const preco = parseFloat(prod.preco_base);
                                     setPrecoUnitario(preco);
                                     setPrecoOriginalProduto(preco);
+                                  } else {
+                                    // Produto sem preço
+                                    setPrecoUnitario(0);
+                                    setPrecoOriginalProduto(0);
                                   }
                                 }}
                                 placeholder="Buscar produto..."
@@ -995,9 +1000,9 @@ const LancarPedido = () => {
                           })()}
                         </div>
                         {tabelasProduto.length > 0 && (
-                          <div className="col-span-3">
+                          <div className="md:col-span-5">
                             <Label className="text-xs">Tabela de Preço 💰</Label>
-                            <Select 
+                            <Select
                               value={tabelaSelecionada}
                               onValueChange={(id) => {
                                 setTabelaSelecionada(id);
@@ -1039,7 +1044,11 @@ const LancarPedido = () => {
                             </Select>
                           </div>
                         )}
-                      <div className="col-span-2">
+                      </div>
+                      
+                      {/* Linha 2: Quantidade, Preço, e Botão */}
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-start">
+                      <div className="md:col-span-2">
                         <Label className="text-xs">{isVendidoPorKg ? "Kg" : "Qtd"}</Label>
                         <Input 
                           type="number" 
@@ -1051,7 +1060,7 @@ const LancarPedido = () => {
                           }}
                         />
                       </div>
-                      <div className="col-span-3">
+                      <div className="md:col-span-5">
                         <Label className="text-xs">{isVendidoPorKg ? "R$/kg" : "R$/caixa"}</Label>
                         <div className="flex gap-2">
                           <Input 
@@ -1060,7 +1069,7 @@ const LancarPedido = () => {
                             value={precoUnitario}
                             onChange={(e) => setPrecoUnitario(parseFloat(e.target.value) || 0)}
                             placeholder="0.00"
-                            className={precoUnitario !== precoOriginalProduto && precoOriginalProduto > 0 ? "border-amber-400 bg-amber-50" : ""}
+                            className={precoUnitario === 0 && selectedProduto ? "border-orange-500" : precoUnitario !== precoOriginalProduto && precoOriginalProduto > 0 ? "border-amber-400 bg-amber-50" : ""}
                           />
                           {precoUnitario !== precoOriginalProduto && precoOriginalProduto > 0 && tabelaSelecionada && (
                             <Button
@@ -1075,6 +1084,9 @@ const LancarPedido = () => {
                             </Button>
                           )}
                         </div>
+                        {precoUnitario === 0 && selectedProduto && (
+                          <p className="text-xs text-orange-600 mt-1">⚠️ Produto sem preço - insira manualmente</p>
+                        )}
                         {precoOriginalProduto > 0 && (
                           <div className="flex gap-1 mt-1">
                             <Button
@@ -1121,14 +1133,19 @@ const LancarPedido = () => {
                           </p>
                         )}
                       </div>
-                      {quantidade > 0 && precoUnitario > 0 && (
-                        <div className="col-span-3 flex items-end">
-                          <div className="text-sm font-semibold text-primary p-2 bg-primary/5 rounded w-full text-center">
-                            Total: R$ {(quantidade * precoUnitario).toFixed(2)}
+                      <div className="md:col-span-3">
+                        {quantidade > 0 && precoUnitario > 0 ? (
+                          <div>
+                            <Label className="text-xs">Total</Label>
+                            <div className="text-sm font-semibold text-primary p-2 bg-primary/5 rounded w-full text-center">
+                              R$ {(quantidade * precoUnitario).toFixed(2)}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      <div className="col-span-2 flex items-end">
+                        ) : (
+                          <div className="h-full" />
+                        )}
+                      </div>
+                      <div className="md:col-span-2 flex items-end">
                         <Button type="button" onClick={adicionarProduto} className="w-full">
                           <Plus className="h-4 w-4" />
                         </Button>
