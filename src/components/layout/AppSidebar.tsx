@@ -92,7 +92,7 @@ function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; op
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes}>
       <SidebarMenuItem>
         <SidebarMenuButton asChild>
           <NavLink
@@ -108,13 +108,15 @@ function SortableMenuItem({ item, open }: { item: typeof defaultMenuItems[0]; op
           >
             {({ isActive }) => (
               <>
-                <item.icon
-                  className={`h-5 w-5 transition-colors ${
-                    isActive
-                      ? "text-sidebar-primary-foreground"
-                      : "text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground"
-                  }`}
-                />
+                <div {...listeners} className="cursor-grab active:cursor-grabbing p-1 -ml-1 mr-1">
+                  <item.icon
+                    className={`h-5 w-5 transition-colors ${
+                      isActive
+                        ? "text-sidebar-primary-foreground"
+                        : "text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground"
+                    }`}
+                  />
+                </div>
                 {open && (
                   <span
                     className={`font-medium transition-colors whitespace-nowrap ${

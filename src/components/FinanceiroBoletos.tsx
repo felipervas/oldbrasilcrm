@@ -1,280 +1,338 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, Upload, Plus, Calendar, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Plus, Upload, Loader2, Check, X, AlertCircle, DollarSign, Calendar } from "lucide-react";
+import { useFinanceiroBoletos } from "@/hooks/useFinanceiroBoletos";
+import { useClientes } from "@/hooks/useClientes";
+import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Combobox } from "@/components/ui/combobox";
 
 export const FinanceiroBoletos = () => {
-  const [boletos, setBoletos] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
-  const loadBoletos = async () => {
-    const { data } = await supabase
-      .from("financeiro")
-      .select("*")
-      .eq("tipo_transacao", "boleto")
-      .order("data_vencimento", { ascending: true });
-    
-    setBoletos(data || []);
-    checkVencimentos(data || []);
-  };
-
-  const checkVencimentos = async (boletos: any[]) => {
-    const hoje = new Date();
-    const amanha = new Date();
-    amanha.setDate(hoje.getDate() + 1);
-
-    const boletosProximos = boletos.filter(b => {
-      if (b.status_pagamento !== 'pendente' || !b.data_vencimento) return false;
-      const venc = new Date(b.data_vencimento);
-      return venc <= amanha && venc >= hoje;
-    });
-
-    if (boletosProximos.length > 0) {
-      toast({
-        title: "⚠️ Boletos próximos do vencimento",
-        description: `${boletosProximos.length} boleto(s) vencem hoje ou amanhã`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    loadBoletos();
-  }, []);
-
-  const extractBoletoInfo = (text: string) => {
-    // Extração básica de informações do boleto
-    const codigoBarras = text.match(/\d{5}\.\d{5}\s\d{5}\.\d{6}\s\d{5}\.\d{6}\s\d\s\d{14}/)?.[0] || "";
-    const valor = text.match(/R\$?\s*(\d{1,3}(?:\.\d{3})*,\d{2})/)?.[1] || "";
-    const vencimento = text.match(/(\d{2}\/\d{2}\/\d{4})/)?.[1] || "";
-    
-    return { codigoBarras, valor, vencimento };
-  };
+  const [uploading, setUploading] = useState(false);
+  const [dadosExtraidos, setDadosExtraidos] = useState<any>(null);
+  const [clienteSelecionado, setClienteSelecionado] = useState<string>("");
+  
+  const { boletos, isLoading, totais, analisarBoleto, adicionarBoleto, marcarComoPago, deletarBoleto, isAdicionando } = useFinanceiroBoletos();
+  const { data: clientesData } = useClientes();
+  const clientes = clientesData?.data || [];
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setLoading(true);
+    setUploading(true);
     try {
-      // Upload do arquivo
-      const fileName = `${Date.now()}_${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("pedidos")
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("pedidos")
-        .getPublicUrl(fileName);
-
-      // Tentar extrair texto do PDF (simplificado)
-      if (file.type === 'application/pdf') {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          const text = event.target?.result as string;
-          const info = extractBoletoInfo(text);
-          
-          // Preencher campos automaticamente
-          const valorNumerico = info.valor.replace(/\./g, '').replace(',', '.');
-          document.getElementById('valor_boleto')?.setAttribute('value', valorNumerico);
-          document.getElementById('codigo_barras')?.setAttribute('value', info.codigoBarras);
-          
-          if (info.vencimento) {
-            const [dia, mes, ano] = info.vencimento.split('/');
-            document.getElementById('data_vencimento')?.setAttribute('value', `${ano}-${mes}-${dia}`);
-          }
-        };
-        reader.readAsText(file);
-      }
-
-      toast({ title: "Arquivo carregado com sucesso!" });
-    } catch (error: any) {
-      toast({ title: "Erro ao fazer upload", description: error.message, variant: "destructive" });
+      const dados = await analisarBoleto(file);
+      setDadosExtraidos(dados);
+    } catch (error) {
+      console.error('Erro ao analisar boleto:', error);
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleSubmit = () => {
+    if (!dadosExtraidos) return;
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Não autenticado");
+    adicionarBoleto({
+      ...dadosExtraidos,
+      cliente_id: clienteSelecionado || null,
+    });
 
-      const formData = new FormData(e.currentTarget);
-      
-      const { error } = await supabase.from("financeiro").insert({
-        tipo: "despesa",
-        tipo_transacao: "boleto",
-        descricao: formData.get("descricao") as string,
-        valor: parseFloat(formData.get("valor_boleto") as string),
-        valor_boleto: parseFloat(formData.get("valor_boleto") as string),
-        data: formData.get("data") as string,
-        data_vencimento: formData.get("data_vencimento") as string,
-        codigo_barras: formData.get("codigo_barras") as string,
-        beneficiario: formData.get("beneficiario") as string,
-        observacoes: formData.get("observacoes") as string,
-        usuario_id: user.id,
-        status_pagamento: "pendente",
-      });
-
-      if (error) throw error;
-
-      toast({ title: "Boleto registrado com sucesso!" });
-      setOpen(false);
-      loadBoletos();
-    } catch (error: any) {
-      toast({ title: "Erro ao registrar boleto", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+    setOpen(false);
+    setDadosExtraidos(null);
+    setClienteSelecionado("");
   };
 
-  const marcarComoPago = async (id: string) => {
-    const { error } = await supabase
-      .from("financeiro")
-      .update({ status_pagamento: "pago" })
-      .eq("id", id);
-
-    if (!error) {
-      toast({ title: "Boleto marcado como pago!" });
-      loadBoletos();
+  const getStatusBadge = (boleto: any) => {
+    if (boleto.status_pagamento === 'pago') {
+      return <Badge variant="outline" className="bg-success/10 text-success border-success/20">Pago</Badge>;
     }
+
+    if (!boleto.data_vencimento) return null;
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const venc = new Date(boleto.data_vencimento);
+    venc.setHours(0, 0, 0, 0);
+    const diffDias = Math.ceil((venc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDias < 0) {
+      return <Badge variant="destructive">Vencido</Badge>;
+    } else if (diffDias === 0) {
+      return <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">Vence hoje</Badge>;
+    } else if (diffDias <= 7) {
+      return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Vence em {diffDias}d</Badge>;
+    }
+    return <Badge variant="outline">Pendente</Badge>;
   };
 
-  const hoje = new Date().toISOString().split('T')[0];
+  const clientesOptions = clientes.map(c => ({
+    value: c.id,
+    label: c.nome_fantasia,
+  }));
 
   return (
     <div className="space-y-6">
+      {/* Cards de Resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total a Receber</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              <span className="text-2xl font-bold text-primary">
+                R$ {totais.pendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-success/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Recebido</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <Check className="h-5 w-5 text-success" />
+              <span className="text-2xl font-bold text-success">
+                R$ {totais.pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-destructive/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Vencidos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <span className="text-2xl font-bold text-destructive">{totais.vencidos}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Boletos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              <span className="text-2xl font-bold">{boletos.length}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Botão Adicionar */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Boletos</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="shadow-sm">
               <Plus className="h-4 w-4 mr-2" />
-              Novo Boleto
+              Novo Boleto com IA
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Registrar Boleto</DialogTitle>
+              <DialogTitle>Adicionar Boleto com Análise IA</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-4">
+              <Alert>
+                <Upload className="h-4 w-4" />
+                <AlertDescription>
+                  Faça upload da imagem ou PDF do boleto. Nossa IA analisará automaticamente os dados.
+                </AlertDescription>
+              </Alert>
+
               <div>
-                <Label>Upload do Boleto (PDF)</Label>
-                <Input type="file" accept=".pdf,.jpg,.png" onChange={handleFileUpload} />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Faça upload do boleto para extração automática de dados
-                </p>
+                <Label>Upload do Boleto</Label>
+                <Input 
+                  type="file" 
+                  accept="image/*,.pdf" 
+                  onChange={handleFileUpload}
+                  disabled={uploading || isAdicionando}
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="valor_boleto">Valor *</Label>
-                  <Input id="valor_boleto" name="valor_boleto" type="number" step="0.01" required />
+
+              {uploading && (
+                <div className="flex items-center justify-center gap-2 py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <span className="text-muted-foreground">Analisando boleto com IA...</span>
                 </div>
-                <div>
-                  <Label htmlFor="data_vencimento">Data de Vencimento *</Label>
-                  <Input id="data_vencimento" name="data_vencimento" type="date" required />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="beneficiario">Beneficiário *</Label>
-                <Input id="beneficiario" name="beneficiario" required />
-              </div>
-              <div>
-                <Label htmlFor="codigo_barras">Código de Barras</Label>
-                <Input id="codigo_barras" name="codigo_barras" />
-              </div>
-              <div>
-                <Label htmlFor="descricao">Descrição *</Label>
-                <Input id="descricao" name="descricao" required />
-              </div>
-              <div>
-                <Label htmlFor="data">Data de Registro</Label>
-                <Input id="data" name="data" type="date" defaultValue={hoje} />
-              </div>
-              <div>
-                <Label htmlFor="observacoes">Observações</Label>
-                <Textarea id="observacoes" name="observacoes" />
-              </div>
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? "Salvando..." : "Registrar Boleto"}
-              </Button>
-            </form>
+              )}
+
+              {dadosExtraidos && (
+                <>
+                  <Alert className="bg-success/10 border-success/20">
+                    <Check className="h-4 w-4 text-success" />
+                    <AlertDescription className="text-success">
+                      Boleto analisado com sucesso! Confira os dados abaixo.
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                    <div>
+                      <Label>Cliente (Opcional)</Label>
+                      <Combobox
+                        options={clientesOptions}
+                        value={clienteSelecionado}
+                        onValueChange={setClienteSelecionado}
+                        placeholder="Selecione um cliente (opcional)"
+                        emptyText="Nenhum cliente encontrado"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Vincule a um cliente para rastreamento
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Valor</Label>
+                        <div className="text-lg font-bold text-primary">
+                          R$ {dadosExtraidos.valor?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || 'N/A'}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Vencimento</Label>
+                        <div className="text-lg font-semibold">
+                          {dadosExtraidos.data_vencimento ? new Date(dadosExtraidos.data_vencimento).toLocaleDateString('pt-BR') : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Beneficiário</Label>
+                      <div className="font-medium">{dadosExtraidos.beneficiario || 'N/A'}</div>
+                    </div>
+
+                    {dadosExtraidos.codigo_barras && (
+                      <div>
+                        <Label>Código de Barras</Label>
+                        <div className="font-mono text-xs bg-background p-2 rounded border">
+                          {dadosExtraidos.codigo_barras}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button 
+                    onClick={handleSubmit} 
+                    disabled={isAdicionando}
+                    className="w-full"
+                  >
+                    {isAdicionando ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      'Confirmar e Salvar Boleto'
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="space-y-4">
-        {boletos.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhum boleto registrado</p>
-            </CardContent>
-          </Card>
-        ) : (
-          boletos.map((boleto) => {
-            const venc = new Date(boleto.data_vencimento);
-            const diffDias = Math.ceil((venc.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-            const vencido = diffDias < 0;
-            const proximo = diffDias <= 1 && diffDias >= 0;
-
-            return (
-              <Card key={boleto.id} className={vencido ? "border-destructive" : proximo ? "border-orange-500" : ""}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{boleto.beneficiario}</span>
-                    <span className="text-lg font-bold">R$ {parseFloat(boleto.valor_boleto).toFixed(2)}</span>
-                  </CardTitle>
-                  <CardDescription>{boleto.descricao}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {(vencido || proximo) && boleto.status_pagamento === 'pendente' && (
-                      <Alert variant={vencido ? "destructive" : "default"}>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>
-                          {vencido ? "VENCIDO!" : "Vence amanhã!"}
-                        </AlertDescription>
-                      </Alert>
+      {/* Lista de Boletos */}
+      {isLoading ? (
+        <div className="text-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground mt-2">Carregando boletos...</p>
+        </div>
+      ) : boletos.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12 text-muted-foreground">
+            <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Nenhum boleto registrado</p>
+            <p className="text-sm mt-2">Adicione um boleto para começar</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {boletos.map((boleto) => (
+            <Card key={boleto.id} className="border-primary/10 hover:border-primary/30 transition-colors">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg">{boleto.beneficiario || boleto.descricao}</CardTitle>
+                    {boleto.clientes && (
+                      <p className="text-sm text-muted-foreground">
+                        Cliente: {boleto.clientes.nome_fantasia}
+                      </p>
                     )}
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4" />
-                      Vencimento: {new Date(boleto.data_vencimento).toLocaleDateString('pt-BR')}
-                    </div>
-                    {boleto.codigo_barras && (
-                      <p className="text-xs text-muted-foreground font-mono">{boleto.codigo_barras}</p>
-                    )}
-                    <div className="flex gap-2 mt-4">
-                      {boleto.status_pagamento === 'pendente' ? (
-                        <Button onClick={() => marcarComoPago(boleto.id)} size="sm">
-                          Marcar como Pago
-                        </Button>
-                      ) : (
-                        <span className="text-green-600 font-semibold">✓ Pago</span>
-                      )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(boleto)}
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-primary">
+                        R$ {Number(boleto.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
-      </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    Vencimento: {boleto.data_vencimento ? new Date(boleto.data_vencimento).toLocaleDateString('pt-BR') : 'N/A'}
+                  </div>
+
+                  {boleto.codigo_barras && (
+                    <div className="text-xs font-mono bg-muted p-2 rounded">
+                      {boleto.codigo_barras}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 pt-2">
+                    {boleto.status_pagamento === 'pendente' ? (
+                      <>
+                        <Button 
+                          onClick={() => marcarComoPago(boleto.id)} 
+                          size="sm"
+                          variant="default"
+                        >
+                          <Check className="h-4 w-4 mr-2" />
+                          Marcar como Pago
+                        </Button>
+                        <Button 
+                          onClick={() => deletarBoleto(boleto.id)} 
+                          size="sm"
+                          variant="destructive"
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Remover
+                        </Button>
+                      </>
+                    ) : (
+                      <Badge variant="outline" className="bg-success/10 text-success">
+                        <Check className="h-3 w-3 mr-1" />
+                        Boleto Pago
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
