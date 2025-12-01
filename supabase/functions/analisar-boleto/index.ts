@@ -30,19 +30,7 @@ serve(async (req) => {
     const content: any[] = [
       {
         type: "text",
-        text: `Analise esta imagem de boleto bancário brasileiro e extraia as seguintes informações em formato JSON:
-{
-  "valor": number (valor em reais, apenas números),
-  "data_vencimento": string (formato YYYY-MM-DD),
-  "beneficiario": string (nome da empresa que vai receber),
-  "codigo_barras": string (se visível, caso contrário null)
-}
-
-IMPORTANTE: 
-- Retorne APENAS o JSON, sem texto adicional
-- O valor deve ser número decimal (ex: 1500.50)
-- A data deve estar no formato YYYY-MM-DD
-- Se não conseguir identificar algum campo, use null`
+        text: "Extraia do boleto: valor (número), vencimento (YYYY-MM-DD), beneficiario, codigo_barras. Retorne JSON apenas."
       }
     ];
 
@@ -71,14 +59,15 @@ IMPORTANTE:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-flash-lite',
         messages: [
           {
             role: 'user',
             content: content
           }
         ],
-        max_tokens: 500,
+        max_tokens: 150,
+        temperature: 0,
       }),
     });
 
