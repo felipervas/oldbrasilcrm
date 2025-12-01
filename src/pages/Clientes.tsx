@@ -46,6 +46,8 @@ const Clientes = () => {
     cep: "",
     logradouro: "",
     numero: "",
+    bairro: "",
+    referencia: "",
     cidade: "",
     uf: "",
     segmento: "",
@@ -110,6 +112,8 @@ const Clientes = () => {
         cep: "",
         logradouro: "",
         numero: "",
+        bairro: "",
+        referencia: "",
         cidade: "",
         uf: "",
         segmento: "",
@@ -209,6 +213,8 @@ const Clientes = () => {
       cep: cliente.cep || "",
       logradouro: cliente.logradouro || "",
       numero: cliente.numero || "",
+      bairro: cliente.bairro || "",
+      referencia: cliente.referencia || "",
       cidade: cliente.cidade || "",
       uf: cliente.uf || "",
       segmento: cliente.segmento || "",
@@ -342,6 +348,7 @@ const Clientes = () => {
         cep: data.cep?.replace(/\D/g, "") || "",
         logradouro: data.logradouro || "",
         numero: data.numero || "",
+        bairro: data.bairro || "",
         cidade: data.cidade || "",
         uf: data.uf || "",
       });
@@ -374,6 +381,7 @@ const Clientes = () => {
       setFormData({
         ...formData,
         logradouro: data.logradouro || "",
+        bairro: data.bairro || "",
         cidade: data.localidade || "",
         uf: data.uf || "",
       });
@@ -531,6 +539,26 @@ const Clientes = () => {
                     id="numero"
                     value={formData.numero}
                     onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bairro">Bairro</Label>
+                  <Input
+                    id="bairro"
+                    value={formData.bairro}
+                    onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="referencia">Referência</Label>
+                  <Input
+                    id="referencia"
+                    placeholder="Ex: Próximo ao supermercado"
+                    value={formData.referencia}
+                    onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
                   />
                 </div>
               </div>
@@ -856,6 +884,25 @@ const Clientes = () => {
                           id="edit_numero"
                           value={formData.numero}
                           onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="edit_bairro">Bairro</Label>
+                        <Input
+                          id="edit_bairro"
+                          value={formData.bairro}
+                          onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit_referencia">Referência</Label>
+                        <Input
+                          id="edit_referencia"
+                          placeholder="Ex: Próximo ao supermercado"
+                          value={formData.referencia}
+                          onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
                         />
                       </div>
                     </div>

@@ -27,6 +27,8 @@ export function ConvertLeadDialog({ lead, open, onOpenChange, onConvert }: Conve
     cep: '',
     logradouro: '',
     numero: '',
+    bairro: '',
+    referencia: '',
     observacoes: '',
   });
 
@@ -44,6 +46,8 @@ export function ConvertLeadDialog({ lead, open, onOpenChange, onConvert }: Conve
         cep: '',
         logradouro: '',
         numero: '',
+        bairro: '',
+        referencia: '',
         observacoes: lead.mensagem || '',
       });
     }
@@ -154,6 +158,26 @@ export function ConvertLeadDialog({ lead, open, onOpenChange, onConvert }: Conve
                 id="numero"
                 value={formData.numero}
                 onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="bairro">Bairro</Label>
+              <Input
+                id="bairro"
+                value={formData.bairro}
+                onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="referencia">Referência</Label>
+              <Input
+                id="referencia"
+                placeholder="Ex: Próximo ao supermercado"
+                value={formData.referencia}
+                onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
               />
             </div>
           </div>
