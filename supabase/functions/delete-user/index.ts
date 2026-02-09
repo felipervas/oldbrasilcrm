@@ -50,15 +50,19 @@ serve(async (req) => {
     
     console.log('Deletando usuário:', userId)
     
-    // Deletar roles primeiro
-    await supabaseAdmin
-      .from('user_roles')
-      .delete()
-      .eq('user_id', userId)
-    
+    // Deletar dados relacionados primeiro (ordem importa por FK constraints)
+    await supabaseAdmin.from('user_roles').delete().eq('user_id', userId)
     console.log('Roles deletadas')
     
-    // Deletar usuário
+    // Deletar referências em outras tabelas
+    await supabaseAdmin.from('colaborador_eventos').delete().eq('colaborador_id', userId)
+    await supabaseAdmin.from('historico_equipe').delete().eq('user_id', userId)
+    
+    // Deletar perfil (FK para auth.users)
+    await supabaseAdmin.from('profiles').delete().eq('id', userId)
+    console.log('Perfil deletado')
+    
+    // Deletar usuário do auth
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
     
     if (deleteError) {
