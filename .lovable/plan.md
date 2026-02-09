@@ -1,97 +1,75 @@
 
+## Plano de Varredura e Otimizacao Geral
 
-## Plano de Otimizacao Geral do Site
+### Problema Principal: "Leads nao atualizam"
 
-### Fase 1: Performance e Carregamento
+A investigacao revelou que os dados existem no banco (45 prospects, 1 lead da loja). O problema esta em:
+- A view `prospects_with_last_interaction` funciona corretamente
+- O hook `useProspectsOptimized` tem `staleTime: 3 minutos` mas `refetchOnMount` esta desabilitado globalmente no `queryClient.ts` (`refetchOnMount: false`), fazendo com que ao navegar entre abas os dados nunca sejam recarregados
+- O `queryClient.ts` global tem configuracoes muito agressivas que impedem atualizacao: `refetchOnWindowFocus: false` + `refetchOnMount: false`
 
-**1.1 Otimizar `index.html`**
-- Remover o script inline de limpeza de service workers (duplicado - ja existe no `main.tsx`)
-- Isso elimina um blocking script que atrasa o carregamento inicial
+### Fase 1: Corrigir Atualizacao de Dados (Critico)
 
-**1.2 Otimizar `vite.config.ts`**
-- Adicionar build splitting manual para separar vendor chunks grandes (react, supabase, recharts, framer-motion, dnd-kit)
-- Isso reduz o bundle principal e melhora cache de dependencias
+**Arquivo: `src/lib/queryClient.ts`**
+- Mudar `refetchOnMount: false` para `refetchOnMount: true` - isso garante que ao navegar para uma pagina, dados obsoletos sejam revalidados
+- Manter `staleTime` para evitar requests duplicados em sequencia rapida
+- Isso resolve o problema de "leads nao atualizam" globalmente
 
-**1.3 Remover arquivo `lazy-routes.tsx` nao utilizado**
-- O arquivo `src/pages/lazy-routes.tsx` define lazy imports duplicados que ja estao em `App.tsx`
-- Remover para evitar confusao
+**Arquivo: `src/hooks/useProspectsOptimized.tsx`**
+- Adicionar `refetchOnMount: 'always'` para forcar revalidacao ao abrir o pipeline
+- Remover `limit(200)` que pode estar escondendo prospects - usar paginacao no frontend
 
-### Fase 2: Rotas Duplicadas no App.tsx
+### Fase 2: Responsividade do LancarPedido
 
-**2.1 Corrigir rotas duplicadas**
-- Rota `/gestor/dashboard` esta definida 2 vezes (linhas 386-394)
-- Rota `/prospects` esta definida 2 vezes (linhas 260-266 e 428-434, sendo a segunda nunca alcancada porque a primeira usa VendasHub)
-- Remover as duplicatas
+**Arquivo: `src/pages/LancarPedido.tsx`**
+- Linha 665: `grid-cols-2` -> `grid-cols-1 sm:grid-cols-2` (Cliente + Responsavel)
+- Linha 720: `grid-cols-2` -> `grid-cols-1 sm:grid-cols-2` (Dados do cliente)
+- Linha 787: `grid-cols-2` -> `grid-cols-1 sm:grid-cols-2` (Numero + Data)
+- Linha 807: `grid-cols-2` -> `grid-cols-1 sm:grid-cols-2` (Frete)
+- Linha 830: `grid-cols-4` -> `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` (Pagamento)
+- Linha 873: `grid-cols-2` -> `grid-cols-1 sm:grid-cols-2` (Entrega)
 
-**2.2 Criar componente LojaLayout reutilizavel**
-- As 5 rotas da loja publica (`/`, `/loja`, `/loja/produto/:id`, etc.) repetem a mesma estrutura com LojaHeader, LojaFooter e WhatsAppButton
-- Extrair para um componente `LojaLayout` que elimina duplicacao
+### Fase 3: Migrar Dados Manuais para React Query no LancarPedido
 
-### Fase 3: Responsividade Mobile (Grids sem breakpoints)
+**Arquivo: `src/pages/LancarPedido.tsx`**
+- Atualmente `loadClientes()`, `loadProdutos()`, `loadColaboradores()` usam `useState` + `useEffect` manual
+- Migrar para `useQuery` com cache, eliminando chamadas duplicadas ao navegar entre paginas
+- Isso melhora performance e evita "tela branca" ao voltar para a pagina
 
-**3.1 `Clientes.tsx` - Formularios**
-- Mudar todos os `grid-cols-2 gap-4` para `grid-cols-1 sm:grid-cols-2 gap-4` nos formularios de novo cliente e edicao
-- Mudar `grid-cols-3 gap-4` para `grid-cols-1 sm:grid-cols-3 gap-4`
-- Mudar `grid-cols-5` das TabsList para scroll horizontal (5 tabs nao cabem no mobile)
+### Fase 4: Melhorias de UX no Pipeline (Prospects)
 
-**3.2 `Clientes.tsx` - Lista**
-- Botoes de acao do cliente (editar, whatsapp, excluir) devem ter touch targets maiores no mobile
+**Arquivo: `src/pages/Prospects.tsx`**
+- Linha 97-113: `useEffect` que carrega colaboradores e usuario manual -> usar `useAuth()` para user ID e `useQuery` para colaboradores
+- Adicionar indicador de "carregando" quando a query esta em background refetch
+- Mostrar contagem total de leads no header
 
-**3.3 `Pedidos.tsx` - Layout**
-- Os botoes de acao (imprimir, editar, excluir) ficam apertados no mobile
-- Mudar layout para empilhar verticalmente no mobile
+### Fase 5: Sidebar - Leads da Loja no Menu
 
-### Fase 4: Sidebar Melhorado
+**Arquivo: `src/components/layout/AppSidebar.tsx`**
+- O item "Leads da Loja" nao aparece no menu lateral (a rota `/leads-loja` existe mas nao esta no menu)
+- Adicionar ao `defaultMenuItems` com icone `MessageCircle` ou `ShoppingBag`
 
-**4.1 `AppSidebar.tsx`**
-- Sidebar ja tem `collapsible="none"` no desktop, mas poderia beneficiar de `collapsible="icon"` para dar mais espaco ao conteudo
-- O SidebarTrigger posicionado com `absolute top-4 -right-3` pode ficar cortado - melhorar posicionamento
+### Fase 6: Pedidos - Carregar Mais que 20
 
-### Fase 5: Queries e Cache
+**Arquivo: `src/pages/Pedidos.tsx`**
+- Atualmente limitado a 20 pedidos (`.limit(20)`)
+- Adicionar paginacao ou botao "Carregar mais"
+- Adicionar filtro por status (pendente, entregue, cancelado)
 
-**5.1 `Pedidos.tsx` - Migrar para React Query**
-- A pagina de Pedidos usa `useState` + `useEffect` manual para carregar dados
-- Migrar para `useQuery` com cache, como ja feito em outras paginas (Dashboard, Clientes)
-- Isso evita recarregamentos desnecessarios e melhora a experiencia
+### Resumo de Arquivos
 
-**5.2 `Clientes.tsx` - Verificacao de perfil**
-- `checkUserProfile` faz uma query separada toda vez que a pagina carrega
-- Usar o `useAuth()` que ja existe no contexto (tem `isAdmin` e `roles`)
-
-**5.3 `Pedidos.tsx` - Verificacao de permissao**
-- Mesmo problema: `verificarPermissao()` faz query manual
-- Substituir por `useAuth()` do contexto
-
-### Fase 6: UX e Micro-melhorias
-
-**6.1 Dashboard - Cards de "Meu Dia" e "Proximas Tarefas"**
-- Atualmente mostram apenas "Nenhuma atividade" sem dados reais
-- Conectar com as queries de tarefas e eventos do dia para exibir dados reais
-
-**6.2 VendasHub - TabsList responsiva**
-- `grid-cols-3 md:grid-cols-4` pode ficar apertado no mobile
-- Mudar para scroll horizontal como ja feito no GestorDashboard
-
-**6.3 Loja publica - LojaHome hero**
-- A secao hero ja esta boa, mas os CTAs poderiam ter touch targets maiores no mobile
-
-### Resumo de Arquivos Afetados
-
-| Arquivo | Mudancas |
-|---------|----------|
-| `index.html` | Remover script duplicado de SW |
-| `vite.config.ts` | Adicionar manual chunks |
-| `src/App.tsx` | Remover rotas duplicadas, criar LojaLayout |
-| `src/pages/Clientes.tsx` | Grids responsivos, usar useAuth |
-| `src/pages/Pedidos.tsx` | Migrar para React Query, grids responsivos, usar useAuth |
-| `src/pages/VendasHub.tsx` | TabsList responsiva |
-| `src/pages/Dashboard.tsx` | Conectar cards com dados reais |
-| `src/pages/lazy-routes.tsx` | Remover (nao utilizado) |
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/lib/queryClient.ts` | Corrigir `refetchOnMount` para `true` |
+| `src/hooks/useProspectsOptimized.tsx` | Adicionar `refetchOnMount: 'always'` |
+| `src/pages/LancarPedido.tsx` | 6 grids responsivos + migrar para React Query |
+| `src/pages/Prospects.tsx` | Usar useAuth, indicador loading |
+| `src/components/layout/AppSidebar.tsx` | Adicionar "Leads da Loja" ao menu |
+| `src/pages/Pedidos.tsx` | Paginacao + filtro status |
 
 ### Secao Tecnica
 
-- **Build splitting**: Separar `react`, `react-dom`, `@supabase`, `recharts`, `framer-motion`, `@dnd-kit` em chunks separados para melhor cache
-- **React Query migration**: Usar `useQuery` com `staleTime: 5min` e `gcTime: 30min` no padrao do projeto
-- **Responsive breakpoints**: Seguir padrao `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3+`
-- **Auth context reuse**: Eliminar queries manuais a `profiles` usando `useAuth()` que ja carrega roles
-
+- **Causa raiz "nao atualiza"**: `refetchOnMount: false` no queryClient global impede recarregamento ao navegar entre paginas. Os dados ficam em cache e nunca sao revalidados ate o staleTime expirar (5-10 min)
+- **Solucao**: `refetchOnMount: true` (padrao do React Query) revalida dados stale ao montar o componente, mantendo cache para transicoes rapidas
+- **Responsive grids**: Todos os `grid-cols-N` sem prefixo `sm:` causam layout quebrado no mobile
+- **React Query migration**: Substitui `useState`+`useEffect` manual por queries com cache automatico, loading states, e error handling
