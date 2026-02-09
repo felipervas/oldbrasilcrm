@@ -4,9 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense, Component, ReactNode } from "react";
 import AppLayout from "./components/layout/AppLayout";
-import { LojaHeader } from "./components/loja/LojaHeader";
-import { LojaFooter } from "./components/loja/LojaFooter";
-import { WhatsAppButton } from "./components/loja/WhatsAppButton";
+import { LojaLayout } from "./components/loja/LojaLayout";
 import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -33,7 +31,6 @@ const MarcaDetalhes = lazy(() => import("./pages/MarcaDetalhes"));
 const EstoqueAmostras = lazy(() => import("./pages/EstoqueAmostras"));
 const GerenciarLoja = lazy(() => import("./pages/GerenciarLoja"));
 const GerenciarEquipe = lazy(() => import("./pages/GerenciarEquipe"));
-const Prospects = lazy(() => import("./pages/Prospects"));
 const ColaboradorRelatorioDiario = lazy(() => import("./pages/ColaboradorRelatorioDiario"));
 const RotasPlanejar = lazy(() => import("./pages/RotasPlanejar"));
 const PerformanceVendas = lazy(() => import("./pages/PerformanceVendas"));
@@ -79,7 +76,6 @@ class ErrorBoundary extends Component<
           const registrations = await navigator.serviceWorker.getRegistrations();
           await Promise.all(registrations.map((reg) => reg.unregister()));
         }
-
         if ("caches" in window) {
           const cacheNames = await caches.keys();
           await Promise.all(cacheNames.map((name) => caches.delete(name)));
@@ -90,10 +86,7 @@ class ErrorBoundary extends Component<
         try {
           localStorage.clear();
           sessionStorage.clear();
-        } catch {
-          // alguns modos privativos não permitem
-        }
-
+        } catch { /* alguns modos privativos não permitem */ }
         window.location.reload();
       }
     })();
@@ -107,35 +100,21 @@ class ErrorBoundary extends Component<
             <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
               <AlertCircle className="w-8 h-8 text-destructive" />
             </div>
-            
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">
-                Erro ao carregar a aplicação
-              </h1>
-              <p className="text-muted-foreground">
-                Detectamos um problema ao carregar a página. Isso pode ser causado por cache desatualizado.
-              </p>
+              <h1 className="text-2xl font-bold text-foreground">Erro ao carregar a aplicação</h1>
+              <p className="text-muted-foreground">Detectamos um problema ao carregar a página. Isso pode ser causado por cache desatualizado.</p>
             </div>
-
             <div className="space-y-3">
-              <Button 
-                onClick={this.handleReload}
-                className="w-full"
-                size="lg"
-              >
+              <Button onClick={this.handleReload} className="w-full" size="lg">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Recarregar sem cache
               </Button>
-              
-              <p className="text-xs text-muted-foreground">
-                Se o problema persistir, tente limpar o cache do navegador manualmente
-              </p>
+              <p className="text-xs text-muted-foreground">Se o problema persistir, tente limpar o cache do navegador manualmente</p>
             </div>
           </div>
         </div>
       );
     }
-
     return this.props.children;
   }
 }
@@ -148,317 +127,49 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Suspense fallback={<LoadingFallback />}>
-          <Routes>
-            {/* Rota de Login */}
-            <Route path="/login" element={<Login />} />
+            <Routes>
+              {/* Rota de Login */}
+              <Route path="/login" element={<Login />} />
 
-            {/* Rota Principal - Redireciona para Loja */}
-            <Route path="/" element={
-              <div className="min-h-screen flex flex-col">
-                <LojaHeader />
-                <main className="flex-1">
-                  <LojaHome />
-                </main>
-                <LojaFooter />
-                <WhatsAppButton />
-              </div>
-            } />
-            
-            {/* Rotas Públicas da Loja */}
-            <Route
-              path="/loja"
-              element={
-                <div className="min-h-screen flex flex-col">
-                  <LojaHeader />
-                  <main className="flex-1">
-                    <LojaHome />
-                  </main>
-                  <LojaFooter />
-                  <WhatsAppButton />
-                </div>
-              }
-            />
-            <Route
-              path="/loja/produto/:id"
-              element={
-                <div className="min-h-screen flex flex-col">
-                  <LojaHeader />
-                  <main className="flex-1">
-                    <ProdutoDetalhes />
-                  </main>
-                  <LojaFooter />
-                  <WhatsAppButton />
-                </div>
-              }
-            />
-            <Route
-              path="/loja/marcas"
-              element={
-                <div className="min-h-screen flex flex-col">
-                  <LojaHeader />
-                  <main className="flex-1">
-                    <LojaMarcas />
-                  </main>
-                  <LojaFooter />
-                  <WhatsAppButton />
-                </div>
-              }
-            />
-            <Route
-              path="/loja/marca/:slug"
-              element={
-                <div className="min-h-screen flex flex-col">
-                  <LojaHeader />
-                  <main className="flex-1">
-                    <MarcaProdutos />
-                  </main>
-                  <LojaFooter />
-                  <WhatsAppButton />
-                </div>
-              }
-            />
-            <Route
-              path="/loja/catalogos"
-              element={
-                <div className="min-h-screen flex flex-col">
-                  <LojaHeader />
-                  <main className="flex-1">
-                    <LojaCatalogos />
-                  </main>
-                  <LojaFooter />
-                  <WhatsAppButton />
-                </div>
-              }
-            />
+              {/* Rotas Públicas da Loja - usando LojaLayout */}
+              <Route path="/" element={<LojaLayout><LojaHome /></LojaLayout>} />
+              <Route path="/loja" element={<LojaLayout><LojaHome /></LojaLayout>} />
+              <Route path="/loja/produto/:id" element={<LojaLayout><ProdutoDetalhes /></LojaLayout>} />
+              <Route path="/loja/marcas" element={<LojaLayout><LojaMarcas /></LojaLayout>} />
+              <Route path="/loja/marca/:slug" element={<LojaLayout><MarcaProdutos /></LojaLayout>} />
+              <Route path="/loja/catalogos" element={<LojaLayout><LojaCatalogos /></LojaLayout>} />
 
-            {/* Rotas Autenticadas - CRM */}
-          <Route
-            path="/crm"
-            element={
-              <AppLayout>
-                <Dashboard />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <AppLayout>
-                <Dashboard />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/clientes"
-            element={
-              <AppLayout>
-                <Clientes />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/prospects"
-            element={
-              <AppLayout>
-                <VendasHub />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/tarefas"
-            element={
-              <AppLayout>
-                <VendasHub />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/performance-vendas"
-            element={
-              <AppLayout>
-                <VendasHub />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/vendas"
-            element={
-              <AppLayout>
-                <VendasHub />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/administracao"
-            element={
-              <ProtectedAdminRoute>
-                <Administracao />
-              </ProtectedAdminRoute>
-            }
-          />
-          <Route
-            path="/produtos"
-            element={
-              <AppLayout>
-                <Produtos />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/marcas"
-            element={
-              <AppLayout>
-                <Marcas />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/marcas/:id"
-            element={
-              <AppLayout>
-                <MarcaDetalhes />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/catalogos"
-            element={
-              <AppLayout>
-                <Catalogos />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/tabelas-precos"
-            element={
-              <AppLayout>
-                <TabelasPrecos />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/receitas"
-            element={
-              <AppLayout>
-                <Receitas />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/pedidos"
-            element={
-              <AppLayout>
-                <Pedidos />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/lancar-pedido"
-            element={
-              <AppLayout>
-                <LancarPedido />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/pedidos/:id/editar"
-            element={
-              <AppLayout>
-                <EditarPedido />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/estoque-amostras"
-            element={
-              <AppLayout>
-                <EstoqueAmostras />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/gestor/dashboard"
-            element={
-              <AppLayout>
-                <GestorDashboard />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/gestor/dashboard"
-            element={
-              <AppLayout>
-                <GestorDashboard />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/colaborador/:id"
-            element={
-              <AppLayout>
-                <ColaboradorPerfil />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/meu-perfil"
-            element={
-              <AppLayout>
-                <MeuPerfil />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/gerenciar-loja"
-            element={
-              <ProtectedAdminRoute>
-                <GerenciarLoja />
-              </ProtectedAdminRoute>
-            }
-          />
-          <Route
-            path="/gerenciar-equipe"
-            element={
-              <ProtectedAdminRoute>
-                <GerenciarEquipe />
-              </ProtectedAdminRoute>
-            }
-          />
-          <Route
-            path="/prospects"
-            element={
-              <AppLayout>
-                <Prospects />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/meu-dia"
-            element={
-              <AppLayout>
-                <ColaboradorRelatorioDiario />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/rotas/planejar"
-            element={
-              <AppLayout>
-                <RotasPlanejar />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/leads-loja"
-            element={
-              <AppLayout>
-                <LeadsLoja />
-              </AppLayout>
-            }
-          />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* Rotas Autenticadas - CRM */}
+              <Route path="/crm" element={<AppLayout><Dashboard /></AppLayout>} />
+              <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
+              <Route path="/clientes" element={<AppLayout><Clientes /></AppLayout>} />
+              <Route path="/prospects" element={<AppLayout><VendasHub /></AppLayout>} />
+              <Route path="/tarefas" element={<AppLayout><VendasHub /></AppLayout>} />
+              <Route path="/performance-vendas" element={<AppLayout><VendasHub /></AppLayout>} />
+              <Route path="/vendas" element={<AppLayout><VendasHub /></AppLayout>} />
+              <Route path="/administracao" element={<ProtectedAdminRoute><Administracao /></ProtectedAdminRoute>} />
+              <Route path="/produtos" element={<AppLayout><Produtos /></AppLayout>} />
+              <Route path="/marcas" element={<AppLayout><Marcas /></AppLayout>} />
+              <Route path="/marcas/:id" element={<AppLayout><MarcaDetalhes /></AppLayout>} />
+              <Route path="/catalogos" element={<AppLayout><Catalogos /></AppLayout>} />
+              <Route path="/tabelas-precos" element={<AppLayout><TabelasPrecos /></AppLayout>} />
+              <Route path="/receitas" element={<AppLayout><Receitas /></AppLayout>} />
+              <Route path="/pedidos" element={<AppLayout><Pedidos /></AppLayout>} />
+              <Route path="/lancar-pedido" element={<AppLayout><LancarPedido /></AppLayout>} />
+              <Route path="/pedidos/:id/editar" element={<AppLayout><EditarPedido /></AppLayout>} />
+              <Route path="/estoque-amostras" element={<AppLayout><EstoqueAmostras /></AppLayout>} />
+              <Route path="/gestor/dashboard" element={<AppLayout><GestorDashboard /></AppLayout>} />
+              <Route path="/colaborador/:id" element={<AppLayout><ColaboradorPerfil /></AppLayout>} />
+              <Route path="/meu-perfil" element={<AppLayout><MeuPerfil /></AppLayout>} />
+              <Route path="/gerenciar-loja" element={<ProtectedAdminRoute><GerenciarLoja /></ProtectedAdminRoute>} />
+              <Route path="/gerenciar-equipe" element={<ProtectedAdminRoute><GerenciarEquipe /></ProtectedAdminRoute>} />
+              <Route path="/meu-dia" element={<AppLayout><ColaboradorRelatorioDiario /></AppLayout>} />
+              <Route path="/rotas/planejar" element={<AppLayout><RotasPlanejar /></AppLayout>} />
+              <Route path="/leads-loja" element={<AppLayout><LeadsLoja /></AppLayout>} />
+
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </Suspense>
         </AuthProvider>
       </BrowserRouter>

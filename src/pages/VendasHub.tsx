@@ -36,21 +36,21 @@ export default function VendasHub() {
       </div>
 
       <Tabs defaultValue="pipeline" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-4">
-          <TabsTrigger value="pipeline" className="gap-2">
+        <TabsList className="flex overflow-x-auto w-full -webkit-overflow-scrolling-touch snap-x snap-mandatory">
+          <TabsTrigger value="pipeline" className="gap-2 snap-start whitespace-nowrap flex-1 min-w-fit">
             <Target className="h-4 w-4" />
             Pipeline
           </TabsTrigger>
-          <TabsTrigger value="performance" className="gap-2">
+          <TabsTrigger value="performance" className="gap-2 snap-start whitespace-nowrap flex-1 min-w-fit">
             <TrendingUp className="h-4 w-4" />
             Performance
           </TabsTrigger>
-          <TabsTrigger value="tarefas" className="gap-2">
+          <TabsTrigger value="tarefas" className="gap-2 snap-start whitespace-nowrap flex-1 min-w-fit">
             <CheckSquare className="h-4 w-4" />
             Tarefas
           </TabsTrigger>
           {isGestor && (
-            <TabsTrigger value="dashboard" className="gap-2">
+            <TabsTrigger value="dashboard" className="gap-2 snap-start whitespace-nowrap flex-1 min-w-fit">
               <BarChart3 className="h-4 w-4" />
               Dashboard
             </TabsTrigger>
