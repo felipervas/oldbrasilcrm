@@ -11,13 +11,13 @@ export const useProspectsOptimized = () => {
         .from('prospects_with_last_interaction')
         .select('*')
         .order('score', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false })
-        .limit(200); // Limitar para os 200 prospects mais relevantes
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
-    staleTime: 3 * 60 * 1000, // 3 minutos
-    gcTime: 15 * 60 * 1000, // 15 minutos
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnMount: 'always',
   });
 };

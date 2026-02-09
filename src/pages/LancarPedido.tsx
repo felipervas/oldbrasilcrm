@@ -662,7 +662,7 @@ const LancarPedido = () => {
                   </Alert>
                 )}
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>Cliente *</Label>
                     <div className="flex items-center">
@@ -717,7 +717,7 @@ const LancarPedido = () => {
                         <span>📋</span>
                         Dados do Cliente (editáveis para este pedido)
                       </h3>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <Label>Razão Social / Nome Fantasia</Label>
                           <Input 
@@ -784,7 +784,7 @@ const LancarPedido = () => {
                   );
                 })()}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="numero_pedido">
                       Número do Pedido 
@@ -804,7 +804,7 @@ const LancarPedido = () => {
 
                 <div className="border-t pt-4">
                   <h3 className="font-semibold mb-3">Informações de Frete</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>Tipo de Frete</Label>
                       <Select name="tipo_frete">
@@ -827,7 +827,7 @@ const LancarPedido = () => {
 
                 <div className="border-t pt-4">
                   <h3 className="font-semibold mb-3">Informações de Pagamento</h3>
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                       <Label>Status</Label>
                       <Select name="status" defaultValue="pendente">
@@ -870,7 +870,7 @@ const LancarPedido = () => {
 
                 <div className="border-t pt-4">
                   <h3 className="font-semibold mb-3">Informações de Entrega</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>Prazo de Entrega (opcional)</Label>
                       <Input name="prazo_entrega" placeholder="Ex: 5 dias úteis, 2 semanas..." />
