@@ -252,17 +252,15 @@ const GestorDashboard = () => {
         </Card>
       </div>
 
-        <Tabs defaultValue="overview" className="w-full relative z-10">
-          <TabsList className="w-full overflow-x-auto scrollbar-hide flex flex-nowrap -webkit-overflow-scrolling-touch">
-            <div className="flex gap-1 min-w-max px-1">
-              <TabsTrigger value="overview" className="whitespace-nowrap">Visão Geral</TabsTrigger>
-              <TabsTrigger value="marcas" className="whitespace-nowrap">Marcas</TabsTrigger>
-              <TabsTrigger value="pedidos" className="whitespace-nowrap">Pedidos</TabsTrigger>
-              <TabsTrigger value="vendedores" className="whitespace-nowrap">Equipe</TabsTrigger>
-              <TabsTrigger value="empresas" className="whitespace-nowrap">Empresas</TabsTrigger>
-              <TabsTrigger value="financeiro" className="whitespace-nowrap">Financeiro</TabsTrigger>
-              <TabsTrigger value="calendario" className="whitespace-nowrap">Calendário</TabsTrigger>
-            </div>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="flex overflow-x-auto w-full -webkit-overflow-scrolling-touch snap-x snap-mandatory">
+              <TabsTrigger value="overview" className="whitespace-nowrap snap-start flex-1 min-w-fit">Visão Geral</TabsTrigger>
+              <TabsTrigger value="marcas" className="whitespace-nowrap snap-start flex-1 min-w-fit">Marcas</TabsTrigger>
+              <TabsTrigger value="pedidos" className="whitespace-nowrap snap-start flex-1 min-w-fit">Pedidos</TabsTrigger>
+              <TabsTrigger value="vendedores" className="whitespace-nowrap snap-start flex-1 min-w-fit">Equipe</TabsTrigger>
+              <TabsTrigger value="empresas" className="whitespace-nowrap snap-start flex-1 min-w-fit">Empresas</TabsTrigger>
+              <TabsTrigger value="financeiro" className="whitespace-nowrap snap-start flex-1 min-w-fit">Financeiro</TabsTrigger>
+              <TabsTrigger value="calendario" className="whitespace-nowrap snap-start flex-1 min-w-fit">Calendário</TabsTrigger>
           </TabsList>
 
         {/* Visão Geral */}
