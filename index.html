@@ -20,28 +20,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <!-- Script de limpeza de service workers e caches (sem mexer na sessão de login) -->
-    <script>
-      (async function () {
-        try {
-          // Remover service workers antigos
-          if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(registrations.map((reg) => reg.unregister()));
-            console.log('✅ Service workers removidos');
-          }
-
-          // Limpar caches antigos
-          if ('caches' in window) {
-            const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map((name) => caches.delete(name)));
-            console.log('✅ Caches limpos');
-          }
-        } catch (error) {
-          console.warn('⚠️ Erro ao limpar cache:', error);
-        }
-      })();
-    </script>
+    <!-- SW cleanup removido - já existe no ErrorBoundary do App.tsx -->
 
     
     

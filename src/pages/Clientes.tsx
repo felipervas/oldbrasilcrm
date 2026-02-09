@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -139,24 +140,8 @@ const Clientes = () => {
   // Remover loadClientes - usar hook otimizado
   // const loadClientes = async () => { ... }
 
-  const checkUserProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("perfil")
-        .eq("id", user.id)
-        .single();
-      return profile?.perfil === "gestor" || profile?.perfil === "admin";
-    }
-    return false;
-  };
-
-  const [isGestor, setIsGestor] = useState(false);
-
-  useEffect(() => {
-    checkUserProfile().then(setIsGestor);
-  }, []);
+  const { isAdmin, roles } = useAuth();
+  const isGestor = roles.includes('gestor') || roles.includes('admin');
 
   const handleDelete = async (clienteId: string) => {
     if (!confirm("Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.")) return;
@@ -454,7 +439,7 @@ const Clientes = () => {
               <DialogTitle>Adicionar Novo Cliente</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="nome_fantasia">Nome Fantasia *</Label>
                   <Input
@@ -474,7 +459,7 @@ const Clientes = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="cnpj_cpf">CNPJ/CPF</Label>
                   <div className="flex gap-2">
@@ -500,7 +485,7 @@ const Clientes = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="telefone">Telefone</Label>
                   <Input
@@ -525,7 +510,7 @@ const Clientes = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="logradouro">Logradouro</Label>
                   <Input
@@ -544,7 +529,7 @@ const Clientes = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="bairro">Bairro</Label>
                   <Input
@@ -564,7 +549,7 @@ const Clientes = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="cidade">Cidade</Label>
                   <Input
@@ -584,7 +569,7 @@ const Clientes = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="segmento">Segmento</Label>
                   <Input
@@ -783,10 +768,11 @@ const Clientes = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
                       <Button
                         variant="outline"
                         size="sm"
+                        className="min-h-[44px] min-w-[44px]"
                         onClick={() => handleEdit(cliente)}
                       >
                         <Edit className="h-4 w-4" />
@@ -795,7 +781,7 @@ const Clientes = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="gap-2"
+                          className="gap-2 min-h-[44px] min-w-[44px]"
                           onClick={() => {
                             const telefone = cliente.telefone.replace(/\D/g, '');
                             const mensagem = encodeURIComponent(`Olá ${cliente.nome_fantasia}! Tudo bem?`);
@@ -808,6 +794,7 @@ const Clientes = () => {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="min-h-[44px] min-w-[44px]"
                         onClick={() => handleDelete(cliente.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -838,17 +825,17 @@ const Clientes = () => {
             <DialogTitle>Editar Cliente</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="info">Informações</TabsTrigger>
-              <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
-              <TabsTrigger value="contatos">Contatos</TabsTrigger>
-              <TabsTrigger value="historico">Histórico</TabsTrigger>
-              <TabsTrigger value="boletos">Boletos</TabsTrigger>
+            <TabsList className="flex overflow-x-auto w-full -webkit-overflow-scrolling-touch snap-x snap-mandatory">
+              <TabsTrigger value="info" className="snap-start whitespace-nowrap">Informações</TabsTrigger>
+              <TabsTrigger value="pedidos" className="snap-start whitespace-nowrap">Pedidos</TabsTrigger>
+              <TabsTrigger value="contatos" className="snap-start whitespace-nowrap">Contatos</TabsTrigger>
+              <TabsTrigger value="historico" className="snap-start whitespace-nowrap">Histórico</TabsTrigger>
+              <TabsTrigger value="boletos" className="snap-start whitespace-nowrap">Boletos</TabsTrigger>
             </TabsList>
 
             <TabsContent value="info">
               <form onSubmit={handleUpdate} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit_nome_fantasia">Nome Fantasia *</Label>
                     <Input
@@ -871,7 +858,7 @@ const Clientes = () => {
                 <div className="border-t pt-4 mt-4">
                   <h3 className="font-semibold mb-3">Endereço</h3>
                   <div className="space-y-3">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="col-span-2">
                         <Label htmlFor="edit_logradouro">Logradouro</Label>
                         <Input
@@ -889,7 +876,7 @@ const Clientes = () => {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="edit_bairro">Bairro</Label>
                         <Input
@@ -908,7 +895,7 @@ const Clientes = () => {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <Label htmlFor="edit_cep">CEP</Label>
                         <Input
@@ -938,7 +925,7 @@ const Clientes = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit_email">Email</Label>
                     <Input
