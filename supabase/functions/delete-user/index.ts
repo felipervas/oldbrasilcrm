@@ -58,9 +58,29 @@ serve(async (req) => {
     await supabaseAdmin.from('colaborador_eventos').delete().eq('colaborador_id', userId)
     await supabaseAdmin.from('historico_equipe').delete().eq('user_id', userId)
     
+    // Limpar audit_log (FK audit_log_user_id_fkey)
+    await supabaseAdmin.from('audit_log').update({ user_id: null }).eq('user_id', userId)
+    console.log('Audit log limpo')
+    
+    // Limpar comentários
+    await supabaseAdmin.from('comentarios').delete().eq('usuario_id', userId)
+    
+    // Limpar referências em outras tabelas (set null onde possível)
+    await supabaseAdmin.from('clientes').update({ responsavel_id: null }).eq('responsavel_id', userId)
+    await supabaseAdmin.from('interacoes').delete().eq('usuario_id', userId)
+    await supabaseAdmin.from('tarefas').update({ responsavel_id: null }).eq('responsavel_id', userId)
+    await supabaseAdmin.from('tarefas').update({ realizada_por_id: null }).eq('realizada_por_id', userId)
+    await supabaseAdmin.from('prospect_interacoes').delete().eq('usuario_id', userId)
+    await supabaseAdmin.from('prospect_visitas').delete().eq('responsavel_id', userId)
+    await supabaseAdmin.from('prospects').update({ responsavel_id: null }).eq('responsavel_id', userId)
+    await supabaseAdmin.from('prospects').update({ criado_por_id: null }).eq('criado_por_id', userId)
+    await supabaseAdmin.from('financeiro').delete().eq('usuario_id', userId)
+    await supabaseAdmin.from('receitas').delete().eq('usuario_id', userId)
+    await supabaseAdmin.from('loja_audit_log').update({ user_id: null }).eq('user_id', userId)
+    
     // Deletar perfil (FK para auth.users)
     await supabaseAdmin.from('profiles').delete().eq('id', userId)
-    console.log('Perfil deletado')
+    console.log('Perfil e referências deletados')
     
     // Deletar usuário do auth
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
