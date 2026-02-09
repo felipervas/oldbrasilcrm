@@ -6,16 +6,22 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Package, Calendar, Trash2, Edit, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ProdutoTooltip } from "@/components/ProdutoTooltip";
 import { ImprimirPedido } from "@/components/ImprimirPedido";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Pagination } from "@/components/Pagination";
+
+const PAGE_SIZE = 30;
 
 const Pedidos = () => {
   const [produtosPorPedido, setProdutosPorPedido] = useState<Record<string, any[]>>({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState("todos");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -23,11 +29,24 @@ const Pedidos = () => {
   const { roles } = useAuth();
   const podeverFaturamento = roles.includes('gestor') || roles.includes('admin');
 
-  // React Query para pedidos
-  const { data: pedidosRecentes = [], isLoading: loading } = useQuery({
-    queryKey: ['pedidos-lista'],
+  // Reset page when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(0);
+  };
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setPage(0);
+  };
+
+  // React Query para pedidos com paginação
+  const { data: result, isLoading: loading } = useQuery({
+    queryKey: ['pedidos-lista', page, debouncedSearchTerm, statusFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const start = page * PAGE_SIZE;
+      const end = start + PAGE_SIZE - 1;
+
+      let query = supabase
         .from("pedidos")
         .select(`
           id, numero_pedido, data_pedido, valor_total, status, 
@@ -38,16 +57,30 @@ const Pedidos = () => {
             numero, cidade, uf, cep, telefone, email, responsavel_id,
             profiles(nome)
           )
-        `)
+        `, { count: 'exact' });
+
+      if (debouncedSearchTerm) {
+        query = query.or(`numero_pedido.ilike.%${debouncedSearchTerm}%,clientes.nome_fantasia.ilike.%${debouncedSearchTerm}%`);
+      }
+
+      if (statusFilter !== 'todos') {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data, error, count } = await query
         .order("data_pedido", { ascending: false })
-        .limit(20);
+        .range(start, end);
 
       if (error) throw error;
-      return data || [];
+      return { data: data || [], count: count || 0 };
     },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 15 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
+
+  const pedidosRecentes = result?.data || [];
+  const totalCount = result?.count || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   // Stats calculadas via useMemo
   const stats = useMemo(() => {
@@ -68,15 +101,6 @@ const Pedidos = () => {
       totalCancelado: pedidosRecentes.filter((p: any) => p.status === 'cancelado').reduce((acc: number, p: any) => acc + (parseFloat(String(p.valor_total || 0))), 0),
     };
   }, [pedidosRecentes]);
-
-  const pedidosFiltrados = useMemo(() => 
-    pedidosRecentes.filter((pedido: any) =>
-      pedido.clientes?.nome_fantasia?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      pedido.numero_pedido?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      pedido.clientes?.profiles?.nome?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-    ),
-    [pedidosRecentes, debouncedSearchTerm]
-  );
 
   const loadProdutosPedido = async (pedidoId: string) => {
     if (produtosPorPedido[pedidoId]) return;
@@ -139,7 +163,9 @@ const Pedidos = () => {
           <SidebarTrigger className="md:hidden" />
           <div>
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Pedidos</h1>
-            <p className="text-muted-foreground">Gestão de pedidos</p>
+            <p className="text-muted-foreground">
+              {totalCount > 0 ? `${totalCount} pedidos no total` : 'Gestão de pedidos'}
+            </p>
           </div>
         </div>
       </div>
@@ -150,21 +176,41 @@ const Pedidos = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-primary" />
-                Pedidos Recentes
+                Pedidos
               </CardTitle>
-              <CardDescription>Últimos 20 pedidos registrados</CardDescription>
+              <CardDescription>
+                {statusFilter !== 'todos' 
+                  ? `Filtrando por: ${getStatusBadge(statusFilter).text}`
+                  : 'Todos os pedidos'}
+              </CardDescription>
             </div>
             <Button onClick={() => navigate("/lancar-pedido")} className="min-h-[44px]">
               <Plus className="h-4 w-4 mr-2" />
               Novo Pedido
             </Button>
           </div>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-col sm:flex-row gap-3">
             <Input
-              placeholder="Buscar por cliente, número do pedido ou vendedor..."
+              className="flex-1"
+              placeholder="Buscar por cliente ou número do pedido..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
+            <Select value={statusFilter} onValueChange={handleStatusChange}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="cotacao">Cotação</SelectItem>
+                <SelectItem value="pedido">Pedido</SelectItem>
+                <SelectItem value="pendente">Pendente</SelectItem>
+                <SelectItem value="em_producao">Em Produção</SelectItem>
+                <SelectItem value="enviado">Enviado</SelectItem>
+                <SelectItem value="entregue">Entregue</SelectItem>
+                <SelectItem value="cancelado">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -173,14 +219,14 @@ const Pedidos = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
               <p>Carregando pedidos...</p>
             </div>
-          ) : pedidosFiltrados.length === 0 ? (
+          ) : pedidosRecentes.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">Nenhum pedido registrado</p>
+              <p className="text-lg font-medium mb-2">Nenhum pedido encontrado</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {pedidosFiltrados.map((pedido: any) => (
+              {pedidosRecentes.map((pedido: any) => (
                 <div 
                   key={pedido.id} 
                   className="border rounded-lg p-4 hover:shadow-md transition-shadow"
@@ -250,6 +296,16 @@ const Pedidos = () => {
                   </div>
                 </div>
               ))}
+
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  totalItems={totalCount}
+                  pageSize={PAGE_SIZE}
+                />
+              )}
             </div>
           )}
         </CardContent>

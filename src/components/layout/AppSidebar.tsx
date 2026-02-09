@@ -35,6 +35,7 @@ import {
   CalendarDays,
   Route,
   GripVertical,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -75,6 +76,7 @@ const defaultMenuItems = [
   { id: "pedidos", title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
   { id: "lancar-pedido", title: "Lançar Pedido", url: "/lancar-pedido", icon: Briefcase },
   { id: "estoque", title: "Estoque & Amostras", url: "/estoque-amostras", icon: Boxes },
+  { id: "leads-loja", title: "Leads da Loja", url: "/leads-loja", icon: MessageCircle },
   { id: "gestor-dashboard", title: "Dashboard Gestor", url: "/gestor/dashboard", icon: BarChart3, restricted: true },
 ];
 

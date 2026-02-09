@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, memo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useCreateProspect, useBulkCreateProspects, useUpdateProspect, Prospect, ProspectStatus } from '@/hooks/useProspects';
 import { useProspectsOptimized } from '@/hooks/useProspectsOptimized';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -16,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { ProspectQuickActions } from '@/components/prospects/ProspectQuickActions';
 import { AgendamentoRapidoModal } from '@/components/prospects/AgendamentoRapidoModal';
 import { CriarTarefaModal } from '@/components/prospects/CriarTarefaModal';
@@ -42,7 +44,8 @@ const statusLabels: Record<ProspectStatus, string> = {
 const statusColumns: ProspectStatus[] = ['novo', 'em_contato', 'aguardando_retorno', 'em_negociacao', 'proposta_enviada', 'ganho'];
 
 export default function Prospects() {
-  const { data: prospects, refetch } = useProspectsOptimized();
+  const { data: prospects, refetch, isLoading: prospectsLoading, isFetching } = useProspectsOptimized();
+  const { user } = useAuth();
   const createProspect = useCreateProspect();
   const bulkCreateProspects = useBulkCreateProspects();
   const navigate = useNavigate();
@@ -58,15 +61,26 @@ export default function Prospects() {
   const [filterCidade, setFilterCidade] = useState('todos');
   const [filterPorte, setFilterPorte] = useState('todos');
   const [filterPrioridade, setFilterPrioridade] = useState('todos');
-  const [colaboradores, setColaboradores] = useState<any[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const currentUserId = user?.id || '';
   const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
   const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
-  // Removido ultimasInteracoes - agora vem da view otimizada
   const [activeId, setActiveId] = useState<string | null>(null);
   const { toast } = useToast();
   const { generateInsights } = useIAInsights();
   const updateProspectMutation = useUpdateProspect();
+
+  // Carregar colaboradores com React Query
+  const { data: colaboradores = [] } = useQuery({
+    queryKey: ['colaboradores-list'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, nome')
+        .order('nome');
+      return data || [];
+    },
+    staleTime: 10 * 60 * 1000,
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -93,24 +107,13 @@ export default function Prospects() {
   const [bulkProspects, setBulkProspects] = useState('');
   const [bulkResponsavel, setBulkResponsavel] = useState('');
 
-  // Carregar colaboradores e usuário atual
+  // Setar responsável padrão quando user carrega
   useEffect(() => {
-    const loadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
-        setNovoProspect(prev => ({ ...prev, responsavel_id: user.id }));
-        setBulkResponsavel(user.id);
-      }
-
-      const { data: colabs } = await supabase
-        .from('profiles')
-        .select('id, nome')
-        .order('nome');
-      setColaboradores(colabs || []);
-    };
-    loadData();
-  }, []);
+    if (currentUserId) {
+      setNovoProspect(prev => ({ ...prev, responsavel_id: currentUserId }));
+      setBulkResponsavel(currentUserId);
+    }
+  }, [currentUserId]);
 
   // Removido: agora a view prospects_with_last_interaction já traz ultima_interacao otimizada
 
@@ -368,9 +371,14 @@ export default function Prospects() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Pipeline de Leads</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold">Pipeline de Leads</h1>
+              {isFetching && !prospectsLoading && (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+              )}
+            </div>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Gerencie seus leads e acompanhe o funil de vendas
+              {prospects?.length ? `${prospects.length} leads no total` : 'Gerencie seus leads e acompanhe o funil de vendas'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
