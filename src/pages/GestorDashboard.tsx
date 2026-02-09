@@ -192,7 +192,7 @@ const GestorDashboard = () => {
       {/* Cards de resumo */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-in fade-in duration-300">
         <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-all hover-scale overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-chart-1/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-1/10 to-transparent pointer-events-none" />
           <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-chart-1 to-chart-1/70 flex items-center justify-center">
@@ -206,7 +206,7 @@ const GestorDashboard = () => {
         </Card>
 
         <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-all hover-scale overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-chart-2/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-2/10 to-transparent pointer-events-none" />
           <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Pedidos</CardTitle>
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-chart-2 to-chart-2/70 flex items-center justify-center">
@@ -220,7 +220,7 @@ const GestorDashboard = () => {
         </Card>
 
         <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-all hover-scale overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-chart-3/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-3/10 to-transparent pointer-events-none" />
           <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Saldo Financeiro</CardTitle>
             <div className={`h-10 w-10 rounded-full flex items-center justify-center ${saldoTotal >= 0 ? 'bg-gradient-to-br from-chart-3 to-chart-3/70' : 'bg-gradient-to-br from-destructive to-destructive/70'}`}>
@@ -236,7 +236,7 @@ const GestorDashboard = () => {
         </Card>
 
         <Card className="border-primary/20 shadow-elegant hover:shadow-glow transition-all hover-scale overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-chart-4/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-chart-4/10 to-transparent pointer-events-none" />
           <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-chart-4 to-chart-4/70 flex items-center justify-center">
