@@ -1,40 +1,49 @@
 
 
-## Correcao: Cliques Bloqueados no Dashboard do Gestor
+## Melhorias na Loja: Catalogos + Fotos UNIKA
 
-### Problema Identificado
+### Problemas Encontrados
 
-Os 4 cards de resumo no topo do Dashboard do Gestor (Faturamento, Pedidos, Saldo, Ticket Medio) possuem uma `div` com `absolute inset-0` para criar um efeito de gradiente decorativo. Essa div invisivel cobre toda a area dos cards e intercepta todos os eventos de clique, impedindo interacao com qualquer elemento da pagina (incluindo a sidebar para navegar de volta).
+**1. Catalogos nao aparecem corretamente**
+- O catalogo "Tabela de Preco Unika" foi salvo com tipo `tabela_precos` (com "s"), mas o codigo so reconhece `tabela_preco` (sem "s"). Resultado: o badge fica cinza generico "Outro" em vez de azul "Tabela de Preco".
+- Todos os 9 catalogos tem `marca_id = null`, entao nao aparecem vinculados a nenhuma marca na loja.
+- A query usa `select("*, marcas(nome)")` que depende de `marca_id` estar preenchido - como esta null, nao mostra a marca.
 
-### Causa Raiz
+**2. Produtos UNIKA sem foto**
+- De 155 produtos UNIKA, apenas 36 tem foto. Sao **119 produtos sem imagem**.
+- O usuario quer que todos usem a mesma foto padrao da UNIKA.
 
-```
-<Card className="... overflow-hidden">
-  <div className="absolute inset-0 bg-gradient-to-br ..." />  <-- BLOQUEIA CLIQUES
-```
-
-A div com `position: absolute` e `inset: 0` cria uma camada que fica por cima de todo o conteudo do card. Como nao tem `pointer-events-none`, ela captura todos os eventos de mouse/touch, tornando impossivel clicar em qualquer coisa atras dela.
+---
 
 ### Solucao
 
-Adicionar `pointer-events-none` nas 4 divs decorativas de gradiente nos cards de resumo do `GestorDashboard.tsx`:
+#### Parte 1: Corrigir dados dos catalogos no banco
 
-**Arquivo: `src/pages/GestorDashboard.tsx`**
-- Linha 195: Adicionar `pointer-events-none` na div de gradiente do card "Faturamento Total"
-- Linha 209: Adicionar `pointer-events-none` na div de gradiente do card "Total de Pedidos"
-- Linha 223: Adicionar `pointer-events-none` na div de gradiente do card "Saldo Financeiro"
-- Linha 239: Adicionar `pointer-events-none` na div de gradiente do card "Ticket Medio"
+- Atualizar o tipo `tabela_precos` para `tabela_preco` (padrao do codigo)
+- Vincular cada catalogo a sua marca correta via `marca_id`, usando o nome para identificar (ex: "Catalogo Unika" -> marca UNIKA, "Catalogo Gencau" -> marca Gencau, etc.)
+
+#### Parte 2: Inserir foto padrao para todos os produtos UNIKA sem imagem
+
+- Usar a URL de uma foto UNIKA ja existente: `https://uwbzrkqtwmykniijbwik.supabase.co/storage/v1/object/public/produto-imagens/307801bf-f796-478b-8882-66d621558567-1761923445046.jpg`
+- Inserir um registro em `produto_imagens` com `ordem = 0` para cada um dos 119 produtos que nao tem foto
+
+#### Parte 3: Melhorar o componente LojaCatalogos
+
+- Adicionar `tabela_precos` como alias no mapeamento de tipos (para suportar ambos os formatos)
+- Melhorar visual geral dos cards
+
+---
 
 ### Secao Tecnica
 
-Mudanca em cada uma das 4 linhas:
-```
-// Antes:
-<div className="absolute inset-0 bg-gradient-to-br from-chart-X/10 to-transparent" />
+**Arquivo: `src/pages/loja/LojaCatalogos.tsx`**
+- Adicionar `tabela_precos` no mapa de tipos para cobrir o valor salvo no banco
 
-// Depois:
-<div className="absolute inset-0 bg-gradient-to-br from-chart-X/10 to-transparent pointer-events-none" />
-```
+**Operacoes no banco de dados (via insert tool):**
 
-Isso garante que as divs decorativas nao interceptem eventos de mouse/touch, permitindo que os cliques passem para os elementos interativos por baixo (sidebar, tabs, botoes).
+1. UPDATE nos catalogos para corrigir `marca_id` vinculando cada catalogo a sua marca
+2. UPDATE no catalogo com tipo errado (`tabela_precos` -> `tabela_preco`)
+3. INSERT em `produto_imagens` para os 119 produtos UNIKA sem foto, usando a mesma URL de referencia
+
+**Nenhuma migration necessaria** - sao apenas operacoes de dados (INSERT/UPDATE).
 
