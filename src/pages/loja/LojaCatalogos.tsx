@@ -33,6 +33,7 @@ export default function LojaCatalogos() {
   const getTipoBadge = (tipo: string) => {
     const tipos: Record<string, { label: string; color: string }> = {
       tabela_preco: { label: "Tabela de Preço", color: "bg-blue-100 text-blue-800" },
+      tabela_precos: { label: "Tabela de Preço", color: "bg-blue-100 text-blue-800" },
       catalogo: { label: "Catálogo", color: "bg-green-100 text-green-800" },
       ficha_tecnica: { label: "Ficha Técnica", color: "bg-purple-100 text-purple-800" },
       outro: { label: "Outro", color: "bg-gray-100 text-gray-800" },
