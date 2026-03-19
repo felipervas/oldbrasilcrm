@@ -1,76 +1,55 @@
 
 
-## Substituir Dados Reais por Dados Ficticios
+## Renomear App para "Cellos" + Acesso sem Senha + Dados Fictícios
 
-O projeto tem referencias a "OLD BRASIL" espalhadas por ~15 arquivos, incluindo numero de WhatsApp real, email, logos e textos especificos. Vou trocar tudo por dados ficticios genericos para que o projeto possa ser vendido como template.
+### O que será feito
 
-### Nome ficticio escolhido: **ACME Distribuidora**
-- WhatsApp: 5511999999999
-- Email: contato@acmedistribuidora.com.br
-- URL mock: app.acmedistribuidora.com/dashboard
+**1. Renomear "ACME" para "Cellos" em todo o projeto (~15 arquivos)**
 
----
+Todos os textos "ACME Distribuidora", "ACME CRM", "ACME" serão trocados por "Cellos Distribuidora", "Cellos CRM", "Cellos". Arquivos afetados:
 
-### Arquivos a editar
+- `index.html` — titulo, meta tags, OG tags
+- `src/pages/Login.tsx` — nome do sistema, area restrita
+- `src/pages/LandingPage.tsx` — Helmet, schema.org
+- `src/pages/loja/LojaHome.tsx` — hero section
+- `src/components/layout/AppSidebar.tsx` — sidebar header
+- `src/components/landing/LandingHeader.tsx` — alt logo
+- `src/components/landing/LandingFooter.tsx` — copyright, email
+- `src/components/landing/TestimonialsCarousel.tsx` — depoimentos
+- `src/components/loja/LojaHeader.tsx` — alt logo
+- `src/components/loja/LojaFooter.tsx` — copyright
+- `src/components/loja/ModalAtendimentoExclusivo.tsx` — localStorage key
+- `src/components/ImprimirPedido.tsx` — alt logo, dados empresa
+- `src/lib/whatsapp.ts` — mensagens
+- `supabase/functions/notificar-tarefas/index.ts` — email sender
 
-**1. `index.html`** - Meta tags, titulo, OG tags
-- "OLD BRASIL" -> "ACME Distribuidora"
-- Remover URLs de imagens externas do Google Storage (usar placeholder)
+Email fictício: `contato@cellosdistribuidora.com.br`
 
-**2. `src/lib/whatsapp.ts`** - Numero WhatsApp e mensagens
-- `5547992620525` -> `5511999999999`
-- "OLD BRASIL" -> "ACME Distribuidora"
+**2. Acesso sem senha (auto-confirm + login simplificado)**
 
-**3. `src/components/loja/LojaHeader.tsx`** - Logo alt text e nome
-- "OLD BRASIL" -> "ACME Distribuidora"
+- Ativar auto-confirm de email via `configure_auth`
+- Modificar `src/pages/Login.tsx` para ter um botão "Entrar como Visitante" que faz signup/login automático com um email genérico (ex: `visitante@cellos.demo` / senha fixa `demo123456`)
+- Isso permite entrar sem digitar nada
 
-**4. `src/components/loja/LojaFooter.tsx`** - Copyright, telefone, logo
-- "OLD BRASIL" -> "ACME Distribuidora"
-- "(47) 99262-0525" -> "(11) 99999-9999"
+**3. Limpar dados reais do banco**
 
-**5. `src/pages/loja/LojaHome.tsx`** - Hero section textos
-- "Ingredientes Premium para Sorveterias e Confeitarias" -> texto generico de distribuidora
+Executar operações de UPDATE no banco para substituir dados reais por fictícios:
+- **Clientes**: trocar `nome_fantasia`, `razao_social`, `cnpj_cpf`, `telefone`, `email`, `endereco` por dados fictícios
+- **Prospects**: trocar `nome_empresa`, `telefone`, `email`, `site`, `endereco`
+- **Profiles**: trocar `nome`, `telefone`, `emails`
+- **Pedidos**: trocar `observacoes`, `numero_pedido`
 
-**6. `src/pages/Login.tsx`** - Nome do sistema, area restrita
-- "OLD CRM" -> "ACME CRM"
-- "Equipe OLD Brasil" -> "Equipe ACME"
-
-**7. `src/pages/LandingPage.tsx`** - Helmet/SEO, schema.org
-- Todas refs "OLD BRASIL" -> "ACME Distribuidora"
-
-**8. `src/components/landing/LandingHeader.tsx`** - Logo alt
-- "OLD BRASIL" -> "ACME Distribuidora"
-
-**9. `src/components/landing/LandingFooter.tsx`** - Copyright, email, logo
-- "OLD BRASIL" -> "ACME Distribuidora"
-- `contato@oldbrasil.com.br` -> `contato@acmedistribuidora.com.br`
-- WhatsApp `5547999999999` -> `5511999999999`
-
-**10. `src/components/landing/HeroSection.tsx`** - URL mock dashboard
-- `app.oldbrasil.com/dashboard` -> `app.acmedistribuidora.com/dashboard`
-
-**11. `src/components/landing/TestimonialsCarousel.tsx`** - Depoimentos
-- "CRM OLD BRASIL" -> "CRM ACME"
-- Nomes e empresas ficticias ja estao ok (Joao Silva, etc.)
-
-**12. `src/components/landing/ProofSection.tsx`** - Marcas parceiras
-- `['Nestle', 'Deux', 'Bauducco', 'Cacau Show', 'Mondelez']` -> `['Marca Alpha', 'Marca Beta', 'Marca Gamma', 'Marca Delta', 'Marca Omega']`
-
-**13. `src/components/landing/FAQSection.tsx`** - Link WhatsApp
-- `5547999999999` -> `5511999999999`
-
-**14. `src/components/landing/LiveProof.tsx`** - Cidades e nomes ficticios
-- Trocar cidades reais (Joinville, Blumenau, etc.) por cidades genericas
-
-**15. `src/components/loja/ModalAtendimentoExclusivo.tsx`** - localStorage key
-- `oldBrasil_modalAtendimentoVisto` -> `acme_modalAtendimentoVisto`
+Isso será feito com queries SQL via insert tool, gerando nomes aleatórios tipo "Empresa Alpha 1", "Empresa Beta 2", etc.
 
 ---
 
-### Secao Tecnica
+### Seção Técnica
 
-- Total de ~15 arquivos com edicoes
-- Nenhuma mudanca de banco de dados necessaria
-- Logo continuara usando o mesmo arquivo de imagem (o usuario pode trocar depois) - apenas os textos alt serao alterados
-- Nenhuma mudanca estrutural ou de logica, apenas strings/textos
+**Arquivos editados**: ~15 arquivos (substituição de string "ACME" → "Cellos")
+
+**Operações no banco**: UPDATE em `clientes`, `prospects`, `profiles`, `pedidos` para anonimizar dados reais
+
+**Auth**: Configurar auto-confirm + criar fluxo de login demo sem senha
+
+**Nenhuma migration necessária** — apenas edição de código e dados existentes
 
