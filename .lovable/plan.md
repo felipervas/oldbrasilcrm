@@ -1,49 +1,76 @@
 
 
-## Melhorias na Loja: Catalogos + Fotos UNIKA
+## Substituir Dados Reais por Dados Ficticios
 
-### Problemas Encontrados
+O projeto tem referencias a "OLD BRASIL" espalhadas por ~15 arquivos, incluindo numero de WhatsApp real, email, logos e textos especificos. Vou trocar tudo por dados ficticios genericos para que o projeto possa ser vendido como template.
 
-**1. Catalogos nao aparecem corretamente**
-- O catalogo "Tabela de Preco Unika" foi salvo com tipo `tabela_precos` (com "s"), mas o codigo so reconhece `tabela_preco` (sem "s"). Resultado: o badge fica cinza generico "Outro" em vez de azul "Tabela de Preco".
-- Todos os 9 catalogos tem `marca_id = null`, entao nao aparecem vinculados a nenhuma marca na loja.
-- A query usa `select("*, marcas(nome)")` que depende de `marca_id` estar preenchido - como esta null, nao mostra a marca.
-
-**2. Produtos UNIKA sem foto**
-- De 155 produtos UNIKA, apenas 36 tem foto. Sao **119 produtos sem imagem**.
-- O usuario quer que todos usem a mesma foto padrao da UNIKA.
+### Nome ficticio escolhido: **ACME Distribuidora**
+- WhatsApp: 5511999999999
+- Email: contato@acmedistribuidora.com.br
+- URL mock: app.acmedistribuidora.com/dashboard
 
 ---
 
-### Solucao
+### Arquivos a editar
 
-#### Parte 1: Corrigir dados dos catalogos no banco
+**1. `index.html`** - Meta tags, titulo, OG tags
+- "OLD BRASIL" -> "ACME Distribuidora"
+- Remover URLs de imagens externas do Google Storage (usar placeholder)
 
-- Atualizar o tipo `tabela_precos` para `tabela_preco` (padrao do codigo)
-- Vincular cada catalogo a sua marca correta via `marca_id`, usando o nome para identificar (ex: "Catalogo Unika" -> marca UNIKA, "Catalogo Gencau" -> marca Gencau, etc.)
+**2. `src/lib/whatsapp.ts`** - Numero WhatsApp e mensagens
+- `5547992620525` -> `5511999999999`
+- "OLD BRASIL" -> "ACME Distribuidora"
 
-#### Parte 2: Inserir foto padrao para todos os produtos UNIKA sem imagem
+**3. `src/components/loja/LojaHeader.tsx`** - Logo alt text e nome
+- "OLD BRASIL" -> "ACME Distribuidora"
 
-- Usar a URL de uma foto UNIKA ja existente: `https://uwbzrkqtwmykniijbwik.supabase.co/storage/v1/object/public/produto-imagens/307801bf-f796-478b-8882-66d621558567-1761923445046.jpg`
-- Inserir um registro em `produto_imagens` com `ordem = 0` para cada um dos 119 produtos que nao tem foto
+**4. `src/components/loja/LojaFooter.tsx`** - Copyright, telefone, logo
+- "OLD BRASIL" -> "ACME Distribuidora"
+- "(47) 99262-0525" -> "(11) 99999-9999"
 
-#### Parte 3: Melhorar o componente LojaCatalogos
+**5. `src/pages/loja/LojaHome.tsx`** - Hero section textos
+- "Ingredientes Premium para Sorveterias e Confeitarias" -> texto generico de distribuidora
 
-- Adicionar `tabela_precos` como alias no mapeamento de tipos (para suportar ambos os formatos)
-- Melhorar visual geral dos cards
+**6. `src/pages/Login.tsx`** - Nome do sistema, area restrita
+- "OLD CRM" -> "ACME CRM"
+- "Equipe OLD Brasil" -> "Equipe ACME"
+
+**7. `src/pages/LandingPage.tsx`** - Helmet/SEO, schema.org
+- Todas refs "OLD BRASIL" -> "ACME Distribuidora"
+
+**8. `src/components/landing/LandingHeader.tsx`** - Logo alt
+- "OLD BRASIL" -> "ACME Distribuidora"
+
+**9. `src/components/landing/LandingFooter.tsx`** - Copyright, email, logo
+- "OLD BRASIL" -> "ACME Distribuidora"
+- `contato@oldbrasil.com.br` -> `contato@acmedistribuidora.com.br`
+- WhatsApp `5547999999999` -> `5511999999999`
+
+**10. `src/components/landing/HeroSection.tsx`** - URL mock dashboard
+- `app.oldbrasil.com/dashboard` -> `app.acmedistribuidora.com/dashboard`
+
+**11. `src/components/landing/TestimonialsCarousel.tsx`** - Depoimentos
+- "CRM OLD BRASIL" -> "CRM ACME"
+- Nomes e empresas ficticias ja estao ok (Joao Silva, etc.)
+
+**12. `src/components/landing/ProofSection.tsx`** - Marcas parceiras
+- `['Nestle', 'Deux', 'Bauducco', 'Cacau Show', 'Mondelez']` -> `['Marca Alpha', 'Marca Beta', 'Marca Gamma', 'Marca Delta', 'Marca Omega']`
+
+**13. `src/components/landing/FAQSection.tsx`** - Link WhatsApp
+- `5547999999999` -> `5511999999999`
+
+**14. `src/components/landing/LiveProof.tsx`** - Cidades e nomes ficticios
+- Trocar cidades reais (Joinville, Blumenau, etc.) por cidades genericas
+
+**15. `src/components/loja/ModalAtendimentoExclusivo.tsx`** - localStorage key
+- `oldBrasil_modalAtendimentoVisto` -> `acme_modalAtendimentoVisto`
 
 ---
 
 ### Secao Tecnica
 
-**Arquivo: `src/pages/loja/LojaCatalogos.tsx`**
-- Adicionar `tabela_precos` no mapa de tipos para cobrir o valor salvo no banco
-
-**Operacoes no banco de dados (via insert tool):**
-
-1. UPDATE nos catalogos para corrigir `marca_id` vinculando cada catalogo a sua marca
-2. UPDATE no catalogo com tipo errado (`tabela_precos` -> `tabela_preco`)
-3. INSERT em `produto_imagens` para os 119 produtos UNIKA sem foto, usando a mesma URL de referencia
-
-**Nenhuma migration necessaria** - sao apenas operacoes de dados (INSERT/UPDATE).
+- Total de ~15 arquivos com edicoes
+- Nenhuma mudanca de banco de dados necessaria
+- Logo continuara usando o mesmo arquivo de imagem (o usuario pode trocar depois) - apenas os textos alt serao alterados
+- Nenhuma mudanca estrutural ou de logica, apenas strings/textos
 
