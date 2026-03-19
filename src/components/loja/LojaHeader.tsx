@@ -51,9 +51,9 @@ export const LojaHeader = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/loja" className="flex items-center space-x-3 group">
-              <img src={logo} alt="OLD BRASIL" className="h-10 w-auto transition-transform group-hover:scale-105" />
+              <img src={logo} alt="ACME Distribuidora" className="h-10 w-auto transition-transform group-hover:scale-105" />
               <span className="font-bold text-lg hidden sm:inline text-slate-900">
-                OLD BRASIL
+                ACME Distribuidora
               </span>
             </Link>
 

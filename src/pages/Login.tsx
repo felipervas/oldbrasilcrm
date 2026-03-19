@@ -90,10 +90,10 @@ const Login = () => {
 
         <div className="text-center">
           <div className="inline-flex items-center justify-center mb-6">
-            <img src={oldLogo} alt="OLD Brasil" className="h-20 w-auto" />
+            <img src={oldLogo} alt="ACME Distribuidora" className="h-20 w-auto" />
           </div>
           <h1 className="text-4xl font-bold text-foreground mb-2">
-            OLD CRM
+            ACME CRM
           </h1>
           <p className="text-muted-foreground">
             Sistema de Gestão de Representação
@@ -105,10 +105,10 @@ const Login = () => {
             <Shield className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-amber-800">
-                🔒 Área Restrita - Equipe OLD Brasil
+                🔒 Área Restrita - Equipe ACME
               </p>
               <p className="text-xs text-amber-700 mt-1">
-                Este sistema é de uso exclusivo para membros autorizados da equipe OLD Brasil. 
+                Este sistema é de uso exclusivo para membros autorizados da equipe ACME. 
                 Apenas colaboradores cadastrados podem acessar.
               </p>
             </div>

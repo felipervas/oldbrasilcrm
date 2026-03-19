@@ -110,7 +110,7 @@ export const HeroSection = () => {
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
                 </div>
                 <div className="flex-1 bg-white dark:bg-slate-700 rounded px-3 py-1 text-xs text-muted-foreground">
-                  app.oldbrasil.com/dashboard
+                  app.acmedistribuidora.com/dashboard
                 </div>
               </div>
               

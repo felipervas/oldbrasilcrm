@@ -93,7 +93,7 @@ export const ProofSection = () => {
             Trabalhamos com as melhores marcas do mercado
           </p>
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 opacity-60">
-            {['Nestlé', 'Deux', 'Bauducco', 'Cacau Show', 'Mondelez'].map((brand) => (
+            {['Marca Alpha', 'Marca Beta', 'Marca Gamma', 'Marca Delta', 'Marca Omega'].map((brand) => (
               <div
                 key={brand}
                 className="text-2xl md:text-3xl font-bold text-foreground/40"

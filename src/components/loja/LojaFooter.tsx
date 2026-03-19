@@ -10,9 +10,9 @@ export const LojaFooter = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Logo e Descrição */}
           <div className="space-y-4">
-            <img src={logo} alt="OLD BRASIL" className="h-12 w-auto" />
+            <img src={logo} alt="ACME Distribuidora" className="h-12 w-auto" />
             <p className="text-sm text-muted-foreground">
-              Produtos premium para sorveterias e confeitarias.
+              Produtos premium para o seu negócio.
             </p>
           </div>
 
@@ -46,7 +46,7 @@ export const LojaFooter = () => {
                 className="flex items-center text-sm text-muted-foreground hover:text-[#25d366] transition-colors"
               >
                 <MessageCircle className="mr-2 h-4 w-4" />
-                (47) 99262-0525
+                (11) 99999-9999
               </a>
             </div>
           </div>
@@ -56,7 +56,7 @@ export const LojaFooter = () => {
         <div className="mt-8 pt-8 border-t">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} OLD BRASIL. Todos os direitos reservados.
+              © {new Date().getFullYear()} ACME Distribuidora. Todos os direitos reservados.
             </p>
             {/* Link discreto para CRM */}
             <Link 

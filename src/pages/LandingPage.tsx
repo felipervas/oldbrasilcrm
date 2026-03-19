@@ -65,7 +65,7 @@ const LandingPage = () => {
     <>
       <Helmet>
         {/* Meta Tags Básicas */}
-        <title>CRM para Distribuidoras | Sistema de Gestão de Vendas Completo</title>
+        <title>CRM para Distribuidoras | ACME Distribuidora</title>
         <meta
           name="description"
           content="CRM profissional para distribuidoras de alimentos. Gerencie vendas, clientes, rotas e equipe em uma única plataforma. Aumente sua produtividade em 3x."
@@ -77,7 +77,7 @@ const LandingPage = () => {
 
         {/* Open Graph (Facebook, LinkedIn) */}
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="CRM para Distribuidoras | OLD BRASIL" />
+        <meta property="og:title" content="CRM para Distribuidoras | ACME Distribuidora" />
         <meta
           property="og:description"
           content="Sistema completo de gestão de vendas para distribuidoras. Dashboard em tempo real, pipeline Kanban e muito mais."
@@ -87,7 +87,7 @@ const LandingPage = () => {
 
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="CRM para Distribuidoras | OLD BRASIL" />
+        <meta name="twitter:title" content="CRM para Distribuidoras | ACME Distribuidora" />
         <meta
           name="twitter:description"
           content="Sistema completo de gestão de vendas para distribuidoras."
@@ -99,7 +99,7 @@ const LandingPage = () => {
           {JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'SoftwareApplication',
-            name: 'OLD BRASIL CRM',
+            name: 'ACME CRM',
             applicationCategory: 'BusinessApplication',
             offers: {
               '@type': 'Offer',

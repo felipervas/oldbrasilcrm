@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: `Analise esta imagem de pedido da OLD Brasil e extraia APENAS as seguintes informações:
+                text: `Analise esta imagem de pedido da ACME Distribuidora e extraia APENAS as seguintes informações:
 
 1. Número do Pedido (campo "Pedido:")
 2. Data do pedido (formato YYYY-MM-DD)
