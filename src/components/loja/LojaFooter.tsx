@@ -56,7 +56,7 @@ export const LojaFooter = () => {
         <div className="mt-8 pt-8 border-t">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} ACME Distribuidora. Todos os direitos reservados.
+              © {new Date().getFullYear()} Cellos Distribuidora. Todos os direitos reservados.
             </p>
             {/* Link discreto para CRM */}
             <Link 

@@ -243,10 +243,10 @@ export function AppSidebar() {
     >
       <SidebarHeader className="relative z-10 p-5 border-b border-sidebar-border bg-sidebar">
         <div className="flex items-center gap-3">
-          <img src={oldLogo} alt="ACME Distribuidora" className="h-11 w-auto" />
+          <img src={oldLogo} alt="Cellos Distribuidora" className="h-11 w-auto" />
           <div className="overflow-hidden">
             <h2 className="font-bold text-lg text-white whitespace-nowrap">
-              ACME CRM
+              Cellos CRM
             </h2>
             <p className="text-xs text-slate-400">
               CRM Profissional

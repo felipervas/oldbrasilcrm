@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Store } from "lucide-react";
+import { Shield, Store, UserCheck } from "lucide-react";
 import oldLogo from "@/assets/old-brasil-logo.png";
+
+const DEMO_EMAIL = "visitante@cellos.demo";
+const DEMO_PASSWORD = "demo123456";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -33,45 +35,65 @@ const Login = () => {
       });
       setIsLoading(false);
     } else if (data.session) {
-      // Aguarda a sessão ser estabelecida antes de navegar
       setTimeout(() => {
         navigate("/dashboard", { replace: true });
       }, 100);
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleVisitorLogin = async () => {
     setIsLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const nome = formData.get("nome") as string;
+    // Try login first
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email: DEMO_EMAIL,
+      password: DEMO_PASSWORD,
+    });
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
+    if (loginData?.session) {
+      setTimeout(() => {
+        navigate("/dashboard", { replace: true });
+      }, 100);
+      return;
+    }
+
+    // If login fails, create the account
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: DEMO_EMAIL,
+      password: DEMO_PASSWORD,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: { nome },
+        data: { nome: "Visitante Demo" },
       },
     });
 
-    if (error) {
+    if (signUpError) {
       toast({
-        title: "Erro ao criar conta",
-        description: error.message,
+        title: "Erro ao entrar",
+        description: signUpError.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Conta criada com sucesso!",
-        description: "Você já pode fazer login.",
-      });
+      setIsLoading(false);
+      return;
     }
 
-    setIsLoading(false);
+    // Login after signup
+    const { data: loginData2, error: loginError2 } = await supabase.auth.signInWithPassword({
+      email: DEMO_EMAIL,
+      password: DEMO_PASSWORD,
+    });
+
+    if (loginError2) {
+      toast({
+        title: "Erro ao entrar",
+        description: loginError2.message,
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    } else if (loginData2?.session) {
+      setTimeout(() => {
+        navigate("/dashboard", { replace: true });
+      }, 100);
+    }
   };
 
   return (
@@ -90,10 +112,10 @@ const Login = () => {
 
         <div className="text-center">
           <div className="inline-flex items-center justify-center mb-6">
-            <img src={oldLogo} alt="ACME Distribuidora" className="h-20 w-auto" />
+            <img src={oldLogo} alt="Cellos Distribuidora" className="h-20 w-auto" />
           </div>
           <h1 className="text-4xl font-bold text-foreground mb-2">
-            ACME CRM
+            Cellos CRM
           </h1>
           <p className="text-muted-foreground">
             Sistema de Gestão de Representação
@@ -105,10 +127,10 @@ const Login = () => {
             <Shield className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-amber-800">
-                🔒 Área Restrita - Equipe ACME
+                🔒 Área Restrita - Equipe Cellos
               </p>
               <p className="text-xs text-amber-700 mt-1">
-                Este sistema é de uso exclusivo para membros autorizados da equipe ACME. 
+                Este sistema é de uso exclusivo para membros autorizados da equipe Cellos. 
                 Apenas colaboradores cadastrados podem acessar.
               </p>
             </div>
@@ -119,37 +141,57 @@ const Login = () => {
           <CardHeader>
             <CardTitle>Bem-vindo</CardTitle>
             <CardDescription>
-              Entre com sua conta ou crie uma nova para continuar
+              Entre com sua conta ou acesse como visitante
             </CardDescription>
           </CardHeader>
-          <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="login-email">Email</Label>
-              <Input
-                id="login-email"
-                name="email"
-                type="email"
-                placeholder="seu@email.com"
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="login-password">Senha</Label>
-              <Input
-                id="login-password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Entrando..." : "Entrar"}
+          <CardContent className="space-y-4">
+            {/* Visitor quick access */}
+            <Button
+              onClick={handleVisitorLogin}
+              disabled={isLoading}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+              size="lg"
+            >
+              <UserCheck className="h-5 w-5" />
+              {isLoading ? "Entrando..." : "Entrar como Visitante"}
             </Button>
-          </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">ou entre com credenciais</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="login-email">Email</Label>
+                <Input
+                  id="login-email"
+                  name="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="login-password">Senha</Label>
+                <Input
+                  id="login-password"
+                  name="password"
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <Button type="submit" variant="outline" className="w-full" disabled={isLoading}>
+                {isLoading ? "Entrando..." : "Entrar"}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const LOCAL_STORAGE_KEY = "acme_modalAtendimentoVisto";
+const LOCAL_STORAGE_KEY = "cellos_modalAtendimentoVisto";
 const TEMPO_EXIBICAO_MS = 60 * 1000; // 1 minuto
 
 export const ModalAtendimentoExclusivo = () => {

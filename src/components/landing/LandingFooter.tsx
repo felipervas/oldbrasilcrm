@@ -82,7 +82,7 @@ export const LandingFooter = () => {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
-          <p>© {currentYear} ACME Distribuidora. Todos os direitos reservados.</p>
+          <p>© {currentYear} Cellos Distribuidora. Todos os direitos reservados.</p>
           <div className="flex gap-6">
             <a href="#" className="hover:text-white transition-colors">
               Política de Privacidade

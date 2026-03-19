@@ -29,7 +29,7 @@ export const LandingHeader = () => {
           <Link to="/" className="flex items-center gap-2">
             <img
               src="/old-brasil-logo.png"
-              alt="ACME Distribuidora"
+              alt="Cellos Distribuidora"
               className="h-10 md:h-12"
             />
           </Link>
