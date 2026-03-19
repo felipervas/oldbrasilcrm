@@ -181,15 +181,15 @@ export function ImprimirPedido({ pedido, produtos }: ImprimirPedidoProps) {
           <div className="header">
             <img 
               src="/old-brasil-logo.png" 
-              alt="OLD Brasil" 
+              alt="ACME Distribuidora" 
               className="logo"
             />
             <div className="company-info">
-              <div className="company-name">DALBERTO VASCONCELLOS LTDA - OLD Brasil</div>
-              CPF/CNPJ: 59.224.429/0001-05<br />
-              RUA BAHIA, 34 - CXPST 03 UNIVERSITARIO - Tijucas - SC - CEP: 88200-000<br />
-              Fones: (47)99155-0525 (47)99231-0525<br />
-              oldvasconcellos@gmail.com
+              <div className="company-name">ACME DISTRIBUIDORA LTDA</div>
+              CNPJ: 00.000.000/0001-00<br />
+              Rua Exemplo, 100 - Centro - São Paulo - SP - CEP: 01000-000<br />
+              Fones: (11)99999-9999<br />
+              contato@acmedistribuidora.com.br
             </div>
           </div>
 
