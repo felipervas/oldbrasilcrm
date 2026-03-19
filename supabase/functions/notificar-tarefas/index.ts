@@ -83,7 +83,7 @@ serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              from: 'CRM ACME <onboarding@resend.dev>',
+              from: 'CRM Cellos <onboarding@resend.dev>',
               to: [email],
               subject: `🔔 Tarefa Agendada: ${tarefa.titulo}`,
               html: `

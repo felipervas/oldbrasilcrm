@@ -10,7 +10,7 @@ export const LojaFooter = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Logo e Descrição */}
           <div className="space-y-4">
-            <img src={logo} alt="ACME Distribuidora" className="h-12 w-auto" />
+            <img src={logo} alt="Cellos Distribuidora" className="h-12 w-auto" />
             <p className="text-sm text-muted-foreground">
               Produtos premium para o seu negócio.
             </p>
@@ -56,7 +56,7 @@ export const LojaFooter = () => {
         <div className="mt-8 pt-8 border-t">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} ACME Distribuidora. Todos os direitos reservados.
+              © {new Date().getFullYear()} Cellos Distribuidora. Todos os direitos reservados.
             </p>
             {/* Link discreto para CRM */}
             <Link 

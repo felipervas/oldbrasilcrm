@@ -11,7 +11,7 @@ const testimonials = [
     role: 'Diretor Comercial',
     company: 'Distribuidora ABC',
     content:
-      'O CRM ACME revolucionou nossa gestão de vendas. Conseguimos organizar toda a equipe e aumentar nossos resultados em 45% no primeiro trimestre.',
+      'O CRM Cellos revolucionou nossa gestão de vendas. Conseguimos organizar toda a equipe e aumentar nossos resultados em 45% no primeiro trimestre.',
     rating: 5,
   },
   {

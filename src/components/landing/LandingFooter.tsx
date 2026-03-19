@@ -11,7 +11,7 @@ export const LandingFooter = () => {
           <div className="md:col-span-2">
             <img
               src="/old-brasil-logo.png"
-              alt="ACME Distribuidora"
+              alt="Cellos Distribuidora"
               className="h-12 mb-4 brightness-0 invert"
             />
             <p className="text-sm text-slate-400 max-w-md">
@@ -65,10 +65,10 @@ export const LandingFooter = () => {
               </li>
               <li>
                 <a
-                  href="mailto:contato@acmedistribuidora.com.br"
-                  className="hover:text-white transition-colors"
-                >
-                  contato@acmedistribuidora.com.br
+                   href="mailto:contato@cellosdistribuidora.com.br"
+                   className="hover:text-white transition-colors"
+                 >
+                   contato@cellosdistribuidora.com.br
                 </a>
               </li>
               <li>
@@ -82,7 +82,7 @@ export const LandingFooter = () => {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
-          <p>© {currentYear} ACME Distribuidora. Todos os direitos reservados.</p>
+          <p>© {currentYear} Cellos Distribuidora. Todos os direitos reservados.</p>
           <div className="flex gap-6">
             <a href="#" className="hover:text-white transition-colors">
               Política de Privacidade
