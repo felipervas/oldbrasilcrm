@@ -1,4 +1,4 @@
-export const WHATSAPP_NUMBER = "5547992620525"; // 47 99262-0525
+export const WHATSAPP_NUMBER = "5511999999999"; // 11 99999-9999
 
 export const gerarLinkWhatsApp = (produto?: {
   nome: string;
@@ -6,7 +6,7 @@ export const gerarLinkWhatsApp = (produto?: {
 }) => {
   if (!produto) {
     const mensagem = encodeURIComponent(
-      "Olá! Gostaria de mais informações sobre os produtos OLD BRASIL."
+      "Olá! Gostaria de mais informações sobre os produtos ACME Distribuidora."
     );
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${mensagem}`;
   }
@@ -26,7 +26,7 @@ export const gerarLinkWhatsAppContextual = (
   dados?: { empresa?: string; feature?: string }
 ) => {
   const mensagens: Record<ContextoWhatsApp, string> = {
-    hero: `Olá! 👋 Vim do site e quero saber mais sobre o CRM OLD BRASIL. Posso tirar algumas dúvidas?`,
+    hero: `Olá! 👋 Vim do site e quero saber mais sobre o CRM ACME Distribuidora. Posso tirar algumas dúvidas?`,
     
     features: `Olá! Vi os recursos do CRM e tenho interesse em: ${dados?.feature || 'todas as funcionalidades'}. Pode me ajudar?`,
     
@@ -38,7 +38,7 @@ export const gerarLinkWhatsAppContextual = (
     
     exitIntent: `Olá! Estava navegando no site e tenho interesse no CRM, mas preciso de mais informações antes de decidir.`,
     
-    inline: `Olá! Gostaria de falar com um especialista sobre o CRM OLD BRASIL. Estou na página principal do site.`,
+    inline: `Olá! Gostaria de falar com um especialista sobre o CRM ACME Distribuidora. Estou na página principal do site.`,
   };
   
   const mensagem = encodeURIComponent(mensagens[contexto] || mensagens.hero);

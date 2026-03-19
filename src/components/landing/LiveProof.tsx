@@ -9,12 +9,12 @@ interface Action {
 }
 
 const actions: Action[] = [
-  { nome: "João Silva", acao: "solicitou demonstração", tempo: "2 min atrás", cidade: "São Paulo" },
-  { nome: "Maria Santos", acao: "iniciou teste grátis", tempo: "5 min atrás", cidade: "Curitiba" },
-  { nome: "Carlos Oliveira", acao: "falou com especialista", tempo: "8 min atrás", cidade: "Joinville" },
-  { nome: "Ana Costa", acao: "baixou apresentação", tempo: "12 min atrás", cidade: "Blumenau" },
-  { nome: "Pedro Almeida", acao: "agendou reunião", tempo: "15 min atrás", cidade: "Florianópolis" },
-  { nome: "Juliana Rocha", acao: "solicitou orçamento", tempo: "18 min atrás", cidade: "Balneário Camboriú" },
+  { nome: "Lucas Ferreira", acao: "solicitou demonstração", tempo: "2 min atrás", cidade: "Campinas" },
+  { nome: "Fernanda Lima", acao: "iniciou teste grátis", tempo: "5 min atrás", cidade: "Ribeirão Preto" },
+  { nome: "Rafael Mendes", acao: "falou com especialista", tempo: "8 min atrás", cidade: "Sorocaba" },
+  { nome: "Camila Souza", acao: "baixou apresentação", tempo: "12 min atrás", cidade: "Santos" },
+  { nome: "Bruno Carvalho", acao: "agendou reunião", tempo: "15 min atrás", cidade: "Jundiaí" },
+  { nome: "Patrícia Rocha", acao: "solicitou orçamento", tempo: "18 min atrás", cidade: "Piracicaba" },
 ];
 
 const generateRandomAction = (): Action => {

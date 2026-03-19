@@ -105,10 +105,10 @@ const Login = () => {
             <Shield className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-medium text-amber-800">
-                🔒 Área Restrita - Equipe OLD Brasil
+                🔒 Área Restrita - Equipe ACME
               </p>
               <p className="text-xs text-amber-700 mt-1">
-                Este sistema é de uso exclusivo para membros autorizados da equipe OLD Brasil. 
+                Este sistema é de uso exclusivo para membros autorizados da equipe ACME. 
                 Apenas colaboradores cadastrados podem acessar.
               </p>
             </div>

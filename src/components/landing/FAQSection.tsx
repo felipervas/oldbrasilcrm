@@ -118,7 +118,7 @@ export const FAQSection = () => {
             Ainda tem dúvidas? Fale diretamente com nossa equipe
           </p>
           <a
-            href="https://wa.me/5547999999999?text=Olá%2C%20tenho%20dúvidas%20sobre%20o%20CRM"
+            href="https://wa.me/5511999999999?text=Olá%2C%20tenho%20dúvidas%20sobre%20o%20CRM"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-semibold transition-colors"

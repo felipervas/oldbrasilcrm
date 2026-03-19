@@ -99,7 +99,7 @@ const LandingPage = () => {
           {JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'SoftwareApplication',
-            name: 'OLD BRASIL CRM',
+            name: 'ACME CRM',
             applicationCategory: 'BusinessApplication',
             offers: {
               '@type': 'Offer',

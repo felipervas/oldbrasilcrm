@@ -84,8 +84,8 @@ export default function LojaHome() {
 
             {/* Título Principal */}
             <h1 className="text-4xl md:text-6xl font-bold text-slate-900 leading-tight">
-              Ingredientes Premium para
-              <span className="block text-blue-600">Sorveterias e Confeitarias</span>
+              Produtos Premium para
+              <span className="block text-blue-600">o Seu Negócio</span>
             </h1>
 
             {/* Subtítulo */}
