@@ -87,7 +87,7 @@ const LandingPage = () => {
 
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="CRM para Distribuidoras | OLD BRASIL" />
+        <meta name="twitter:title" content="CRM para Distribuidoras | ACME Distribuidora" />
         <meta
           name="twitter:description"
           content="Sistema completo de gestão de vendas para distribuidoras."
