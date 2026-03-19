@@ -181,15 +181,15 @@ export function ImprimirPedido({ pedido, produtos }: ImprimirPedidoProps) {
           <div className="header">
             <img 
               src="/old-brasil-logo.png" 
-              alt="ACME Distribuidora" 
+               alt="Cellos Distribuidora" 
               className="logo"
             />
             <div className="company-info">
-              <div className="company-name">ACME DISTRIBUIDORA LTDA</div>
+              <div className="company-name">CELLOS DISTRIBUIDORA LTDA</div>
               CNPJ: 00.000.000/0001-00<br />
               Rua Exemplo, 100 - Centro - São Paulo - SP - CEP: 01000-000<br />
               Fones: (11)99999-9999<br />
-              contato@acmedistribuidora.com.br
+              contato@cellosdistribuidora.com.br
             </div>
           </div>
 
