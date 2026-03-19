@@ -90,10 +90,10 @@ const Login = () => {
 
         <div className="text-center">
           <div className="inline-flex items-center justify-center mb-6">
-            <img src={oldLogo} alt="OLD Brasil" className="h-20 w-auto" />
+            <img src={oldLogo} alt="ACME Distribuidora" className="h-20 w-auto" />
           </div>
           <h1 className="text-4xl font-bold text-foreground mb-2">
-            OLD CRM
+            ACME CRM
           </h1>
           <p className="text-muted-foreground">
             Sistema de Gestão de Representação
