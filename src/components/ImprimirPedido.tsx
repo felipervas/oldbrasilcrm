@@ -311,7 +311,7 @@ export function ImprimirPedido({ pedido, produtos }: ImprimirPedidoProps) {
           </div>
 
           <div className="footer">
-            Gerado em {new Date().toLocaleString('pt-BR')} por OLD Brasil
+            Gerado em {new Date().toLocaleString('pt-BR')} por ACME Distribuidora
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-4">
