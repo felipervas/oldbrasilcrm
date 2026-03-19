@@ -86,20 +86,22 @@ export const formatarPreco = (valor: number): string => {
   }).format(valor);
 };
 
-export const marcasVolateis = ['GENCAU', 'CACAU'];
+export const marcasVolateis = ['CACAU FINO', 'CACAU'];
 
 export const isMarcaVolatil = (marca: string): boolean => {
   return marcasVolateis.some(m => marca.toUpperCase().includes(m));
 };
 
 export const coresMarcas: Record<string, string> = {
-  'GENCAU': 'bg-orange-500',
-  'UNIKA': 'bg-purple-500',
-  'NELISUL': 'bg-blue-500',
-  'VACCARIN': 'bg-green-500',
-  'WUDY': 'bg-red-500',
-  'BUONO': 'bg-pink-500',
-  'PLUSPACK': 'bg-gray-500',
+  'CACAU FINO': 'bg-orange-500',
+  'VELVET': 'bg-purple-500',
+  'GLACIAL': 'bg-blue-500',
+  'AURORA': 'bg-green-500',
+  'TROPIK': 'bg-red-500',
+  'DOLCE': 'bg-pink-500',
+  'FROST': 'bg-gray-500',
+  'CRISTAL': 'bg-cyan-500',
+  'SUMMIT': 'bg-amber-500',
 };
 
 export const getCorMarca = (marca: string): string => {
