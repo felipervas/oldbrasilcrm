@@ -77,7 +77,7 @@ const LandingPage = () => {
 
         {/* Open Graph (Facebook, LinkedIn) */}
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="CRM para Distribuidoras | ACME Distribuidora" />
+        <meta property="og:title" content="CRM para Distribuidoras | Cellos Distribuidora" />
         <meta
           property="og:description"
           content="Sistema completo de gestão de vendas para distribuidoras. Dashboard em tempo real, pipeline Kanban e muito mais."
