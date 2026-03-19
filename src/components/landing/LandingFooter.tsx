@@ -65,10 +65,10 @@ export const LandingFooter = () => {
               </li>
               <li>
                 <a
-                  href="mailto:contato@oldbrasil.com.br"
+                  href="mailto:contato@acmedistribuidora.com.br"
                   className="hover:text-white transition-colors"
                 >
-                  contato@oldbrasil.com.br
+                  contato@acmedistribuidora.com.br
                 </a>
               </li>
               <li>
