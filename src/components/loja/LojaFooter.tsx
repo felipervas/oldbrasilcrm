@@ -46,7 +46,7 @@ export const LojaFooter = () => {
                 className="flex items-center text-sm text-muted-foreground hover:text-[#25d366] transition-colors"
               >
                 <MessageCircle className="mr-2 h-4 w-4" />
-                (47) 99262-0525
+                (11) 99999-9999
               </a>
             </div>
           </div>
