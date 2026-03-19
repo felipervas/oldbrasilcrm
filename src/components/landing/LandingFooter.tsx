@@ -11,7 +11,7 @@ export const LandingFooter = () => {
           <div className="md:col-span-2">
             <img
               src="/old-brasil-logo.png"
-              alt="ACME Distribuidora"
+              alt="Cellos Distribuidora"
               className="h-12 mb-4 brightness-0 invert"
             />
             <p className="text-sm text-slate-400 max-w-md">
