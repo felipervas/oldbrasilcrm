@@ -65,7 +65,7 @@ const LandingPage = () => {
     <>
       <Helmet>
         {/* Meta Tags Básicas */}
-        <title>CRM para Distribuidoras | Sistema de Gestão de Vendas Completo</title>
+        <title>CRM para Distribuidoras | ACME Distribuidora</title>
         <meta
           name="description"
           content="CRM profissional para distribuidoras de alimentos. Gerencie vendas, clientes, rotas e equipe em uma única plataforma. Aumente sua produtividade em 3x."
