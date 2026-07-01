@@ -1,0 +1,22 @@
+{
+  "name": "RepApp Gelato",
+  "short_name": "RepApp",
+  "description": "Sistema de pedidos para representantes comerciais",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e3151",
+  "theme_color": "#1e3151",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

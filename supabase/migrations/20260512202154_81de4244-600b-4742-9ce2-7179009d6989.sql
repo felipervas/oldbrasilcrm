@@ -1,0 +1,1 @@
+ALTER VIEW public.cliente_retencao_metrics SET (security_invoker = on);

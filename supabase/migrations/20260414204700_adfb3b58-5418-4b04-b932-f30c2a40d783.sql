@@ -1,0 +1,1 @@
+ALTER TABLE public.clientes ALTER COLUMN representante_id DROP NOT NULL;

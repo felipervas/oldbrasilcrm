@@ -1,53 +1,30 @@
 <!doctype html>
-<html lang="pt-BR" translate="no">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="google" content="notranslate">
-    <title translate="no">CRM para Distribuidoras | Sistema de Gestão de Vendas Completo - Cellos Distribuidora</title>
-    <meta name="description" content="CRM profissional para distribuidoras. Venda 3x mais, trabalhe 50% menos. Sistema completo de gestão de vendas, clientes, rotas e equipe em uma única plataforma - Cellos Distribuidora.">
-    <meta name="author" content="Cellos Distribuidora" />
-    
-    <!-- DNS Prefetch para domínios externos -->
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
-    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
-    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
-    <link rel="dns-prefetch" href="https://www.google-analytics.com">
-    <link rel="dns-prefetch" href="https://api.whatsapp.com">
-    
-    <!-- Preconnect para recursos críticos -->
-    <link rel="preconnect" href="https://uwbzrkqtwmykniijbwik.supabase.co" crossorigin>
-    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <!-- SW cleanup removido - já existe no ErrorBoundary do App.tsx -->
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>RepApp Gelato — Pedidos para Representantes</title>
+    <meta name="description" content="Sistema de pedidos para representantes comerciais de gelato e confeitaria">
+    <meta name="theme-color" content="#1e3151" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     
     
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/placeholder.svg">
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="/placeholder.svg">
-    
-  
-  
-  
+    <script>
+      // Init theme before render to prevent flash
+      (function(){var t=localStorage.getItem('theme');if(t==='dark'||(t==null&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')})();
+    </script>
+    <meta property="og:title" content="RepApp Gelato — Pedidos para Representantes">
+  <meta name="twitter:title" content="RepApp Gelato — Pedidos para Representantes">
+  <meta property="og:description" content="Sistema de pedidos para representantes comerciais de gelato e confeitaria">
+  <meta name="twitter:description" content="Sistema de pedidos para representantes comerciais de gelato e confeitaria">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  
-  
-  
-  
-  
-  
-  
-  
-  <meta property="og:title" content="Cellos Distribuidora - Loja online">
-  <meta name="twitter:title" content="Cellos Distribuidora - Loja online">
-  <meta property="og:description" content="Loja de produtos da Cellos Distribuidora">
-  <meta name="twitter:description" content="Loja de produtos da Cellos Distribuidora">
+  <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/53414a76-7654-4ab8-a26c-65b18eef93fb/id-preview-a78628f8--fcc72902-6a4f-4493-bd1e-5a6f150bd3c3.lovable.app-1774458867671.png">
+  <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/53414a76-7654-4ab8-a26c-65b18eef93fb/id-preview-a78628f8--fcc72902-6a4f-4493-bd1e-5a6f150bd3c3.lovable.app-1774458867671.png">
+  <meta name="twitter:card" content="summary_large_image">
 </head>
-
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

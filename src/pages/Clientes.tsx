@@ -1,1215 +1,819 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, memo, useDeferredValue } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, MessageCircle, Edit, FileText, UserPlus, Upload, Trash2, Mail } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { ClienteProdutosHistorico } from "@/components/ClienteProdutosHistorico";
-import { ClienteBoletos } from "@/components/ClienteBoletos";
-import { useClientes } from "@/hooks/useClientes";
-import { useDebounce } from "@/hooks/useDebounce";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Pagination } from "@/components/Pagination";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Plus, Search, Phone, Mail, MapPin, Trash2, MessageCircle, Users, UserPlus, UserCheck, Loader2, UserX, EyeOff, RotateCcw, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
+import { Link, useSearchParams } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { WhatsAppActionButton } from "@/components/WhatsAppActionButton";
+import { VendedorSelect } from "@/components/VendedorSelect";
+import { EnderecoAutocomplete } from "@/components/EnderecoAutocomplete";
+import { useClientesRetencao } from "@/hooks/useClientesRetencao";
+import { STATUS_RETENCAO_META, StatusRetencao, descricaoUltimaCompra } from "@/lib/retencao";
+import { openWhatsApp } from "@/lib/whatsapp";
 
-const Clientes = () => {
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [pedidoOpen, setPedidoOpen] = useState(false);
-  const [contatoOpen, setContatoOpen] = useState(false);
-  const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingCnpj, setLoadingCnpj] = useState(false);
-  const [loadingCep, setLoadingCep] = useState(false);
-  const [pedidos, setPedidos] = useState<any[]>([]);
-  const [contatos, setContatos] = useState<any[]>([]);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filtroStatus, setFiltroStatus] = useState<"todos" | "ativo" | "inativo">("todos");
-  const [responsaveis, setResponsaveis] = useState<any[]>([]);
-  const [page, setPage] = useState(0);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+const SEGMENTOS = ["Sorveteria", "Açaiteria", "Gelateria", "Padaria", "Chocolateria", "Restaurante", "Supermercado", "Outros"];
+const REGIMES_TRIBUTARIOS = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Isento/Não contribuinte"];
 
-  const [formData, setFormData] = useState({
-    nome_fantasia: "",
-    razao_social: "",
-    cnpj_cpf: "",
-    email: "",
-    telefone: "",
-    cep: "",
-    logradouro: "",
-    numero: "",
-    bairro: "",
-    referencia: "",
-    cidade: "",
-    uf: "",
-    segmento: "",
-    tamanho: "",
-    observacoes: "",
-    historico_pedidos: "",
-    aniversario: "",
-  });
+const segmentoColors: Record<string, string> = {
+  "Sorveteria": "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
+  "Açaiteria": "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+  "Gelateria": "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400",
+  "Padaria": "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  "Chocolateria": "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+  "Restaurante": "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  "Supermercado": "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  "Outros": "bg-muted text-muted-foreground",
+};
 
-  const [pedidoData, setPedidoData] = useState({
-    numero_pedido: "",
-    data_pedido: "",
-    valor_total: "",
-    status: "pendente",
-    observacoes: "",
-  });
+const emptyForm = {
+  nome_loja: "", nome_fantasia: "", nome_contato: "", pessoa_compras: "",
+  cnpj: "", ie: "", inscricao_estadual: "", telefone: "", celular: "",
+  email: "", instagram: "", endereco: "", bairro: "", cidade: "", estado: "", cep: "", observacoes: "",
+  segmento: "Outros", regime_tributario: "", marcas_concorrentes: "",
+};
 
-  const [contatoData, setContatoData] = useState({
-    nome: "",
-    cargo: "",
-    email: "",
-    telefone: "",
-    aniversario: "",
-    observacoes: "",
-  });
+const basicFields: { key: string; label: string; placeholder: string; mask?: string }[] = [
+  { key: "nome_loja", label: "Razão Social *", placeholder: "Gelateria Premium Ltda" },
+  { key: "nome_fantasia", label: "Nome Fantasia", placeholder: "Gelateria Premium" },
+  { key: "cnpj", label: "CNPJ", placeholder: "00.000.000/0000-00", mask: "cnpj" },
+  { key: "inscricao_estadual", label: "Inscrição Estadual", placeholder: "123.456.789" },
+  { key: "nome_contato", label: "Nome do Contato", placeholder: "João Silva" },
+  { key: "pessoa_compras", label: "Pessoa de Compras", placeholder: "Quem decide as compras" },
+  { key: "telefone", label: "Telefone", placeholder: "(11) 3333-4444", mask: "phone" },
+  { key: "celular", label: "Celular (WhatsApp)", placeholder: "(11) 99999-8888", mask: "phone" },
+  { key: "email", label: "E-mail", placeholder: "contato@loja.com" },
+  { key: "instagram", label: "Instagram", placeholder: "@perfil_da_loja" },
+];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+function formatCnpj(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 14);
+  return digits.replace(/^(\d{2})(\d)/, "$1.$2").replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d)/, ".$1/$2").replace(/(\d{4})(\d)/, "$1-$2");
+}
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 10) return digits.replace(/^(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2");
+  return digits.replace(/^(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
+}
+function formatCep(value: string): string {
+  return value.replace(/\D/g, "").slice(0, 8).replace(/^(\d{5})(\d)/, "$1-$2");
+}
+function applyMask(value: string, mask?: string): string {
+  if (mask === "cnpj") return formatCnpj(value);
+  if (mask === "phone") return formatPhone(value);
+  if (mask === "cep") return formatCep(value);
+  return value;
+}
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Erro",
-          description: "Você precisa estar logado para adicionar clientes",
-          variant: "destructive",
-        });
-        return;
-      }
+const ClienteCard = memo(function ClienteCard({
+  c,
+  vendedorNome,
+  isMine,
+  canClaim,
+  isAdminOrGestor,
+  ret,
+  onAssignToMe,
+  onEdit,
+  onReativar,
+  onInativar,
+}: {
+  c: any;
+  vendedorNome: string | undefined;
+  isMine: boolean;
+  canClaim: boolean;
+  isAdminOrGestor: boolean;
+  ret: any;
+  onAssignToMe: (id: string) => void;
+  onEdit: (c: any) => void;
+  onReativar: (c: any) => void;
+  onInativar: (c: any) => void;
+}) {
+  const retStatus: StatusRetencao = ret?.status_retencao ?? "novo";
+  const retMeta = STATUS_RETENCAO_META[retStatus];
+  return (
+    <Card key={c.id} className={cn("border-0 shadow-sm hover:shadow-md transition-shadow", c.status === "inativo" && "opacity-70 bg-muted/30", !isMine && !vendedorNome && c.status !== "inativo" && "border-l-4 border-l-amber-400")}>
+      <CardContent className="p-4 space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <Link to={`/clientes/${c.id}`} className="flex-1 min-w-0">
+            <h3 className="font-semibold text-foreground text-lg hover:text-primary transition-colors line-clamp-2">{c.nome_loja}</h3>
+          </Link>
+          <div className="flex gap-1 shrink-0 flex-wrap justify-end">
+            {c.status !== "inativo" && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className={cn("text-[10px] gap-1 border", retMeta.badgeClass)}>
+                    <span className={cn("inline-block w-1.5 h-1.5 rounded-full", retMeta.dotClass)} />
+                    {retMeta.label}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[260px] text-xs">
+                  {ret?.motivo_alerta ?? "Sem dados de pedidos ainda"}
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {c.status === "inativo" && (
+              <Badge variant="secondary" className="text-[10px] gap-1">
+                <UserX className="h-3 w-3" /> Inativo
+              </Badge>
+            )}
+            {c.segmento && c.segmento !== "Outros" && (
+              <Badge className={cn("text-[10px]", segmentoColors[c.segmento] ?? "")}>{c.segmento}</Badge>
+            )}
+          </div>
+        </div>
 
-      const { error } = await supabase.from("clientes").insert({
-        ...formData,
-        aniversario: formData.aniversario || null,
-        responsavel_id: user.id,
-      });
+        {/* Linha de última compra (sempre visível para clientes ativos) */}
+        {c.status !== "inativo" && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <AlertCircle className={cn("h-3 w-3", retStatus !== "ativo" && retStatus !== "novo" ? "text-orange-500" : "text-muted-foreground/60")} />
+            {descricaoUltimaCompra(ret?.dias_desde_ultima_compra ?? null)}
+          </p>
+        )}
 
-      if (error) throw error;
+        {c.status === "inativo" && c.motivo_inativacao && (
+          <p className="text-xs italic text-muted-foreground border-l-2 border-muted-foreground/30 pl-2">
+            Motivo: {c.motivo_inativacao}
+          </p>
+        )}
 
-      toast({
-        title: "Sucesso!",
-        description: "Cliente adicionado com sucesso",
-      });
+        {isAdminOrGestor && (
+          <div className="flex items-center gap-1.5 text-xs">
+            {isMine ? (
+              <span className="flex items-center gap-1 text-primary"><UserCheck className="h-3 w-3" /> Você</span>
+            ) : vendedorNome ? (
+              <span className="flex items-center gap-1 text-muted-foreground"><UserCheck className="h-3 w-3" /> {vendedorNome}</span>
+            ) : (
+              <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium"><UserPlus className="h-3 w-3" /> Sem vendedor</span>
+            )}
+          </div>
+        )}
+        {!isAdminOrGestor && !isMine && c.status !== "inativo" && (
+          <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-medium">
+            <UserPlus className="h-3 w-3" /> Disponível
+          </div>
+        )}
 
-      setFormData({
-        nome_fantasia: "",
-        razao_social: "",
-        cnpj_cpf: "",
-        email: "",
-        telefone: "",
-        cep: "",
-        logradouro: "",
-        numero: "",
-        bairro: "",
-        referencia: "",
-        cidade: "",
-        uf: "",
-        segmento: "",
-        tamanho: "",
-        observacoes: "",
-        historico_pedidos: "",
-        aniversario: "",
-      });
-      setOpen(false);
-      // Clientes serão recarregados automaticamente pelo React Query
-    } catch (error: any) {
-      toast({
-        title: "Erro ao adicionar cliente",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+        {c.nome_contato && <p className="text-sm text-muted-foreground">{c.nome_contato}</p>}
+        {c.cnpj && <p className="text-xs text-muted-foreground font-mono">{c.cnpj}</p>}
+        <div className="space-y-1 text-sm text-muted-foreground">
+          {c.telefone && <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" />{c.telefone}</div>}
+          {c.email && <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" />{c.email}</div>}
+          {c.cidade && <div className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" />{c.cidade}{c.estado ? `, ${c.estado}` : ""}</div>}
+        </div>
+        <div className="flex gap-2 pt-1 flex-wrap">
+          {(c.celular || c.telefone) && c.status !== "inativo" && (
+            <WhatsAppActionButton
+              phone={c.celular || c.telefone}
+              message={`Olá ${(c.nome_contato || c.nome_loja || "").split(/\s+/)[0]}, aqui é ${vendedorNome || "da Cellos Representações"}. Tudo bem?`}
+              variant="outline"
+              size="sm"
+              className="gap-1.5 min-h-[44px] text-green-700 border-green-300 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950"
+              title="Enviar WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4" /> WhatsApp
+            </WhatsAppActionButton>
+          )}
+          {/* Ação rápida de retenção: aparece quando cliente não está ativo */}
+          {retStatus !== "ativo" && retStatus !== "novo" && c.status !== "inativo" && (c.celular || c.telefone) && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 min-h-[44px] text-orange-700 border-orange-300 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-950"
+              onClick={() => {
+                const nome = (c.nome_contato || c.nome_loja || "").split(/\s+/)[0];
+                const tplPorStatus: Record<string, string> = {
+                  atencao: `Olá ${nome}, aqui é ${vendedorNome || "da Cellos Representações"}. Notei que faz um tempinho desde a última compra — está tudo certo por aí? Posso te mandar as novidades?`,
+                  em_risco: `Olá ${nome}, aqui é ${vendedorNome || "da Cellos Representações"}. Senti sua falta! Bora conversar pra eu entender como posso te ajudar?`,
+                  inativo: `Olá ${nome}, aqui é ${vendedorNome || "da Cellos Representações"}. Preparei uma condição especial pra retomar nossa parceria. Posso te enviar?`,
+                };
+                openWhatsApp(c.celular || c.telefone, tplPorStatus[retStatus]);
+              }}
+            >
+              <MessageCircle className="h-4 w-4" /> Enviar follow-up
+            </Button>
+          )}
+          {canClaim && c.status !== "inativo" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 min-h-[44px] text-amber-700 border-amber-300 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950"
+              onClick={() => onAssignToMe(c.id)}
+            >
+              <UserPlus className="h-4 w-4" /> Atribuir para mim
+            </Button>
+          )}
+          <Button variant="outline" size="sm" className="min-h-[44px]" onClick={() => onEdit(c)}>Editar</Button>
+          <Link to={`/clientes/${c.id}`}>
+            <Button variant="ghost" size="sm" className="min-h-[44px] text-primary">Ver ficha</Button>
+          </Link>
+          {c.status === "inativo" ? (
+            <Button variant="outline" size="sm" className="gap-1.5 min-h-[44px]" onClick={() => onReativar(c)}>
+              <RotateCcw className="h-4 w-4" /> Reativar
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" className="gap-1.5 min-h-[44px] text-muted-foreground hover:text-destructive" onClick={() => onInativar(c)}>
+              <UserX className="h-4 w-4" /> Inativar
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+});
+
+export default function Clientes() {
+  const { user } = useAuth();
+  const { isAdminOrGestor, canActAsOther, loading: roleLoading } = useUserRole();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [vendedores, setVendedores] = useState<{ id: string; nome: string }[]>([]);
+  const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
+  const [segFilter, setSegFilter] = useState<string | null>(null);
+  const [vendedorFilter, setVendedorFilter] = useState<string | null>(null);
+  const [statusRetencaoFilter, setStatusRetencaoFilter] = useState<StatusRetencao | null>(
+    (searchParams.get("retencao") as StatusRetencao) || null
+  );
+  const [showInativos, setShowInativos] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [vendedorAlvo, setVendedorAlvo] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [cnpjLoading, setCnpjLoading] = useState(false);
+  const [inativarOpen, setInativarOpen] = useState(false);
+  const [inativarTarget, setInativarTarget] = useState<any | null>(null);
+  const [motivoInativacao, setMotivoInativacao] = useState("");
+  const [inativando, setInativando] = useState(false);
+  const [vendedorNome, setVendedorNome] = useState<string>("");
+
+  const { retencaoMap } = useClientesRetencao();
+
+  // Mantém URL e estado em sync
+  useEffect(() => {
+    const fromUrl = searchParams.get("retencao") as StatusRetencao | null;
+    if (fromUrl !== statusRetencaoFilter) setStatusRetencaoFilter(fromUrl);
+  }, [searchParams]);
+
+  const updateStatusFilter = (s: StatusRetencao | null) => {
+    setStatusRetencaoFilter(s);
+    const next = new URLSearchParams(searchParams);
+    if (s) next.set("retencao", s);
+    else next.delete("retencao");
+    setSearchParams(next, { replace: true });
   };
 
-  // Remover loadClientes - usar hook otimizado
-  // const loadClientes = async () => { ... }
-
-  const { isAdmin, roles } = useAuth();
-  const isGestor = roles.includes('gestor') || roles.includes('admin');
-
-  const handleDelete = async (clienteId: string) => {
-    if (!confirm("Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.")) return;
-    
-    setLoading(true);
-    try {
-      const { error } = await supabase.from("clientes").delete().eq("id", clienteId);
-      if (error) throw error;
-      
-      toast({ title: "Cliente excluído com sucesso!" });
-      // Clientes serão recarregados automaticamente
-    } catch (error: any) {
-      console.error("Erro ao excluir cliente:", error);
-      toast({ 
-        title: "Erro ao excluir cliente", 
-        description: error.message,
-        variant: "destructive" 
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadResponsaveis = async () => {
-    const { data } = await supabase.from("profiles").select("id, nome").order("nome");
-    if (data) setResponsaveis(data);
-  };
-
-  const loadPedidos = async (clienteId: string) => {
-    const { data } = await supabase
-      .from("pedidos")
-      .select("*")
-      .eq("cliente_id", clienteId)
-      .order("data_pedido", { ascending: false });
-    if (data) setPedidos(data);
-  };
-
-  const loadContatos = async (clienteId: string) => {
-    const { data } = await supabase
-      .from("contatos_clientes")
-      .select("*")
-      .eq("cliente_id", clienteId)
-      .order("nome");
-    if (data) setContatos(data);
-  };
-
-  const handleEdit = (cliente: any) => {
-    setClienteSelecionado(cliente);
-    setFormData({
-      nome_fantasia: cliente.nome_fantasia || "",
-      razao_social: cliente.razao_social || "",
-      cnpj_cpf: cliente.cnpj_cpf || "",
-      email: cliente.email || "",
-      telefone: cliente.telefone || "",
-      cep: cliente.cep || "",
-      logradouro: cliente.logradouro || "",
-      numero: cliente.numero || "",
-      bairro: cliente.bairro || "",
-      referencia: cliente.referencia || "",
-      cidade: cliente.cidade || "",
-      uf: cliente.uf || "",
-      segmento: cliente.segmento || "",
-      tamanho: cliente.tamanho || "",
-      observacoes: cliente.observacoes || "",
-      historico_pedidos: cliente.historico_pedidos || "",
-      aniversario: cliente.aniversario || "",
+  // Dispara job de geração de follow-ups automáticos 1x por dia por usuário (best-effort, silencioso).
+  useEffect(() => {
+    if (!user) return;
+    const key = `retencao_job_${user.id}_${new Date().toISOString().slice(0, 10)}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, "1");
+    supabase.auth.getSession().then(({ data }) => {
+      const token = data.session?.access_token;
+      if (!token) return;
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gerar-followups-retencao`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }).catch(() => {/* silencioso */});
     });
-    setEditOpen(true);
-    loadPedidos(cliente.id);
-    loadContatos(cliente.id);
+  }, [user?.id]);
+
+  useEffect(() => { if (user && !roleLoading) fetchClientes(); }, [user?.id, roleLoading]);
+
+  // Carrega o primeiro nome do vendedor logado para usar nas saudações de WhatsApp
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("nome").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      setVendedorNome(data?.nome?.split(/\s+/)[0] ?? "");
+    });
+  }, [user?.id]);
+
+  const lookupCnpj = useCallback(async (cnpjValue: string) => {
+    const digits = cnpjValue.replace(/\D/g, "");
+    if (digits.length !== 14) return;
+    setCnpjLoading(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/consulta-cnpj`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.session?.access_token}`,
+          },
+          body: JSON.stringify({ cnpj: digits }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setForm(prev => ({
+          ...prev,
+          nome_loja: prev.nome_loja || data.razao_social || data.nome_fantasia || prev.nome_loja,
+          nome_fantasia: prev.nome_fantasia || data.nome_fantasia || prev.nome_fantasia,
+          inscricao_estadual: prev.inscricao_estadual || data.inscricao_estadual || prev.inscricao_estadual,
+          endereco: data.logradouro
+            ? `${data.logradouro}${data.numero ? `, ${data.numero}` : ""}${data.complemento ? ` - ${data.complemento}` : ""}`
+            : prev.endereco,
+          bairro: data.bairro || prev.bairro,
+          cidade: data.municipio || prev.cidade,
+          estado: data.uf || prev.estado,
+          cep: data.cep ? formatCep(data.cep) : prev.cep,
+          telefone: prev.telefone || (data.telefone ? formatPhone(data.telefone) : prev.telefone),
+          email: prev.email || data.email || prev.email,
+        }));
+        toast.success(
+          data.ie_warning
+            ? `Dados preenchidos. ${data.ie_warning}.`
+            : `Dados do CNPJ preenchidos! (fonte: ${data.source || "—"})`
+        );
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.error || "Não foi possível consultar o CNPJ.");
+      }
+    } catch {
+      toast.error("Erro ao consultar CNPJ.");
+    } finally {
+      setCnpjLoading(false);
+    }
+  }, []);
+
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const fetchClientes = async () => {
+    setFetchError(null);
+    try {
+      const { data, error } = await supabase.from("clientes").select("*").order("nome_loja").limit(2000);
+      if (error) throw error;
+      setClientes(data ?? []);
+
+      if (isAdminOrGestor) {
+        const { data: profs } = await supabase.from("profiles").select("user_id, nome, role");
+        const map: Record<string, string> = {};
+        const vendList: { id: string; nome: string }[] = [];
+        (profs ?? []).forEach((p: any) => {
+          map[p.user_id] = p.nome;
+          if (p.role !== "secretaria") vendList.push({ id: p.user_id, nome: p.nome });
+        });
+        setProfiles(map);
+        setVendedores(vendList);
+      }
+    } catch (e: any) {
+      console.error("[Clientes] fetchClientes erro:", e);
+      const msg = e?.message ?? "Erro desconhecido ao carregar clientes.";
+      setFetchError(msg);
+      toast.error(`Não foi possível carregar os clientes: ${msg}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!clienteSelecionado) return;
-    
-    setLoading(true);
+  const handleAssignToMe = useCallback(async (clienteId: string) => {
+    const { error } = await supabase.from("clientes").update({ representante_id: user!.id }).eq("id", clienteId);
+    if (error) { toast.error("Erro ao atribuir cliente."); return; }
+    toast.success("Cliente atribuído a você!");
+    fetchClientes();
+  }, [user?.id]);
+
+  const openNew = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setVendedorAlvo(user?.id ?? "");
+    setDrawerOpen(true);
+  };
+  const openEdit = useCallback((c: any) => {
+    setEditing(c);
+    setForm({
+      nome_loja: c.nome_loja, nome_fantasia: c.nome_fantasia ?? "",
+      nome_contato: c.nome_contato ?? "", pessoa_compras: c.pessoa_compras ?? "",
+      cnpj: c.cnpj ?? "", ie: c.ie ?? "", inscricao_estadual: c.inscricao_estadual ?? c.ie ?? "",
+      telefone: c.telefone ?? "", celular: c.celular ?? "", email: c.email ?? "",
+      instagram: c.instagram ?? "",
+      endereco: c.endereco ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "", estado: c.estado ?? "", cep: c.cep ?? "",
+      observacoes: c.observacoes ?? "", segmento: c.segmento ?? "Outros",
+      regime_tributario: c.regime_tributario ?? "", marcas_concorrentes: c.marcas_concorrentes ?? "",
+    });
+    setVendedorAlvo(c.representante_id ?? user?.id ?? "");
+    setDrawerOpen(true);
+  }, [user?.id]);
+
+  const handleFieldChange = (key: string, value: string, mask?: string) => {
+    setForm({ ...form, [key]: applyMask(value, mask) });
+  };
+
+  const handleSubmit = async () => {
+    if (!form.nome_loja.trim()) { toast.error("Nome da loja é obrigatório."); return; }
+    const payload: any = { ...form };
+    setSaving(true);
+    if (editing) {
+      // Secretária/gerente pode reatribuir vendedor
+      if (canActAsOther && vendedorAlvo) payload.representante_id = vendedorAlvo;
+      const { error } = await supabase.from("clientes").update(payload).eq("id", editing.id);
+      if (error) { toast.error("Erro ao atualizar cliente."); setSaving(false); return; }
+      toast.success("Cliente atualizado!");
+    } else {
+      const repId = canActAsOther && vendedorAlvo ? vendedorAlvo : user!.id;
+      const { error } = await supabase.from("clientes").insert({ ...payload, representante_id: repId });
+      if (error) { toast.error("Erro ao cadastrar cliente."); setSaving(false); return; }
+      toast.success("Cliente cadastrado!");
+    }
+    setSaving(false); setDrawerOpen(false); fetchClientes();
+  };
+
+  const handleDelete = async () => {
+    if (!editing) return;
+    const { error } = await supabase.from("clientes").delete().eq("id", editing.id);
+    if (error) { toast.error("Erro ao excluir cliente."); return; }
+    toast.success("Cliente excluído!"); setDrawerOpen(false); fetchClientes();
+  };
+
+  const isUnassigned = (c: any) => {
+    return c.representante_id !== user?.id && !profiles[c.representante_id];
+  };
+
+  const openInativar = useCallback((c: any) => {
+    setInativarTarget(c);
+    setMotivoInativacao(c.motivo_inativacao ?? "");
+    setInativarOpen(true);
+  }, []);
+
+  const confirmInativar = async () => {
+    if (!inativarTarget) return;
+    if (!motivoInativacao.trim()) { toast.error("Informe o motivo da inativação."); return; }
+    setInativando(true);
     const { error } = await supabase
       .from("clientes")
       .update({
-        ...formData,
-        aniversario: formData.aniversario || null,
+        status: "inativo",
+        motivo_inativacao: motivoInativacao.trim(),
+        inativado_em: new Date().toISOString(),
       })
-      .eq("id", clienteSelecionado.id);
-
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erro ao atualizar cliente", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Cliente atualizado com sucesso!" });
-      setEditOpen(false);
-      // Clientes serão recarregados automaticamente
-    }
+      .eq("id", inativarTarget.id);
+    setInativando(false);
+    if (error) { toast.error("Erro ao inativar cliente."); return; }
+    toast.success("Cliente inativado.");
+    setInativarOpen(false);
+    setInativarTarget(null);
+    setMotivoInativacao("");
+    fetchClientes();
   };
 
-  const handleAddPedido = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!clienteSelecionado || !selectedFile) {
-      toast({ title: "Selecione um arquivo PDF", variant: "destructive" });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${clienteSelecionado.id}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('pedidos')
-        .upload(filePath, selectedFile);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from('pedidos').getPublicUrl(filePath);
-
-      const { error: insertError } = await supabase.from("pedidos").insert({
-        cliente_id: clienteSelecionado.id,
-        numero_pedido: pedidoData.numero_pedido || null,
-        data_pedido: pedidoData.data_pedido || null,
-        valor_total: pedidoData.valor_total ? parseFloat(pedidoData.valor_total) : null,
-        status: pedidoData.status,
-        observacoes: pedidoData.observacoes || null,
-        arquivo_url: urlData.publicUrl,
-        arquivo_nome: selectedFile.name,
-      });
-
-      if (insertError) throw insertError;
-
-      toast({ title: "Pedido adicionado com sucesso!" });
-      setPedidoOpen(false);
-      setPedidoData({ numero_pedido: "", data_pedido: "", valor_total: "", status: "pendente", observacoes: "" });
-      setSelectedFile(null);
-      loadPedidos(clienteSelecionado.id);
-    } catch (error: any) {
-      toast({ title: "Erro ao adicionar pedido", description: error.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddContato = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!clienteSelecionado) return;
-
-    setLoading(true);
-    const { error } = await supabase.from("contatos_clientes").insert({
-      cliente_id: clienteSelecionado.id,
-      ...contatoData,
-      aniversario: contatoData.aniversario || null,
-    });
-
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erro ao adicionar contato", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Contato adicionado com sucesso!" });
-      setContatoOpen(false);
-      setContatoData({ nome: "", cargo: "", email: "", telefone: "", aniversario: "", observacoes: "" });
-      loadContatos(clienteSelecionado.id);
-    }
-  };
-
-  const buscarCnpj = async () => {
-    const cnpj = formData.cnpj_cpf.replace(/\D/g, "");
-    if (cnpj.length !== 14) {
-      toast({ title: "CNPJ inválido", description: "Digite um CNPJ válido com 14 dígitos", variant: "destructive" });
-      return;
-    }
-
-    setLoadingCnpj(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('buscar-cnpj', {
-        body: { cnpj }
-      });
-
-      if (error) throw error;
-
-      if (data.error) {
-        toast({ title: "Erro", description: data.error, variant: "destructive" });
-        return;
-      }
-
-      setFormData({
-        ...formData,
-        razao_social: data.razao_social || "",
-        nome_fantasia: data.nome_fantasia || data.razao_social || "",
-        email: data.email || "",
-        telefone: data.telefone || "",
-        cep: data.cep?.replace(/\D/g, "") || "",
-        logradouro: data.logradouro || "",
-        numero: data.numero || "",
-        bairro: data.bairro || "",
-        cidade: data.cidade || "",
-        uf: data.uf || "",
-      });
-
-      toast({ title: "Sucesso!", description: "Dados da empresa carregados" });
-    } catch (error) {
-      toast({ title: "Erro ao buscar CNPJ", description: "Tente novamente", variant: "destructive" });
-    } finally {
-      setLoadingCnpj(false);
-    }
-  };
-
-  const buscarCep = async () => {
-    const cep = formData.cep.replace(/\D/g, "");
-    if (cep.length !== 8) {
-      toast({ title: "CEP inválido", description: "Digite um CEP válido com 8 dígitos", variant: "destructive" });
-      return;
-    }
-
-    setLoadingCep(true);
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-      const data = await response.json();
-      
-      if (data.erro) {
-        toast({ title: "CEP não encontrado", variant: "destructive" });
-        return;
-      }
-
-      setFormData({
-        ...formData,
-        logradouro: data.logradouro || "",
-        bairro: data.bairro || "",
-        cidade: data.localidade || "",
-        uf: data.uf || "",
-      });
-
-      toast({ title: "Sucesso!", description: "Endereço carregado" });
-    } catch (error) {
-      toast({ title: "Erro ao buscar CEP", description: "Tente novamente", variant: "destructive" });
-    } finally {
-      setLoadingCep(false);
-    }
-  };
-
-  const handleChangeResponsavel = async (clienteId: string, novoResponsavelId: string) => {
+  const reativarCliente = useCallback(async (c: any) => {
     const { error } = await supabase
       .from("clientes")
-      .update({ responsavel_id: novoResponsavelId })
-      .eq("id", clienteId);
-
-    if (error) {
-      toast({ title: "Erro ao alterar responsável", variant: "destructive" });
-    } else {
-      toast({ title: "Responsável alterado com sucesso!" });
-      // Clientes serão recarregados automaticamente
-    }
-  };
-
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  const { data: clientesData, isLoading: clientesLoading } = useClientes(page, 10, debouncedSearchTerm, filtroStatus);
-  
-  const clientes = clientesData?.data || [];
-  const totalClientes = clientesData?.count || 0;
-  const totalPages = Math.ceil(totalClientes / 10);
-  
-  // Filtrar clientes localmente (já vem do backend)
-  const clientesFiltrados = clientes;
-
-  useEffect(() => {
-    loadResponsaveis();
+      .update({ status: "ativo", motivo_inativacao: null, inativado_em: null })
+      .eq("id", c.id);
+    if (error) { toast.error("Erro ao reativar."); return; }
+    toast.success(`${c.nome_loja} reativado!`);
+    fetchClientes();
   }, []);
 
-  // Resetar página ao mudar busca ou filtro
-  useEffect(() => {
-    setPage(0);
-  }, [debouncedSearchTerm, filtroStatus]);
+  const baseFiltered = useMemo(() => clientes
+    .filter(c => showInativos ? c.status === "inativo" : c.status !== "inativo")
+    .filter(c => !segFilter || c.segmento === segFilter)
+    .filter(c => !vendedorFilter || (vendedorFilter === "sem_vendedor" ? isUnassigned(c) : c.representante_id === vendedorFilter))
+    .filter(c => {
+      if (!deferredSearch) return true;
+      const s = deferredSearch.toLowerCase();
+      return c.nome_loja.toLowerCase().includes(s) || (c.cidade ?? "").toLowerCase().includes(s) || (c.cnpj ?? "").toLowerCase().includes(s);
+    }), [clientes, showInativos, segFilter, vendedorFilter, deferredSearch, user?.id, profiles]);
+
+  // Contagens por status de retenção (sobre o conjunto filtrado pelos demais filtros)
+  const statusCounts: Record<StatusRetencao | "todos", number> = useMemo(() => {
+    const counts: Record<StatusRetencao | "todos", number> = {
+      todos: baseFiltered.length,
+      ativo: 0, atencao: 0, em_risco: 0, inativo: 0, novo: 0,
+    };
+    baseFiltered.forEach(c => {
+      const r = retencaoMap.get(c.id);
+      if (r) counts[r.status_retencao]++;
+      else counts.novo++;
+    });
+    return counts;
+  }, [baseFiltered, retencaoMap]);
+
+  const filtered = useMemo(() => baseFiltered.filter(c => {
+    if (!statusRetencaoFilter) return true;
+    const r = retencaoMap.get(c.id);
+    const st = r?.status_retencao ?? "novo";
+    return st === statusRetencaoFilter;
+  }), [baseFiltered, statusRetencaoFilter, retencaoMap]);
+
+  if (loading || roleLoading) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
   return (
-    <div className="space-y-6 p-4 md:p-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <SidebarTrigger className="md:hidden" />
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Clientes
-            </h1>
-            <p className="text-muted-foreground">
-              Gerencie seus clientes e oportunidades
-            </p>
-          </div>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Novo Cliente
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Adicionar Novo Cliente</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nome_fantasia">Nome Fantasia *</Label>
-                  <Input
-                    id="nome_fantasia"
-                    required
-                    value={formData.nome_fantasia}
-                    onChange={(e) => setFormData({ ...formData, nome_fantasia: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="razao_social">Razão Social</Label>
-                  <Input
-                    id="razao_social"
-                    value={formData.razao_social}
-                    onChange={(e) => setFormData({ ...formData, razao_social: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cnpj_cpf">CNPJ/CPF</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="cnpj_cpf"
-                      value={formData.cnpj_cpf}
-                      onChange={(e) => setFormData({ ...formData, cnpj_cpf: e.target.value })}
-                      placeholder="Digite o CNPJ"
-                    />
-                    <Button type="button" onClick={buscarCnpj} disabled={loadingCnpj} variant="outline">
-                      {loadingCnpj ? "..." : "Buscar"}
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone</Label>
-                  <Input
-                    id="telefone"
-                    value={formData.telefone}
-                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cep">CEP</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="cep"
-                      value={formData.cep}
-                      onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
-                      placeholder="Digite o CEP"
-                    />
-                    <Button type="button" onClick={buscarCep} disabled={loadingCep} variant="outline">
-                      {loadingCep ? "..." : "Buscar"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="logradouro">Logradouro</Label>
-                  <Input
-                    id="logradouro"
-                    value={formData.logradouro}
-                    onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="numero">Número</Label>
-                  <Input
-                    id="numero"
-                    value={formData.numero}
-                    onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="bairro">Bairro</Label>
-                  <Input
-                    id="bairro"
-                    value={formData.bairro}
-                    onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="referencia">Referência</Label>
-                  <Input
-                    id="referencia"
-                    placeholder="Ex: Próximo ao supermercado"
-                    value={formData.referencia}
-                    onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cidade">Cidade</Label>
-                  <Input
-                    id="cidade"
-                    value={formData.cidade}
-                    onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="uf">UF</Label>
-                  <Input
-                    id="uf"
-                    maxLength={2}
-                    value={formData.uf}
-                    onChange={(e) => setFormData({ ...formData, uf: e.target.value.toUpperCase() })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="segmento">Segmento</Label>
-                  <Input
-                    id="segmento"
-                    value={formData.segmento}
-                    onChange={(e) => setFormData({ ...formData, segmento: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tamanho">Tamanho</Label>
-                  <Input
-                    id="tamanho"
-                    value={formData.tamanho}
-                    onChange={(e) => setFormData({ ...formData, tamanho: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="observacoes">Observações</Label>
-                <Textarea
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="aniversario">Aniversário</Label>
-                <Input
-                  id="aniversario"
-                  type="date"
-                  value={formData.aniversario}
-                  onChange={(e) => setFormData({ ...formData, aniversario: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="historico_pedidos">Histórico de Pedidos</Label>
-                <Textarea
-                  id="historico_pedidos"
-                  placeholder="Ex: Último pedido em 10/2025 - 50kg Cacau Premium"
-                  value={formData.historico_pedidos}
-                  onChange={(e) => setFormData({ ...formData, historico_pedidos: e.target.value })}
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-2 justify-end">
-                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Salvando..." : "Salvar Cliente"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+    <div className="space-y-4 sm:space-y-6">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary">Clientes</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">{clientes.length} cadastrados · {filtered.length} exibidos</p>
       </div>
 
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            Lista de Clientes
-          </CardTitle>
-          <CardDescription>
-            Todos os clientes cadastrados no sistema
-          </CardDescription>
-          <div className="flex gap-4 mt-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Buscar por nome, CNPJ, telefone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Select value={filtroStatus} onValueChange={(v: any) => setFiltroStatus(v)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="ativo">Ativos</SelectItem>
-                <SelectItem value="inativo">Inativos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {clientesLoading ? (
-            <div className="space-y-4">
-              {[...Array(10)].map((_, i) => (
-                <Skeleton key={i} className="h-32 w-full" />
-              ))}
-            </div>
-          ) : clientesFiltrados.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">Nenhum cliente cadastrado</p>
-              <p className="text-sm mb-4">Comece adicionando seu primeiro cliente</p>
-              <Button className="gap-2" onClick={() => setOpen(true)}>
-                <Plus className="h-4 w-4" />
-                Adicionar Cliente
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Buscar por nome, cidade ou CNPJ..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 min-h-[44px]" />
+      </div>
+
+      <div className="flex gap-2 flex-wrap items-center">
+        <Button variant={!segFilter ? "default" : "outline"} size="sm" className="min-h-[44px]" onClick={() => setSegFilter(null)}>Todos</Button>
+        {SEGMENTOS.map(s => (
+          <Button key={s} variant={segFilter === s ? "default" : "outline"} size="sm" className="min-h-[44px]" onClick={() => setSegFilter(segFilter === s ? null : s)}>{s}</Button>
+        ))}
+      </div>
+
+      {isAdminOrGestor && vendedores.length > 0 && (
+        <div className="flex gap-2 items-center flex-wrap">
+          <Label className="text-xs font-medium text-muted-foreground">Vendedor:</Label>
+          <Button variant={!vendedorFilter ? "default" : "outline"} size="sm" className="min-h-[36px] text-xs" onClick={() => setVendedorFilter(null)}>Todos</Button>
+          <Button variant={vendedorFilter === "sem_vendedor" ? "default" : "outline"} size="sm" className="min-h-[36px] text-xs gap-1 border-dashed" onClick={() => setVendedorFilter(vendedorFilter === "sem_vendedor" ? null : "sem_vendedor")}>
+            <UserPlus className="h-3 w-3" /> Sem vendedor
+          </Button>
+          {vendedores.map(v => (
+            <Button key={v.id} variant={vendedorFilter === v.id ? "default" : "outline"} size="sm" className="min-h-[36px] text-xs" onClick={() => setVendedorFilter(vendedorFilter === v.id ? null : v.id)}>{v.nome || "Sem nome"}</Button>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 pl-1">
+        <Switch id="show-inativos" checked={showInativos} onCheckedChange={setShowInativos} />
+        <Label htmlFor="show-inativos" className="text-xs text-muted-foreground cursor-pointer flex items-center gap-1.5">
+          <EyeOff className="h-3.5 w-3.5" /> Mostrar apenas inativos
+        </Label>
+      </div>
+
+      {/* Filtros rápidos por status de retenção (não substituem os outros filtros) */}
+      <div className="flex gap-2 flex-wrap items-center">
+        <Label className="text-xs font-medium text-muted-foreground">Retenção:</Label>
+        <Button
+          variant={!statusRetencaoFilter ? "default" : "outline"}
+          size="sm"
+          className="min-h-[36px] text-xs"
+          onClick={() => updateStatusFilter(null)}
+        >
+          Todos ({statusCounts.todos})
+        </Button>
+        {(["ativo", "atencao", "em_risco", "inativo", "novo"] as StatusRetencao[]).map((st) => {
+          const meta = STATUS_RETENCAO_META[st];
+          const active = statusRetencaoFilter === st;
+          return (
+            <Button
+              key={st}
+              variant={active ? "default" : "outline"}
+              size="sm"
+              className="min-h-[36px] text-xs gap-1.5"
+              onClick={() => updateStatusFilter(active ? null : st)}
+            >
+              <span className={cn("inline-block w-2 h-2 rounded-full", meta.dotClass)} />
+              {meta.label} ({statusCounts[st]})
+            </Button>
+          );
+        })}
+      </div>
+
+      {fetchError && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <div className="flex-1 space-y-2">
+              <p className="text-sm font-medium text-destructive">Não foi possível carregar os clientes</p>
+              <p className="text-xs text-muted-foreground break-words">{fetchError}</p>
+              <Button size="sm" variant="outline" onClick={() => { setLoading(true); fetchClientes(); }}>
+                <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Tentar novamente
               </Button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {clientesFiltrados.map((cliente) => (
-                <div key={cliente.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors">
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-lg">{cliente.nome_fantasia}</h3>
-                        <span className={`text-xs px-2 py-1 rounded ${cliente.ativo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {cliente.ativo ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </div>
-                      {cliente.razao_social && (
-                        <p className="text-sm text-muted-foreground">{cliente.razao_social}</p>
-                      )}
-                       <div className="mt-2 space-y-1 text-sm">
-                         {cliente.cnpj_cpf && <p>🏢 {cliente.cnpj_cpf}</p>}
-                         {cliente.email && <p>📧 {cliente.email}</p>}
-                         {cliente.telefone && <p>📱 {cliente.telefone}</p>}
-                        {cliente.cidade && cliente.uf && (
-                          <p>📍 {cliente.cidade}/{cliente.uf}</p>
-                        )}
-                        {cliente.ultima_compra_data && (
-                          <p>🛒 Última compra: {new Date(cliente.ultima_compra_data).toLocaleDateString('pt-BR')}</p>
-                        )}
-                        <p className="text-sm border-t pt-2 mt-2">
-                          📦 <span className="font-medium">Total de pedidos:</span> <span className="font-bold">{cliente.total_pedidos || 0}</span>
-                        </p>
-                        {isGestor && cliente.total_comprado > 0 && (
-                          <>
-                            <p className="font-semibold text-primary">
-                              💰 Total: {new Intl.NumberFormat('pt-BR', { 
-                                style: 'currency', 
-                                currency: 'BRL' 
-                              }).format(cliente.total_comprado)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Média/mês: {new Intl.NumberFormat('pt-BR', { 
-                                style: 'currency', 
-                                currency: 'BRL' 
-                              }).format(cliente.compra_mensal_media || 0)}
-                            </p>
-                          </>
-                        )}
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-xs text-muted-foreground">Responsável:</span>
-                          <Select 
-                            value={cliente.responsavel_id || ""} 
-                            onValueChange={(v) => handleChangeResponsavel(cliente.id, v)}
-                          >
-                            <SelectTrigger className="h-7 w-[180px] text-xs">
-                              <SelectValue placeholder="Selecione">
-                                {cliente.profiles?.nome || "Sem responsável"}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {responsaveis.map((resp) => (
-                                <SelectItem key={resp.id} value={resp.id}>
-                                  {resp.nome}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-xs text-muted-foreground">Status:</span>
-                          <Select 
-                            value={cliente.ativo ? "ativo" : "inativo"} 
-                            onValueChange={async (v) => {
-                              const { error } = await supabase
-                                .from("clientes")
-                                .update({ ativo: v === "ativo" })
-                                .eq("id", cliente.id);
-                              if (!error) {
-                                toast({ title: "Status atualizado!" });
-                                queryClient.invalidateQueries({ queryKey: ['clientes'] });
-                              }
-                            }}
-                          >
-                            <SelectTrigger className="h-7 w-[120px] text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="ativo">Ativo</SelectItem>
-                              <SelectItem value="inativo">Inativo</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="min-h-[44px] min-w-[44px]"
-                        onClick={() => handleEdit(cliente)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      {cliente.telefone && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2 min-h-[44px] min-w-[44px]"
-                          onClick={() => {
-                            const telefone = cliente.telefone.replace(/\D/g, '');
-                            const mensagem = encodeURIComponent(`Olá ${cliente.nome_fantasia}! Tudo bem?`);
-                            window.open(`https://wa.me/55${telefone}?text=${mensagem}`, '_blank');
-                          }}
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="min-h-[44px] min-w-[44px]"
-                        onClick={() => handleDelete(cliente.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!fetchError && filtered.length === 0 && (
+        <Card className="border-dashed">
+          <CardContent className="p-6 text-center space-y-3">
+            <Users className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+            {clientes.length === 0 ? (
+              <>
+                <p className="text-sm font-medium text-foreground">Nenhum cliente encontrado</p>
+                <p className="text-xs text-muted-foreground">
+                  A consulta retornou vazia. Se você acabou de logar, tente recarregar a página.
+                </p>
+                <Button size="sm" variant="outline" onClick={() => { setLoading(true); fetchClientes(); }}>
+                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Recarregar
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-foreground">
+                  Você tem {clientes.length} cliente{clientes.length === 1 ? "" : "s"} cadastrado{clientes.length === 1 ? "" : "s"}, mas nenhum corresponde aos filtros atuais.
+                </p>
+                <p className="text-xs text-muted-foreground">Limpe os filtros para ver toda a lista.</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSearch("");
+                    setSegFilter(null);
+                    setVendedorFilter(null);
+                    setShowInativos(false);
+                    updateStatusFilter(null);
+                  }}
+                >
+                  Limpar todos os filtros
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <TooltipProvider delayDuration={150}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(c => {
+            const vendedorNome = profiles[c.representante_id];
+            const isMine = c.representante_id === user?.id;
+            const canClaim = !isMine && !isAdminOrGestor && !canActAsOther;
+            const ret = retencaoMap.get(c.id);
+            return (
+              <ClienteCard
+                key={c.id}
+                c={c}
+                vendedorNome={vendedorNome}
+                isMine={isMine}
+                canClaim={canClaim}
+                isAdminOrGestor={isAdminOrGestor}
+                ret={ret}
+                onAssignToMe={handleAssignToMe}
+                onEdit={openEdit}
+                onReativar={reativarCliente}
+                onInativar={openInativar}
+              />
+            );
+          })}
+        </div>
+      </TooltipProvider>
+
+      {filtered.length === 0 && (
+        <div className="flex flex-col items-center py-12 text-muted-foreground">
+          <Users className="h-12 w-12 mb-3 opacity-40" />
+          <p className="text-lg font-medium">Nenhum cliente encontrado</p>
+          <p className="text-sm mt-1">
+            {clientes.length === 0 ? "Cadastre seu primeiro cliente para começar a vender! 🚀" : "Tente outro filtro ou busca."}
+          </p>
+          {clientes.length === 0 && (
+            <Button className="mt-4 min-h-[44px]" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Cadastrar primeiro cliente</Button>
           )}
-          
-          {clientesFiltrados.length > 0 && (
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              totalItems={totalClientes}
-              pageSize={10}
-            />
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
-      {/* Dialog de Edição de Cliente */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar Cliente</DialogTitle>
-          </DialogHeader>
-          <Tabs defaultValue="info" className="w-full">
-            <TabsList className="flex overflow-x-auto w-full -webkit-overflow-scrolling-touch snap-x snap-mandatory">
-              <TabsTrigger value="info" className="snap-start whitespace-nowrap">Informações</TabsTrigger>
-              <TabsTrigger value="pedidos" className="snap-start whitespace-nowrap">Pedidos</TabsTrigger>
-              <TabsTrigger value="contatos" className="snap-start whitespace-nowrap">Contatos</TabsTrigger>
-              <TabsTrigger value="historico" className="snap-start whitespace-nowrap">Histórico</TabsTrigger>
-              <TabsTrigger value="boletos" className="snap-start whitespace-nowrap">Boletos</TabsTrigger>
-            </TabsList>
+      <Button className="fixed bottom-24 right-4 md:bottom-8 md:right-8 h-14 w-14 rounded-full shadow-xl bg-secondary text-secondary-foreground hover:bg-secondary/90 z-30" size="icon" onClick={openNew}>
+        <Plus className="h-6 w-6" />
+      </Button>
 
-            <TabsContent value="info">
-              <form onSubmit={handleUpdate} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_nome_fantasia">Nome Fantasia *</Label>
-                    <Input
-                      id="edit_nome_fantasia"
-                      required
-                      value={formData.nome_fantasia}
-                      onChange={(e) => setFormData({ ...formData, nome_fantasia: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_razao_social">Razão Social</Label>
-                    <Input
-                      id="edit_razao_social"
-                      value={formData.razao_social}
-                      onChange={(e) => setFormData({ ...formData, razao_social: e.target.value })}
-                    />
-                  </div>
-                </div>
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent className="overflow-y-auto w-full sm:max-w-lg p-4 sm:p-6">
+          <SheetHeader>
+            <SheetTitle className="text-primary">{editing ? "Editar Cliente" : "Novo Cliente"}</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-3 mt-4">
+            {canActAsOther && (
+              <VendedorSelect value={vendedorAlvo} onChange={setVendedorAlvo} />
+            )}
 
-                <div className="border-t pt-4 mt-4">
-                  <h3 className="font-semibold mb-3">Endereço</h3>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="col-span-2">
-                        <Label htmlFor="edit_logradouro">Logradouro</Label>
-                        <Input
-                          id="edit_logradouro"
-                          value={formData.logradouro}
-                          onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit_numero">Número</Label>
-                        <Input
-                          id="edit_numero"
-                          value={formData.numero}
-                          onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="edit_bairro">Bairro</Label>
-                        <Input
-                          id="edit_bairro"
-                          value={formData.bairro}
-                          onChange={(e) => setFormData({ ...formData, bairro: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit_referencia">Referência</Label>
-                        <Input
-                          id="edit_referencia"
-                          placeholder="Ex: Próximo ao supermercado"
-                          value={formData.referencia}
-                          onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="edit_cep">CEP</Label>
-                        <Input
-                          id="edit_cep"
-                          value={formData.cep}
-                          onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit_cidade">Cidade</Label>
-                        <Input
-                          id="edit_cidade"
-                          value={formData.cidade}
-                          onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="edit_uf">UF</Label>
-                        <Input
-                          id="edit_uf"
-                          value={formData.uf}
-                          onChange={(e) => setFormData({ ...formData, uf: e.target.value })}
-                          maxLength={2}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_email">Email</Label>
-                    <Input
-                      id="edit_email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_telefone">Telefone</Label>
-                    <Input
-                      id="edit_telefone"
-                      value={formData.telefone}
-                      onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit_aniversario">Aniversário</Label>
+            {basicFields.map(({ key, label, placeholder, mask }) => (
+              <div key={key} className="space-y-1">
+                <Label className="text-xs">{label}</Label>
+                <div className="relative flex gap-2">
                   <Input
-                    id="edit_aniversario"
-                    type="date"
-                    value={formData.aniversario}
-                    onChange={(e) => setFormData({ ...formData, aniversario: e.target.value })}
+                    value={(form as any)[key]}
+                    onChange={e => handleFieldChange(key, e.target.value, mask)}
+                    onBlur={key === "cnpj" ? () => lookupCnpj(form.cnpj) : undefined}
+                    placeholder={placeholder}
+                    className="min-h-[44px] flex-1"
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit_observacoes">Observações</Label>
-                  <Textarea
-                    id="edit_observacoes"
-                    value={formData.observacoes}
-                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? "Salvando..." : "Salvar Alterações"}
-                  </Button>
-                </div>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="pedidos">
-              <div className="space-y-4">
-                <Button onClick={() => setPedidoOpen(true)} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Novo Pedido
-                </Button>
-                <div className="space-y-3">
-                  {pedidos.map((pedido) => (
-                    <div key={pedido.id} className="border rounded p-3">
-                      <div className="flex justify-between">
-                        <div>
-                          <p className="font-semibold">{pedido.numero_pedido || "Sem número"}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {pedido.data_pedido && new Date(pedido.data_pedido).toLocaleDateString('pt-BR')}
-                          </p>
-                          {pedido.valor_total && <p className="text-sm">R$ {parseFloat(pedido.valor_total).toFixed(2)}</p>}
-                        </div>
-                        {pedido.arquivo_url && (
-                          <Button variant="outline" size="sm" onClick={() => window.open(pedido.arquivo_url, '_blank')}>
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                  {key === "cnpj" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => lookupCnpj(form.cnpj)}
+                      disabled={cnpjLoading || form.cnpj.replace(/\D/g, "").length !== 14}
+                      className="min-h-[44px] whitespace-nowrap"
+                    >
+                      {cnpjLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar dados"}
+                    </Button>
+                  )}
                 </div>
               </div>
-            </TabsContent>
+            ))}
 
-            <TabsContent value="contatos">
-              <div className="space-y-4">
-                <Button onClick={() => setContatoOpen(true)} className="gap-2">
-                  <UserPlus className="h-4 w-4" />
-                  Novo Contato
-                </Button>
-                <div className="space-y-3">
-                  {contatos.map((contato) => (
-                    <div key={contato.id} className="border rounded p-3 flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold">{contato.nome}</p>
-                        {contato.cargo && <p className="text-sm text-muted-foreground">{contato.cargo}</p>}
-                        {contato.email && <p className="text-sm">📧 {contato.email}</p>}
-                        {contato.telefone && <p className="text-sm">📱 {contato.telefone}</p>}
-                        {contato.aniversario && (
-                          <p className="text-sm">🎂 {new Date(contato.aniversario).toLocaleDateString('pt-BR')}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        {contato.telefone && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const telefone = contato.telefone.replace(/\D/g, '');
-                              const mensagem = encodeURIComponent(`Olá ${contato.nome}! Tudo bem?`);
-                              window.open(`https://wa.me/55${telefone}?text=${mensagem}`, '_blank');
-                            }}
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {contato.email && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              window.open(`mailto:${contato.email}`, '_blank');
-                            }}
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={async () => {
-                            if (!confirm("Deseja excluir este contato?")) return;
-                            
-                            const { error } = await supabase
-                              .from('contatos_clientes')
-                              .delete()
-                              .eq('id', contato.id);
-                            
-                            if (error) {
-                              toast({ title: "Erro ao excluir contato", variant: "destructive" });
-                            } else {
-                              toast({ title: "Contato excluído com sucesso!" });
-                              if (clienteSelecionado) loadContatos(clienteSelecionado.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              </TabsContent>
-              
-              <TabsContent value="historico">
-                {clienteSelecionado && (
-                  <ClienteProdutosHistorico 
-                    clienteId={clienteSelecionado.id}
-                    clienteNome={clienteSelecionado.nome_fantasia}
-                  />
-                )}
-              </TabsContent>
+            {/* Endereço completo via CEP/Nominatim */}
+            <div className="space-y-2 rounded-lg border p-3 bg-muted/20">
+              <Label className="text-xs font-semibold flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" /> Endereço
+              </Label>
+              <EnderecoAutocomplete
+                value={{ cep: form.cep, endereco: form.endereco, bairro: form.bairro, cidade: form.cidade, estado: form.estado }}
+                onChange={(next) => setForm({ ...form, ...next })}
+              />
+            </div>
 
-              <TabsContent value="boletos">
-                {clienteSelecionado && (
-                  <ClienteBoletos clienteId={clienteSelecionado.id} />
-                )}
-              </TabsContent>
-            </Tabs>
-        </DialogContent>
-      </Dialog>
+            <div className="space-y-1">
+              <Label className="text-xs">Segmento</Label>
+              <Select value={form.segmento} onValueChange={v => setForm({ ...form, segmento: v })}>
+                <SelectTrigger className="min-h-[44px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SEGMENTOS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Observações</Label>
+              <Textarea value={form.observacoes} onChange={e => setForm({ ...form, observacoes: e.target.value })} placeholder="Notas sobre o cliente..." />
+            </div>
 
-      {/* Dialog de Novo Pedido */}
-      <Dialog open={pedidoOpen} onOpenChange={setPedidoOpen}>
+            <div className="space-y-1">
+              <Label className="text-xs">Regime tributário</Label>
+              <Select value={form.regime_tributario || "__none__"} onValueChange={v => setForm({ ...form, regime_tributario: v === "__none__" ? "" : v })}>
+                <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Não informado</SelectItem>
+                  {REGIMES_TRIBUTARIOS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Outras marcas com que trabalha</Label>
+              <Textarea
+                value={form.marcas_concorrentes}
+                onChange={e => setForm({ ...form, marcas_concorrentes: e.target.value })}
+                placeholder="Ex: Nestlé, Frooty, La Basque, Davene..."
+                rows={2}
+              />
+            </div>
+
+            <Button className="w-full min-h-[48px]" onClick={handleSubmit} disabled={saving}>
+              {saving ? "Salvando..." : editing ? "Salvar Alterações" : "Cadastrar Cliente"}
+            </Button>
+            {editing && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full min-h-[44px]"><Trash2 className="h-4 w-4 mr-2" />Excluir Cliente</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
+                    <AlertDialogDescription>Esta ação não pode ser desfeita. O cliente "{editing.nome_loja}" será removido permanentemente.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Dialog open={inativarOpen} onOpenChange={setInativarOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Adicionar Pedido</DialogTitle>
+            <DialogTitle className="text-primary flex items-center gap-2">
+              <UserX className="h-5 w-5" /> Inativar cliente
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAddPedido} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="numero_pedido">Número do Pedido</Label>
-              <Input
-                id="numero_pedido"
-                value={pedidoData.numero_pedido}
-                onChange={(e) => setPedidoData({ ...pedidoData, numero_pedido: e.target.value })}
-              />
+          <div className="space-y-3 py-2">
+            {inativarTarget && (
+              <p className="text-sm text-muted-foreground">
+                Você está inativando <span className="font-semibold text-foreground">{inativarTarget.nome_loja}</span>. Ele não vai mais gerar alertas de risco nem aparecer nas listas.
+              </p>
+            )}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Motivo da inativação *</Label>
+              <Textarea value={motivoInativacao} onChange={e => setMotivoInativacao(e.target.value)} placeholder="Ex: Fechou as portas, mudou de fornecedor..." rows={3} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="data_pedido">Data do Pedido</Label>
-              <Input
-                id="data_pedido"
-                type="date"
-                value={pedidoData.data_pedido}
-                onChange={(e) => setPedidoData({ ...pedidoData, data_pedido: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="valor_total">Valor Total</Label>
-              <Input
-                id="valor_total"
-                type="number"
-                step="0.01"
-                value={pedidoData.valor_total}
-                onChange={(e) => setPedidoData({ ...pedidoData, valor_total: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="arquivo">Arquivo PDF *</Label>
-              <Input
-                id="arquivo"
-                type="file"
-                accept=".pdf"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                required
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setPedidoOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Salvando..." : "Salvar Pedido"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de Novo Contato */}
-      <Dialog open={contatoOpen} onOpenChange={setContatoOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Adicionar Contato</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAddContato} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="contato_nome">Nome *</Label>
-              <Input
-                id="contato_nome"
-                required
-                value={contatoData.nome}
-                onChange={(e) => setContatoData({ ...contatoData, nome: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="contato_cargo">Cargo</Label>
-              <Input
-                id="contato_cargo"
-                value={contatoData.cargo}
-                onChange={(e) => setContatoData({ ...contatoData, cargo: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="contato_email">Email</Label>
-              <Input
-                id="contato_email"
-                type="email"
-                value={contatoData.email}
-                onChange={(e) => setContatoData({ ...contatoData, email: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="contato_telefone">Telefone</Label>
-              <Input
-                id="contato_telefone"
-                value={contatoData.telefone}
-                onChange={(e) => setContatoData({ ...contatoData, telefone: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="contato_aniversario">Aniversário</Label>
-              <Input
-                id="contato_aniversario"
-                type="date"
-                value={contatoData.aniversario}
-                onChange={(e) => setContatoData({ ...contatoData, aniversario: e.target.value })}
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setContatoOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Salvando..." : "Salvar Contato"}
-              </Button>
-            </div>
-          </form>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInativarOpen(false)} disabled={inativando}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmInativar} disabled={inativando || !motivoInativacao.trim()}>
+              {inativando ? "Inativando..." : "Confirmar inativação"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
-};
-
-export default Clientes;
+}

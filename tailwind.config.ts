@@ -12,14 +12,6 @@ export default {
         "2xl": "1400px",
       },
     },
-    screens: {
-      'xs': '375px',
-      'sm': '640px',
-      'md': '768px',
-      'lg': '1024px',
-      'xl': '1280px',
-      '2xl': '1536px',
-    },
     extend: {
       colors: {
         border: "hsl(var(--border))",
@@ -30,7 +22,6 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
-          glow: "hsl(var(--primary-glow))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -47,14 +38,6 @@ export default {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
-        },
-        success: {
-          DEFAULT: "hsl(var(--success))",
-          foreground: "hsl(var(--success-foreground))",
-        },
-        warning: {
-          DEFAULT: "hsl(var(--warning))",
-          foreground: "hsl(var(--warning-foreground))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -74,43 +57,27 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        loja: {
-          primary: "hsl(var(--loja-primary))",
-          "primary-light": "hsl(var(--loja-primary-light))",
-          secondary: "hsl(var(--loja-secondary))",
-          accent: "hsl(var(--loja-accent))",
-          cream: "hsl(var(--loja-cream))",
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
         },
-        crm: {
-          primary: "hsl(var(--crm-primary))",
-          "primary-dark": "hsl(var(--crm-primary-dark))",
-          secondary: "hsl(var(--crm-secondary))",
-          accent: "hsl(var(--crm-accent))",
-          "sidebar-from": "hsl(var(--crm-sidebar-from))",
-          "sidebar-to": "hsl(var(--crm-sidebar-to))",
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
         },
-      },
-      backgroundImage: {
-        "gradient-primary": "var(--gradient-primary)",
-        "gradient-subtle": "var(--gradient-subtle)",
-        "gradient-card": "var(--gradient-card)",
-      },
-      boxShadow: {
-        card: "var(--shadow-card)",
-        elevated: "var(--shadow-elevated)",
-        glow: "var(--shadow-glow)",
-        "loja-card": "var(--loja-shadow-card)",
-        "loja-hover": "var(--loja-shadow-hover)",
-        "crm-card": "var(--crm-shadow-card)",
-        "crm-hover": "var(--crm-shadow-hover)",
-      },
-      transitionProperty: {
-        smooth: "var(--transition-smooth)",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      fontFamily: {
+        sans: ["Manrope", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        neu: "var(--shadow-neu)",
+        "neu-sm": "var(--shadow-neu-sm)",
+        "neu-inset": "var(--shadow-neu-inset)",
       },
       keyframes: {
         "accordion-down": {

@@ -1,996 +1,555 @@
-import { useState, useEffect, useRef } from "react";
-import { useDebounce } from "@/hooks/useDebounce";
-import { useProdutos } from "@/hooks/useProdutos";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Pagination } from "@/components/Pagination";
-import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Package, Upload, Edit, ArrowUpCircle, ArrowDownCircle, Trash2, Image as ImageIcon, X } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { ProdutoTabelasPreco } from "@/components/ProdutoTabelasPreco";
-import { ProdutoEditDialog } from "@/components/loja/ProdutoEditDialog";
-import { CarrinhoOrcamento } from "@/components/CarrinhoOrcamento";
-import { useCarrinho } from "@/hooks/useCarrinho";
-import { ShoppingCart } from "lucide-react";
-
-const Produtos = () => {
-  const { adicionarItem } = useCarrinho();
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
-  const [produtoSelecionado, setProdutoSelecionado] = useState<any>(null);
-  const [produtosParaAdicionar, setProdutosParaAdicionar] = useState<any[]>([]);
-  const [marcas, setMarcas] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [marcaSelecionada, setMarcaSelecionada] = useState("");
-  const [marcaFiltro, setMarcaFiltro] = useState("");
-  const [editFormData, setEditFormData] = useState<any>({});
-  const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
-  const [estoqueOpen, setEstoqueOpen] = useState(false);
-  const [movimentacaoData, setMovimentacaoData] = useState({
-    tipo: "entrada",
-    quantidade: "",
-    observacao: "",
-  });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(0);
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  const { data: produtosData, isLoading: produtosLoading } = useProdutos(page, 10, debouncedSearchTerm, marcaFiltro || undefined);
-  const [imagensLoja, setImagensLoja] = useState<any[]>([]);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [tabelasPrecoCriacao, setTabelasPrecoCriacao] = useState<Array<{ nome: string; preco?: number; usarNoSite?: boolean }>>([]);
-  const [usarTabelas, setUsarTabelas] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const imagemInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const calcularEExibir = (preco: number, peso: number, rendimento: number) => {
-    const resultadoDiv = document.getElementById('calculos-resultado');
-    const precoKgDiv = document.getElementById('calc-preco-kg');
-    const rendimentoDiv = document.getElementById('calc-rendimento');
-    const custoDoseDiv = document.getElementById('calc-custo-dose');
-
-    if (!resultadoDiv || !precoKgDiv || !rendimentoDiv || !custoDoseDiv) return;
-
-    if (preco === 0) {
-      resultadoDiv.classList.add('hidden');
-      return;
-    }
-
-    resultadoDiv.classList.remove('hidden');
-
-    // Preço por kg
-    if (peso > 0) {
-      const precoKg = preco / peso;
-      precoKgDiv.innerHTML = `<strong>Preço/kg:</strong> R$ ${precoKg.toFixed(2)}`;
-    } else {
-      precoKgDiv.innerHTML = '';
-    }
-
-    // Rendimento
-    if (rendimento > 0) {
-      const dosesParaUmKg = 1000 / rendimento;
-      const precoPorKgGelato = preco * dosesParaUmKg;
-      rendimentoDiv.innerHTML = `<strong>Preço/kg gelato:</strong> R$ ${precoPorKgGelato.toFixed(2)} (${dosesParaUmKg.toFixed(1)} doses)`;
-      custoDoseDiv.innerHTML = `<strong>Custo por dose (${rendimento}g):</strong> R$ ${preco.toFixed(2)}`;
-    } else {
-      rendimentoDiv.innerHTML = '';
-      custoDoseDiv.innerHTML = '';
-    }
-  };
-
-  // Usar hook otimizado em vez de loadProdutos
-  const produtosLista = produtosData?.data || [];
-  const totalProdutos = produtosData?.count || 0;
-  const totalPages = Math.ceil(totalProdutos / 10);
-
-  const loadMarcas = async () => {
-    const { data } = await supabase.from("marcas").select("*").eq("ativa", true);
-    setMarcas(data || []);
-  };
-
-  useEffect(() => {
-    loadMarcas();
-  }, []);
-
-  // Resetar página ao mudar busca ou filtro de marca
-  useEffect(() => {
-    setPage(0);
-  }, [debouncedSearchTerm, marcaFiltro]);
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const formData = new FormData(e.currentTarget);
-    
-    // Validação explícita
-    const nome = formData.get("nome") as string;
-    if (!nome || nome.trim() === '') {
-      toast({ 
-        title: "❌ Campo obrigatório", 
-        description: "O campo 'Nome' é obrigatório",
-        variant: "destructive" 
-      });
-      setLoading(false);
-      return;
-    }
-
-    // Validação condicional: ou tem tabelas OU tem preço base
-    const temTabelas = tabelasPrecoCriacao.length > 0;
-    const temPrecoBase = formData.get("preco_por_kg") || formData.get("preco_base");
-
-    if (!temTabelas && !temPrecoBase) {
-      toast({ 
-        title: "❌ Preço obrigatório", 
-        description: "Defina um preço base OU adicione tabelas de preço",
-        variant: "destructive" 
-      });
-      setLoading(false);
-      return;
-    }
-
-    // Se usar tabelas, validar se todas têm preço
-    if (usarTabelas && temTabelas) {
-      const tabelasSemPreco = tabelasPrecoCriacao.filter(t => !t.preco || t.preco <= 0);
-      if (tabelasSemPreco.length > 0) {
-        toast({ 
-          title: "❌ Preços obrigatórios", 
-          description: `Defina preços para todas as tabelas selecionadas (${tabelasSemPreco.length} sem preço)`,
-          variant: "destructive" 
-        });
-        setLoading(false);
-        return;
-      }
-    }
-
-    try {
-      // Se usar tabelas, preço base pode ser null
-      const preco_base = formData.get("preco_base") && !usarTabelas ? parseFloat(formData.get("preco_base") as string) : null;
-      const preco_por_kg = formData.get("preco_por_kg") && !usarTabelas ? parseFloat(formData.get("preco_por_kg") as string) : null;
-      const peso_embalagem_kg = formData.get("peso_embalagem_kg") ? parseFloat(formData.get("peso_embalagem_kg") as string) : 25;
-      
-      const produtoData = {
-        nome: nome.trim(),
-        nome_loja: formData.get("nome_loja") as string || null,
-        descricao: formData.get("descricao") as string || null,
-        marca_id: marcaSelecionada || null,
-        preco_base,
-        preco_por_kg,
-        peso_embalagem_kg,
-        tipo_embalagem: formData.get("tipo_embalagem") as string || 'caixa',
-        tipo_calculo: formData.get("tipo_calculo") as string || 'normal',
-        tipo_venda: formData.get("tipo_venda") as string || 'unidade',
-        peso_unidade_kg: formData.get("peso_unidade_kg") ? parseFloat(formData.get("peso_unidade_kg") as string) : null,
-        rendimento_dose_gramas: formData.get("rendimento_dose_gramas") ? parseInt(formData.get("rendimento_dose_gramas") as string) : null,
-        visivel_loja: true,
-        destaque_loja: false,
-        ativo: true,
-      };
-
-      console.log('📦 Inserindo produto:', produtoData);
-
-      const { error, data } = await supabase
-        .from("produtos")
-        .insert(produtoData)
-        .select();
-
-      if (error) {
-        console.error('❌ Erro detalhado:', error);
-        throw error;
-      }
-
-      console.log('✅ Produto criado:', data);
-      
-      // Criar tabelas de preço se houver
-      if (data && data[0] && tabelasPrecoCriacao.length > 0) {
-        const tabelasParaInserir = tabelasPrecoCriacao
-          .filter(t => t.nome.trim() !== '' && t.preco && t.preco > 0)
-          .map(t => ({
-            produto_id: data[0].id,
-            nome_tabela: t.nome.trim(),
-            preco_por_kg: t.preco,
-            usar_no_site: t.usarNoSite || false,
-          }));
-
-        if (tabelasParaInserir.length > 0) {
-          const { error: tabelasError } = await supabase
-            .from('produto_tabelas_preco')
-            .insert(tabelasParaInserir);
-
-          if (tabelasError) {
-            console.error('⚠️ Erro ao criar tabelas de preço:', tabelasError);
-            toast({ 
-              title: "⚠️ Produto criado, mas erro nas tabelas", 
-              description: "O produto foi criado mas houve erro ao adicionar as tabelas de preço",
-              variant: "destructive" 
-            });
-          }
-        }
-      }
-
-      toast({ title: "✅ Produto adicionado com sucesso!" });
-      setOpen(false);
-      setMarcaSelecionada("");
-      setTabelasPrecoCriacao([]);
-      setUsarTabelas(false);
-      // Produtos serão recarregados automaticamente
-      
-    } catch (error: any) {
-      console.error('❌ Erro ao adicionar produto:', error);
-      toast({ 
-        title: "❌ Erro ao adicionar produto", 
-        description: error.message || 'Erro desconhecido',
-        variant: "destructive" 
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setLoading(true);
-    const reader = new FileReader();
-
-    reader.onload = async (event) => {
-      const text = event.target?.result as string;
-      const lines = text.split('\n').filter(line => line.trim());
-      
-      // Ignora a primeira linha (cabeçalho)
-      const produtos = lines.slice(1).map(line => {
-        // CSV tem formato: Nome, Marca, Preco, Descricao
-        const [nome, marca_nome, precoStr, descricao] = line.split(',').map(item => item.trim());
-        
-        // Encontra marca pelo nome
-        const marca = marcas.find(m => m.nome.toLowerCase() === marca_nome?.toLowerCase());
-        
-        // Extrair peso da descrição (ex: "Peso da embalagem: 5 kg.")
-        let pesoEmbalagem = 25; // default
-        const pesoMatch = descricao?.match(/(\d+(?:\.\d+)?)\s*kg/i);
-        if (pesoMatch) {
-          pesoEmbalagem = parseFloat(pesoMatch[1]);
-        }
-        
-        // Preço é o preço TOTAL da embalagem
-        const precoTotal = precoStr ? parseFloat(precoStr.replace(',', '.')) : null;
-        const precoPorKg = precoTotal && pesoEmbalagem > 0 ? precoTotal / pesoEmbalagem : null;
-        
-        console.log(`📦 ${nome}: Preço Total R$${precoTotal} / ${pesoEmbalagem}kg = R$${precoPorKg?.toFixed(2)}/kg`);
-        
-        return {
-          nome: nome || 'Produto sem nome',
-          marca_id: marca?.id || null,
-          preco_base: precoTotal,
-          preco_por_kg: precoPorKg,
-          peso_embalagem_kg: pesoEmbalagem,
-          descricao: descricao || null,
-          tipo_venda: 'kg', // Produtos importados são vendidos por kg
-          ativo: true,
-          visivel_loja: true,
-        };
-      }).filter(p => p.nome !== 'Produto sem nome');
-
-      const { error } = await supabase.from("produtos").insert(produtos);
-
-      setLoading(false);
-
-      if (error) {
-        toast({ title: "Erro ao importar produtos", description: error.message, variant: "destructive" });
-      } else {
-        toast({ 
-          title: `✅ ${produtos.length} produtos importados!`,
-          description: 'Preços calculados automaticamente por kg'
-        });
-        setImportOpen(false);
-        // Produtos serão recarregados automaticamente
-      }
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    };
-
-    reader.readAsText(file);
-  };
-
-  const handleEdit = async (produto: any) => {
-    setProdutoSelecionado(produto);
-    setEditOpen(true);
-  };
-
-  const loadImagensLoja = async (produtoId: string) => {
-    const { data } = await supabase
-      .from("produto_imagens")
-      .select("*")
-      .eq("produto_id", produtoId)
-      .order("ordem", { ascending: true });
-    setImagensLoja(data || []);
-  };
-
-  const handleUploadImagem = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || !produtoSelecionado) return;
-
-    setUploadingImage(true);
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${i}.${fileExt}`;
-      const filePath = `${produtoSelecionado.id}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('produto-imagens')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        toast({ title: "Erro ao fazer upload", description: uploadError.message, variant: "destructive" });
-        continue;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('produto-imagens')
-        .getPublicUrl(filePath);
-
-      await supabase.from("produto_imagens").insert({
-        produto_id: produtoSelecionado.id,
-        url: publicUrl,
-        ordem: imagensLoja.length + i,
-      });
-    }
-
-    setUploadingImage(false);
-    toast({ title: "Imagens carregadas com sucesso!" });
-    await loadImagensLoja(produtoSelecionado.id);
-    
-    if (imagemInputRef.current) {
-      imagemInputRef.current.value = '';
-    }
-  };
-
-  const handleDeleteImagem = async (imagemId: string, url: string) => {
-    if (!confirm("Deseja excluir esta imagem?")) return;
-
-    const filePath = url.split('/produto-imagens/')[1];
-    await supabase.storage.from('produto-imagens').remove([filePath]);
-    await supabase.from("produto_imagens").delete().eq("id", imagemId);
-
-    toast({ title: "Imagem excluída com sucesso!" });
-    await loadImagensLoja(produtoSelecionado.id);
-  };
-
-  const loadMovimentacoes = async (produtoId: string) => {
-    const { data } = await supabase
-      .from("movimentacao_estoque")
-      .select("*, profiles(nome)")
-      .eq("produto_id", produtoId)
-      .order("created_at", { ascending: false });
-    setMovimentacoes(data || []);
-  };
-
-  const handleMovimentacao = async () => {
-    if (!produtoSelecionado || !movimentacaoData.quantidade) return;
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase.from("movimentacao_estoque").insert({
-      produto_id: produtoSelecionado.id,
-      tipo: movimentacaoData.tipo,
-      quantidade: parseInt(movimentacaoData.quantidade),
-      observacao: movimentacaoData.observacao,
-      responsavel_id: user.id,
-    });
-
-    if (error) {
-      toast({ title: "Erro ao registrar movimentação", variant: "destructive" });
-    } else {
-      toast({ title: "Movimentação registrada com sucesso!" });
-      setEstoqueOpen(false);
-      setMovimentacaoData({ tipo: "entrada", quantidade: "", observacao: "" });
-      loadMovimentacoes(produtoSelecionado.id);
-      // Produtos serão recarregados automaticamente
-    }
-  };
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!produtoSelecionado) return;
-
-    setLoading(true);
-    const { error } = await supabase
-      .from("produtos")
-      .update({
-        nome: editFormData.nome,
-        submarca: editFormData.submarca || null,
-        descricao: editFormData.descricao,
-        marca_id: marcaSelecionada || null,
-        preco_base: editFormData.preco_base ? parseFloat(editFormData.preco_base) : null,
-        preco_por_kg: editFormData.preco_por_kg ? parseFloat(editFormData.preco_por_kg) : null,
-        peso_embalagem_kg: editFormData.peso_embalagem_kg ? parseFloat(editFormData.peso_embalagem_kg) : 25,
-        peso_unidade_kg: editFormData.peso_unidade_kg ? parseFloat(editFormData.peso_unidade_kg) : null,
-        rendimento_dose_gramas: editFormData.rendimento_dose_gramas ? parseInt(editFormData.rendimento_dose_gramas) : null,
-        visivel_loja: editFormData.visivel_loja,
-        destaque_loja: editFormData.destaque_loja,
-        ordem_exibicao: editFormData.ordem_exibicao,
-      })
-      .eq("id", produtoSelecionado.id);
-
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erro ao atualizar produto", variant: "destructive" });
-    } else {
-      toast({ title: "Produto atualizado com sucesso!" });
-      setEditOpen(false);
-      // Produtos serão recarregados automaticamente
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este produto?")) return;
-
-    const { error } = await supabase.from("produtos").delete().eq("id", id);
-
-    if (error) {
-      toast({ title: "Erro ao excluir produto", variant: "destructive" });
-    } else {
-      toast({ title: "Produto excluído com sucesso!" });
-      // Produtos serão recarregados automaticamente
-    }
-  };
-
-  return (
-    <div className="flex-1 space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-2 sm:gap-4">
-          <SidebarTrigger />
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Produtos
-            </h1>
-            <p className="text-sm text-muted-foreground hidden sm:block">
-              Catálogo de produtos representados
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <CarrinhoOrcamento />
-          <Dialog open={importOpen} onOpenChange={setImportOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Upload className="h-4 w-4" />
-                Importar CSV
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Importar Produtos via CSV</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="bg-primary/5 p-4 rounded-lg space-y-2">
-                  <p className="text-sm font-medium">Formato do CSV:</p>
-                  <p className="text-xs text-muted-foreground">
-                    <strong>Nome, Marca, Preço, Descrição</strong>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    • <strong>Preço:</strong> Valor total da embalagem<br/>
-                    • <strong>Descrição:</strong> Deve conter o peso (ex: "Peso da embalagem: 5 kg.")<br/>
-                    • O sistema calculará automaticamente o preço por kg
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    <strong>Exemplo:</strong><br/>
-                    DEXTRO,Kommodity,191.60,Peso da embalagem: 5 kg.
-                  </p>
-                </div>
-                <Input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv"
-                  onChange={handleImportCSV}
-                  disabled={loading}
-                />
-                {loading && <p className="text-sm">Importando e calculando preços...</p>}
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Novo Produto
-              </Button>
-            </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Novo Produto</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-4">
-              <div>
-                <Label htmlFor="nome">Nome Interno (CRM) *</Label>
-                <Input id="nome" name="nome" required placeholder="Ex: Manteiga de Cacau 04" />
-              </div>
-              <div>
-                <Label htmlFor="nome_loja">Nome para Loja</Label>
-                <Input id="nome_loja" name="nome_loja" placeholder="Ex: Manteiga de Cacau" />
-              </div>
-              <div>
-                <Label htmlFor="tipo_embalagem">Tipo de Embalagem</Label>
-                <Select name="tipo_embalagem" defaultValue="caixa">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="caixa">📦 Caixa</SelectItem>
-                    <SelectItem value="saco">🛍️ Saco</SelectItem>
-                    <SelectItem value="balde">🪣 Balde</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="marca">Marca</Label>
-                <Select 
-                  value={marcaSelecionada} 
-                  onValueChange={(value) => {
-                    setMarcaSelecionada(value);
-                    const marca = marcas.find(m => m.id === value);
-                    const isGenial = marca?.nome?.toLowerCase().includes('gencau') || marca?.nome?.toLowerCase().includes('genial');
-                    // Atualizar tipo_calculo dinamicamente
-                    const tipoInput = document.getElementById('tipo_calculo') as HTMLInputElement;
-                    if (tipoInput && isGenial) {
-                      tipoInput.value = 'por_kg';
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma marca" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {marcas.map((marca) => (
-                      <SelectItem key={marca.id} value={marca.id}>
-                        {marca.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input type="hidden" id="tipo_calculo" name="tipo_calculo" value="normal" />
-              </div>
-              
-              <div>
-                <Label htmlFor="tipo_venda">Como é vendido? *</Label>
-                <Select name="tipo_venda" defaultValue="unidade">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unidade">📦 Por Unidade/Caixa (Pazinhas, Bases)</SelectItem>
-                    <SelectItem value="kg">⚖️ Por Kilo (Cacau, produtos voláteis)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Define como o produto será vendido nos pedidos
-                </p>
-              </div>
-
-              {/* Toggle para usar tabelas ou preço base */}
-              <div className="flex items-center space-x-2 p-3 border rounded-lg bg-muted/30">
-                <Switch
-                  id="usar-tabelas"
-                  checked={usarTabelas}
-                  onCheckedChange={setUsarTabelas}
-                />
-                <Label htmlFor="usar-tabelas" className="font-semibold cursor-pointer">
-                  📊 Usar apenas Tabelas de Negociação (sem preço base)
-                </Label>
-              </div>
-
-              {/* Se NÃO usar tabelas, mostrar preço base obrigatório */}
-              {!usarTabelas && (
-                <div>
-                  <Label htmlFor="preco_base">
-                    {marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
-                     marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial') 
-                      ? 'Preço por Kg *' 
-                      : 'Preço Base *'}
-                  </Label>
-                  <Input 
-                    id={marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
-                        marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')
-                      ? 'preco_por_kg'
-                      : 'preco_base'}
-                    name={marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
-                          marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')
-                      ? 'preco_por_kg'
-                      : 'preco_base'}
-                    type="number" 
-                    step="0.01" 
-                    required={!usarTabelas}
-                    onChange={(e) => {
-                      const preco = parseFloat(e.target.value) || 0;
-                      const peso = parseFloat((document.getElementById('peso_unidade_kg') as HTMLInputElement)?.value) || 0;
-                      const rendimento = parseFloat((document.getElementById('rendimento_dose_gramas') as HTMLInputElement)?.value) || 0;
-                      calcularEExibir(preco, peso, rendimento);
-                      
-                      // Se for produto Genial, calcular preço da caixa
-                      const isGenial = marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
-                                     marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial');
-                      if (isGenial) {
-                        const precoCaixa = preco * 25;
-                        const inputPrecoBase = document.getElementById('preco_base_hidden') as HTMLInputElement;
-                        if (inputPrecoBase) inputPrecoBase.value = precoCaixa.toFixed(2);
-                        const pesoInput = document.getElementById('peso_embalagem_kg') as HTMLInputElement;
-                        if (pesoInput && !pesoInput.value) pesoInput.value = '25';
-                        
-                        // Mostrar cálculo
-                        const calcDiv = document.getElementById('genial-calc');
-                        if (calcDiv) {
-                          calcDiv.innerHTML = `<p class="text-sm text-muted-foreground mt-1">Preço por caixa (25kg): R$ ${precoCaixa.toFixed(2)}</p>`;
-                        }
-                      }
-                    }}
-                  />
-                  {(marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('gencau') || 
-                    marcas.find(m => m.id === marcaSelecionada)?.nome?.toLowerCase().includes('genial')) && (
-                    <>
-                      <div id="genial-calc"></div>
-                      <input type="hidden" id="preco_base_hidden" name="preco_base" />
-                      <input type="hidden" id="peso_embalagem_kg" name="peso_embalagem_kg" value="25" />
-                      <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mt-2">
-                        <p className="text-xs text-blue-700 dark:text-blue-300">
-                          ⚖️ <strong>Produto com Preço Volátil (Cacau)</strong><br />
-                          Digite o preço por kg. O sistema calculará automaticamente o preço por caixa de 25kg.
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="peso_unidade_kg">Peso da Unidade (kg)</Label>
-                  <Input 
-                    id="peso_unidade_kg" 
-                    name="peso_unidade_kg" 
-                    type="number" 
-                    step="0.001" 
-                    placeholder="Ex: 3.5"
-                    onChange={(e) => {
-                      const peso = parseFloat(e.target.value) || 0;
-                      const preco = parseFloat((document.getElementById('preco_base') as HTMLInputElement)?.value) || 0;
-                      const rendimento = parseFloat((document.getElementById('rendimento_dose_gramas') as HTMLInputElement)?.value) || 0;
-                      calcularEExibir(preco, peso, rendimento);
-                    }}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Para calcular preço por kilo</p>
-                </div>
-                <div>
-                  <Label htmlFor="rendimento_dose_gramas">Rendimento (g/kg)</Label>
-                  <Input 
-                    id="rendimento_dose_gramas" 
-                    name="rendimento_dose_gramas" 
-                    type="number" 
-                    placeholder="Ex: 30"
-                    onChange={(e) => {
-                      const rendimento = parseFloat(e.target.value) || 0;
-                      const preco = parseFloat((document.getElementById('preco_base') as HTMLInputElement)?.value) || 0;
-                      const peso = parseFloat((document.getElementById('peso_unidade_kg') as HTMLInputElement)?.value) || 0;
-                      calcularEExibir(preco, peso, rendimento);
-                    }}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Gramas para 1kg de gelato</p>
-                </div>
-              </div>
-              <div id="calculos-resultado" className="bg-muted/50 p-3 rounded-lg text-sm space-y-1 hidden">
-                <h4 className="font-semibold mb-2">📊 Cálculos Automáticos:</h4>
-                <div id="calc-preco-kg"></div>
-                <div id="calc-rendimento"></div>
-                <div id="calc-custo-dose"></div>
-              </div>
-              <div>
-                <Label htmlFor="descricao">Descrição</Label>
-                <Textarea id="descricao" name="descricao" />
-              </div>
-
-              {/* Seção de Tabelas de Preço - NOVA INTERFACE */}
-              {usarTabelas && (
-                <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
-                  <div>
-                    <Label className="text-sm font-semibold mb-2 block">
-                      📊 Tabelas de Negociação
-                    </Label>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Crie tabelas com nomes personalizados e preços individuais. Uma delas será exibida no site.
-                    </p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="qtd-tabelas" className="text-sm">Quantas tabelas criar?</Label>
-                    <select
-                      id="qtd-tabelas"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      value={tabelasPrecoCriacao.length}
-                      onChange={(e) => {
-                        const qtd = parseInt(e.target.value);
-                        const novasTabelas = Array.from({ length: qtd }, (_, i) => {
-                          const existente = tabelasPrecoCriacao[i];
-                          return existente || { nome: '', preco: undefined, usarNoSite: i === 0 };
-                        });
-                        setTabelasPrecoCriacao(novasTabelas);
-                      }}
-                    >
-                      <option value="0">Selecione...</option>
-                      {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
-                        <option key={num} value={num}>{num} {num === 1 ? 'tabela' : 'tabelas'}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {tabelasPrecoCriacao.length > 0 && (
-                    <div className="space-y-3">
-                      {tabelasPrecoCriacao.map((tabela, index) => (
-                        <div key={index} className="border rounded-lg p-3 bg-background space-y-3">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-sm font-semibold">Tabela {index + 1}</Label>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <Label className="text-xs">Nome da Tabela *</Label>
-                              <Input
-                                placeholder="Ex: Varejo, Atacado..."
-                                value={tabela.nome || ''}
-                                onChange={(e) => {
-                                  const novas = [...tabelasPrecoCriacao];
-                                  novas[index].nome = e.target.value;
-                                  setTabelasPrecoCriacao(novas);
-                                }}
-                                className="h-9"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">Preço (R$/kg) *</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                value={tabela.preco || ''}
-                                onChange={(e) => {
-                                  const novas = [...tabelasPrecoCriacao];
-                                  novas[index].preco = e.target.value ? parseFloat(e.target.value) : undefined;
-                                  setTabelasPrecoCriacao(novas);
-                                }}
-                                className="h-9"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`usar-site-${index}`}
-                              checked={tabela.usarNoSite || false}
-                              onCheckedChange={(checked) => {
-                                const novas = tabelasPrecoCriacao.map((t, i) => ({
-                                  ...t,
-                                  usarNoSite: i === index ? !!checked : false
-                                }));
-                                setTabelasPrecoCriacao(novas);
-                              }}
-                            />
-                            <Label htmlFor={`usar-site-${index}`} className="text-xs cursor-pointer">
-                              Usar esta tabela no site/loja
-                            </Label>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {tabelasPrecoCriacao.length > 0 && (
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        💡 A tabela marcada será usada para exibir o preço no site. As demais ficam disponíveis para negociação.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? "Salvando..." : "Salvar Produto"}
-              </Button>
-            </div>
-            </form>
-          </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-primary" />
-            Catálogo de Produtos
-          </CardTitle>
-          <CardDescription>
-            Todos os produtos disponíveis
-          </CardDescription>
-          <div className="mt-4 flex flex-col sm:flex-row gap-3">
-            <Input
-              placeholder="Buscar por nome ou marca..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
-            />
-            <Select 
-              value={marcaFiltro || "all"} 
-              onValueChange={(val) => setMarcaFiltro(val === "all" ? "" : val)}
-            >
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Filtrar por marca" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as marcas</SelectItem>
-                {marcas.map((marca) => (
-                  <SelectItem key={marca.id} value={marca.id}>
-                    {marca.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {produtosLoading ? (
-            <div className="space-y-4">
-              {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-32 w-full" />
-              ))}
-            </div>
-          ) : produtosLista.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">Nenhum produto cadastrado</p>
-              <p className="text-sm">Adicione produtos ao seu catálogo</p>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {produtosLista.map((produto) => (
-                <div key={produto.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{produto.nome}</h3>
-                      {produto.submarca && (
-                        <p className="text-xs text-muted-foreground">Submarca: {produto.submarca}</p>
-                      )}
-                      {produto.marcas && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          🏷️ Marca: {produto.marcas.nome}
-                        </p>
-                      )}
-                      
-                       {/* 🆕 SEÇÃO DE PREÇOS */}
-                      <div className="mt-3 space-y-1 bg-muted/50 p-3 rounded-lg">
-                        {produto.preco_base && (
-                          <p className="text-sm font-semibold text-primary">
-                            💰 Preço Base: R$ {Number(produto.preco_base).toFixed(2)}
-                          </p>
-                        )}
-                        {produto.preco_por_kg && (
-                          <p className="text-sm">
-                            ⚖️ Preço por Kg: R$ {Number(produto.preco_por_kg).toFixed(2)}
-                          </p>
-                        )}
-                        {produto.peso_embalagem_kg && (
-                          <p className="text-xs text-muted-foreground">
-                            📦 Embalagem: {produto.peso_embalagem_kg}kg
-                          </p>
-                        )}
-                        {produto.rendimento_dose_gramas && produto.preco_por_kg && (
-                          <p className="text-sm">
-                            🥄 Custo por Dose ({produto.rendimento_dose_gramas}g): 
-                            R$ {((Number(produto.preco_por_kg) * produto.rendimento_dose_gramas) / 1000).toFixed(2)}
-                          </p>
-                        )}
-                      </div>
-                      
-                      {produto.descricao && (
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                          {produto.descricao}
-                        </p>
-                      )}
-                      
-                      <div className="mt-2 flex gap-2">
-                        <span className={`text-xs px-2 py-1 rounded ${produto.ativo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {produto.ativo ? '✓ Ativo' : '✗ Inativo'}
-                        </span>
-                        {produto.estoque_escritorio !== undefined && (
-                          <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
-                            📦 Estoque: {produto.estoque_escritorio}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      {produto.preco_por_kg && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => {
-                            adicionarItem({
-                              produto_id: produto.id,
-                              nome: produto.nome,
-                              preco_por_kg: Number(produto.preco_por_kg),
-                              quantidade_kg: 1,
-                              marca: produto.marcas?.nome,
-                            });
-                            toast({ title: '✅ Produto adicionado ao orçamento!' });
-                          }}
-                          className="w-full"
-                        >
-                          <ShoppingCart className="h-4 w-4 mr-1" />
-                          Adicionar
-                        </Button>
-                      )}
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(produto)} className="flex-1">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDelete(produto.id)} className="flex-1">
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* 📊 TABELAS DE PREÇO */}
-                  <ProdutoTabelasPreco produtoId={produto.id} />
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {produtosLista.length > 0 && (
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              totalItems={totalProdutos}
-              pageSize={10}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Dialog de Edição com Tabelas de Preço */}
-      <ProdutoEditDialog 
-        produto={produtoSelecionado}
-        open={editOpen}
-        onOpenChange={(open) => {
-          setEditOpen(open);
-          if (!open) {
-            setProdutoSelecionado(null);
-            queryClient.invalidateQueries({ queryKey: ['produtos'] });
-          }
-        }}
-      />
-    </div>
-  );
+import { Skeleton } from "@/components/ui/skeleton";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Package, Search, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
+interface Brand {
+  id: string;
+  name: string;
+  category: string | null;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  unit: string | null;
+  notes: string | null;
+  brand_id: string;
+  is_active: boolean;
+  price: number;
+  unidade_medida: string | null;
+  peso_liquido: number | null;
+  volume: number | null;
+  descricao_detalhada: string | null;
+  codigo_referencia: string | null;
+  brands?: { name: string; category: string | null } | null;
+}
+
+const UNIDADES_MEDIDA = ["Unidade", "Caixa", "Pacote", "Fardo", "Galão", "Kg", "g", "L", "ml", "Litro"];
+
+const TABELAS_PRECO_GENCAU = [
+  { key: "tabela_1", label: "Tabela 1" },
+  { key: "tabela_2", label: "Tabela 2" },
+  { key: "tabela_3", label: "Tabela 3" },
+  { key: "tabela_4", label: "Tabela 4" },
+  { key: "distribuidor", label: "Distribuidor" },
+] as const;
+type TipoTabela = typeof TABELAS_PRECO_GENCAU[number]["key"];
+
+const brandColors: Record<string, string> = {
+  "Vaccarin": "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  "PLUSPACK": "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  "WUDY": "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+  "IMPEL": "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  "NR Foods": "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+  "La Sereníssima": "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
+  "Gencau": "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  "BUONO": "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400",
+  "ISOTERM": "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
+  "Unika": "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400",
 };
 
-export default Produtos;
+const formatBRL = (v: number) =>
+  (Number(v) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const emptyForm = {
+  name: "",
+  description: "",
+  unit: "",
+  notes: "",
+  brand_id: "",
+  is_active: true,
+  price: "",
+  unidade_medida: "",
+  peso_liquido: "",
+  volume: "",
+  descricao_detalhada: "",
+  codigo_referencia: "",
+};
+
+export default function Produtos() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [brandFilter, setBrandFilter] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editing, setEditing] = useState<Product | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [precosGencau, setPrecosGencau] = useState<Record<TipoTabela, string>>({
+    tabela_1: "", tabela_2: "", tabela_3: "", tabela_4: "", distribuidor: "",
+  });
+  const [produtosRowId, setProdutosRowId] = useState<string | null>(null);
+
+  const isGencau = (brandId: string) => {
+    const b = brands.find(x => x.id === brandId);
+    return (b?.name ?? "").toLowerCase() === "gencau";
+  };
+
+  const fetchAll = async () => {
+    const [prodRes, brandRes] = await Promise.all([
+      supabase.from("products").select("*, brands(name, category)").order("name"),
+      supabase.from("brands").select("id, name, category").eq("active", true).order("name"),
+    ]);
+    setProducts((prodRes.data as Product[]) ?? []);
+    setBrands(brandRes.data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchAll(); }, []);
+
+  const filtered = products
+    .filter(p => !brandFilter || p.brand_id === brandFilter)
+    .filter(p => {
+      if (!search) return true;
+      const s = search.toLowerCase();
+      return p.name.toLowerCase().includes(s) || (p.description ?? "").toLowerCase().includes(s) || (p.brands?.name ?? "").toLowerCase().includes(s);
+    });
+
+  const openNew = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setPrecosGencau({ tabela_1: "", tabela_2: "", tabela_3: "", tabela_4: "", distribuidor: "" });
+    setProdutosRowId(null);
+    setDrawerOpen(true);
+  };
+
+  const loadPrecosGencau = async (productName: string) => {
+    // Match com produtos.id pelo nome (mesma fonte usada nos pedidos)
+    const { data: prodRow } = await supabase
+      .from("produtos")
+      .select("id")
+      .eq("nome", productName)
+      .maybeSingle();
+    if (!prodRow) {
+      setProdutosRowId(null);
+      setPrecosGencau({ tabela_1: "", tabela_2: "", tabela_3: "", tabela_4: "", distribuidor: "" });
+      return;
+    }
+    setProdutosRowId(prodRow.id);
+    const { data: precos } = await supabase
+      .from("produto_precos")
+      .select("tipo_tabela, preco")
+      .eq("produto_id", prodRow.id);
+    const next: Record<TipoTabela, string> = { tabela_1: "", tabela_2: "", tabela_3: "", tabela_4: "", distribuidor: "" };
+    (precos ?? []).forEach((r: any) => {
+      next[r.tipo_tabela as TipoTabela] = r.preco != null ? String(r.preco) : "";
+    });
+    setPrecosGencau(next);
+  };
+
+  const openEdit = (p: Product) => {
+    setEditing(p);
+    setForm({
+      name: p.name,
+      description: p.description ?? "",
+      unit: p.unit ?? "",
+      notes: p.notes ?? "",
+      brand_id: p.brand_id,
+      is_active: p.is_active,
+      price: p.price > 0 ? String(p.price) : "",
+      unidade_medida: p.unidade_medida ?? "",
+      peso_liquido: p.peso_liquido != null ? String(p.peso_liquido) : "",
+      volume: p.volume != null ? String(p.volume) : "",
+      descricao_detalhada: p.descricao_detalhada ?? "",
+      codigo_referencia: p.codigo_referencia ?? "",
+    });
+    setPrecosGencau({ tabela_1: "", tabela_2: "", tabela_3: "", tabela_4: "", distribuidor: "" });
+    setProdutosRowId(null);
+    if (isGencau(p.brand_id)) {
+      loadPrecosGencau(p.name);
+    }
+    setDrawerOpen(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name.trim()) { toast.error("Nome do produto é obrigatório."); return; }
+    if (!form.brand_id) { toast.error("Selecione uma marca."); return; }
+    const gencau = isGencau(form.brand_id);
+    const parsedPrice = form.price ? Number(form.price.replace(",", ".")) : 0;
+    if (!gencau && (Number.isNaN(parsedPrice) || parsedPrice < 0)) { toast.error("Preço inválido."); return; }
+    const parsedPeso = form.peso_liquido ? Number(form.peso_liquido.replace(",", ".")) : null;
+    const parsedVolume = form.volume ? Number(form.volume.replace(",", ".")) : null;
+    setSaving(true);
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim() || null,
+      unit: form.unit.trim() || null,
+      notes: form.notes.trim() || null,
+      brand_id: form.brand_id,
+      is_active: form.is_active,
+      price: gencau ? 0 : parsedPrice,
+      unidade_medida: form.unidade_medida || null,
+      peso_liquido: parsedPeso,
+      volume: parsedVolume,
+      descricao_detalhada: form.descricao_detalhada.trim() || null,
+      codigo_referencia: form.codigo_referencia.trim() || null,
+    };
+    if (editing) {
+      const { error } = await supabase.from("products").update(payload).eq("id", editing.id);
+      if (error) { toast.error("Erro ao atualizar produto."); setSaving(false); return; }
+    } else {
+      const { error } = await supabase.from("products").insert(payload);
+      if (error) { toast.error("Erro ao cadastrar produto."); setSaving(false); return; }
+    }
+
+    // Espelha em "produtos" (tabela usada no lançamento de pedidos)
+    {
+      const marcaNome = brands.find(b => b.id === payload.brand_id)?.name ?? null;
+      const um = (payload.unidade_medida ?? "").toLowerCase();
+      const unidadeEnum = um.startsWith("kg") ? "kg"
+        : um.startsWith("cx") || um.startsWith("caix") ? "cx"
+        : um.startsWith("l") || um.startsWith("lt") || um.startsWith("ml") || um.startsWith("gal") ? "lt"
+        : "un";
+      const produtosPayload: any = {
+        nome: payload.name,
+        descricao: payload.description,
+        preco: payload.price,
+        categoria: "Outros",
+        unidade: unidadeEnum,
+        ativo: payload.is_active,
+        marca: marcaNome,
+        unidade_medida: payload.unidade_medida,
+        peso_liquido: payload.peso_liquido,
+        volume: payload.volume,
+        descricao_detalhada: payload.descricao_detalhada,
+        codigo_referencia: payload.codigo_referencia,
+        referencia: payload.codigo_referencia,
+        observacoes: payload.notes,
+      };
+      const { data: existente } = await supabase
+        .from("produtos").select("id").eq("nome", payload.name).maybeSingle();
+      if (existente?.id) {
+        await supabase.from("produtos").update(produtosPayload).eq("id", existente.id);
+      } else {
+        await supabase.from("produtos").insert(produtosPayload);
+      }
+    }
+
+    // Persiste tabelas Gencau
+    if (gencau) {
+      let prodId = produtosRowId;
+      if (!prodId) {
+        const { data: prodRow } = await supabase
+          .from("produtos").select("id").eq("nome", payload.name).maybeSingle();
+        prodId = prodRow?.id ?? null;
+      }
+      if (prodId) {
+        const rows = TABELAS_PRECO_GENCAU.map(t => ({
+          produto_id: prodId!,
+          tipo_tabela: t.key as any,
+          preco: Number((precosGencau[t.key] || "0").replace(",", ".")) || 0,
+        }));
+        const { error: upErr } = await supabase
+          .from("produto_precos")
+          .upsert(rows, { onConflict: "produto_id,tipo_tabela" });
+        if (upErr) {
+          toast.error("Produto salvo, mas erro ao salvar tabelas de preço (verifique permissões).");
+          console.error(upErr);
+        }
+      } else {
+        toast.warning("Produto Gencau não encontrado na base de pedidos para vincular tabelas de preço.");
+      }
+    }
+
+    toast.success(editing ? "Produto atualizado!" : "Produto cadastrado!");
+    setSaving(false);
+    setDrawerOpen(false);
+    fetchAll();
+  };
+
+  const handleDelete = async () => {
+    if (!editing) return;
+    const { error } = await supabase.from("products").delete().eq("id", editing.id);
+    if (error) { toast.error("Erro ao excluir produto."); return; }
+    toast.success("Produto excluído!");
+    setDrawerOpen(false);
+    fetchAll();
+  };
+
+  const toggleAtivo = async (p: Product, checked: boolean) => {
+    const { error } = await supabase.from("products").update({ is_active: checked }).eq("id", p.id);
+    if (error) { toast.error("Erro ao atualizar status."); return; }
+    setProducts(prev => prev.map(x => x.id === p.id ? { ...x, is_active: checked } : x));
+    toast.success(checked ? "Produto ativado!" : "Produto desativado!");
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-10 w-full" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-primary">Produtos por Marca</h1>
+        <p className="text-muted-foreground mt-1">{products.length} produtos · {brands.length} marcas</p>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Buscar produto ou marca..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        <Button variant={!brandFilter ? "default" : "outline"} size="sm" onClick={() => setBrandFilter(null)}>
+          Todas
+        </Button>
+        {brands.map(b => (
+          <Button
+            key={b.id}
+            variant={brandFilter === b.id ? "default" : "outline"}
+            size="sm"
+            onClick={() => setBrandFilter(brandFilter === b.id ? null : b.id)}
+          >
+            {b.name}
+          </Button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-3 opacity-40" />
+            <p className="text-lg font-medium">Nenhum produto encontrado</p>
+            <p className="text-sm mt-1">
+              {products.length === 0 ? "Cadastre o primeiro produto para começar." : "Tente outro filtro ou busca."}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(p => {
+            const brand = Array.isArray(p.brands) ? p.brands[0] : p.brands;
+            return (
+            <Card
+              key={p.id}
+              className={`border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${!p.is_active ? "opacity-60" : ""}`}
+              onClick={() => openEdit(p)}
+            >
+              <CardContent className="p-5 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-foreground leading-tight">{p.name}</h3>
+                  <Badge className={brandColors[brand?.name ?? ""] ?? "bg-muted text-muted-foreground"}>
+                    {brand?.name ?? "—"}
+                  </Badge>
+                </div>
+                {p.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>
+                )}
+                <div className="flex items-baseline justify-between gap-2 pt-1">
+                  <span className="text-xl font-bold text-primary">
+                    {formatBRL(Number(p.price ?? 0))}
+                  </span>
+                  {p.unit && (
+                    <span className="text-xs text-muted-foreground">por {p.unit}</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {brand?.category && (
+                      <Badge variant="outline" className="text-[10px]">{brand.category}</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                    <span className="text-xs text-muted-foreground">{p.is_active ? "Ativo" : "Inativo"}</span>
+                    <Switch checked={p.is_active} onCheckedChange={v => toggleAtivo(p, v)} />
+                  </div>
+                </div>
+                {p.notes && (
+                  <p className="text-[11px] text-muted-foreground/70 line-clamp-1 italic">{p.notes}</p>
+                )}
+              </CardContent>
+            </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <Button className="fixed bottom-20 right-4 md:bottom-8 md:right-8 h-14 w-14 rounded-full shadow-xl bg-secondary text-secondary-foreground hover:bg-secondary/90" size="icon" onClick={openNew}>
+        <Plus className="h-6 w-6" />
+      </Button>
+
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-primary">{editing ? "Editar Produto" : "Novo Produto"}</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-3 mt-4">
+            <div className="space-y-1">
+              <Label className="text-xs">Nome *</Label>
+              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nome do produto" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Marca *</Label>
+              <Select
+                value={form.brand_id}
+                onValueChange={v => {
+                  setForm({ ...form, brand_id: v });
+                  if (editing && isGencau(v)) loadPrecosGencau(form.name || editing.name);
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  {brands.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Descrição</Label>
+              <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Descrição do produto..." />
+            </div>
+            {form.brand_id && isGencau(form.brand_id) ? (
+              <div className="space-y-2 p-3 rounded-lg border border-secondary/40 bg-secondary/5">
+                <Label className="text-sm font-semibold text-primary">Tabelas de Preço (Gencau)</Label>
+                <p className="text-[11px] text-muted-foreground">Uso interno — não aparece para o cliente.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {TABELAS_PRECO_GENCAU.map(t => (
+                    <div key={t.key} className="space-y-1">
+                      <Label className="text-[11px]">{t.label} (R$)</Label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={precosGencau[t.key]}
+                        onChange={e => setPrecosGencau(prev => ({ ...prev, [t.key]: e.target.value.replace(/[^\d.,]/g, "") }))}
+                        placeholder="0,00"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Preço (R$)</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    value={form.price}
+                    onChange={e => setForm({ ...form, price: e.target.value.replace(/[^\d.,]/g, "") })}
+                    placeholder="0,00"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Unidade de medida</Label>
+                  <Select value={form.unidade_medida} onValueChange={v => setForm({ ...form, unidade_medida: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                    <SelectContent>
+                      {UNIDADES_MEDIDA.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            {form.brand_id && isGencau(form.brand_id) && (
+              <div className="space-y-1">
+                <Label className="text-xs">Unidade de medida</Label>
+                <Select value={form.unidade_medida} onValueChange={v => setForm({ ...form, unidade_medida: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {UNIDADES_MEDIDA.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Peso líq. (kg)</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={form.peso_liquido}
+                  onChange={e => setForm({ ...form, peso_liquido: e.target.value.replace(/[^\d.,]/g, "") })}
+                  placeholder="0,000"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Volume (L)</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={form.volume}
+                  onChange={e => setForm({ ...form, volume: e.target.value.replace(/[^\d.,]/g, "") })}
+                  placeholder="0,000"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Cód. ref.</Label>
+                <Input
+                  value={form.codigo_referencia}
+                  onChange={e => setForm({ ...form, codigo_referencia: e.target.value })}
+                  placeholder="REF-001"
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Descrição detalhada</Label>
+              <Textarea
+                value={form.descricao_detalhada}
+                onChange={e => setForm({ ...form, descricao_detalhada: e.target.value })}
+                placeholder="Descrição completa para PDF/catálogo..."
+                rows={3}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Antiga unidade (legado)</Label>
+              <Input value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} placeholder="kg, un, cx..." />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Observações internas</Label>
+              <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notas internas sobre o produto..." />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Produto ativo</Label>
+              <Switch checked={form.is_active} onCheckedChange={v => setForm({ ...form, is_active: v })} />
+            </div>
+            <Button className="w-full" onClick={handleSubmit} disabled={saving}>
+              {saving ? "Salvando..." : editing ? "Salvar Alterações" : "Cadastrar Produto"}
+            </Button>
+            {editing && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full">
+                    <Trash2 className="h-4 w-4 mr-2" />Excluir Produto
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. O produto "{editing.name}" será removido permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}

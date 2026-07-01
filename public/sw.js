@@ -1,23 +1,15 @@
-// Service Worker minimalista - versão 4
-// Remove cache agressivo que causava problemas no Safari
+const CACHE_NAME = "repapp-v1";
 
-const CACHE_VERSION = 'v4';
-
-// Limpar TODOS os caches antigos na ativação
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(name => caches.delete(name))
-      );
-    }).then(() => {
-      // Tomar controle imediatamente de todas as páginas
-      return self.clients.claim();
-    })
-  );
+self.addEventListener("install", (e) => {
+  self.skipWaiting();
 });
 
-// Não interceptar nenhuma requisição - deixar o navegador lidar naturalmente
-self.addEventListener('fetch', () => {
-  // Intencionalmente vazio - não interceptamos requisições
+self.addEventListener("activate", (e) => {
+  e.waitUntil(clients.claim());
+});
+
+self.addEventListener("fetch", (e) => {
+  e.respondWith(
+    fetch(e.request).catch(() => caches.match(e.request))
+  );
 });

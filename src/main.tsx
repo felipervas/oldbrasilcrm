@@ -1,33 +1,25 @@
 import { createRoot } from "react-dom/client";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { HelmetProvider } from "react-helmet-async";
-import { queryClient } from "./lib/queryClient";
 import App from "./App.tsx";
 import "./index.css";
 
-// 🚀 Apenas limpar service workers antigos e caches em produção (sem registrar novo SW)
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', async () => {
-    try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map((reg) => reg.unregister()));
+// Register service worker only in production to avoid stale preview caches
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    if (import.meta.env.PROD) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      return;
+    }
 
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map((name) => caches.delete(name)));
-      }
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => registration.unregister());
+    });
 
-      console.log('✅ Service workers removidos e caches limpos');
-    } catch (error) {
-      console.warn('Erro ao limpar service workers/caches:', error);
+    if ("caches" in window) {
+      caches.keys().then((keys) => {
+        keys.forEach((key) => caches.delete(key));
+      });
     }
   });
 }
 
-createRoot(document.getElementById("root")!).render(
-  <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </HelmetProvider>
-);
+createRoot(document.getElementById("root")!).render(<App />);
