@@ -1,1 +1,18 @@
 project_id = "rbprkwtgrrsghcqvdwux"
+
+# Endpoints públicos do e-commerce (carrinho/checkout de visitantes e webhook
+# do Mercado Pago não têm JWT de usuário; a segurança é feita dentro da função)
+[functions.ecom-carrinho]
+verify_jwt = false
+
+[functions.ecom-frete]
+verify_jwt = false
+
+[functions.ecom-checkout]
+verify_jwt = false
+
+[functions.ecom-webhook-mercadopago]
+verify_jwt = false
+
+[functions.ecom-rastreio]
+verify_jwt = false
