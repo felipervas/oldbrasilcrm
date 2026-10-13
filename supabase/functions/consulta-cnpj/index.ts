@@ -1,7 +1,11 @@
+import { pickInscricaoEstadual } from "./ie.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const FETCH_TIMEOUT_MS = 8000;
 
 type Result = {
   razao_social: string;
@@ -17,27 +21,26 @@ type Result = {
   telefone: string;
   email: string;
   source: string;
+  ie_source?: string;
   ie_warning?: string;
 };
 
-function pickIE(data: any): string {
-  // BrasilAPI returns array of inscricoes_estaduais [{inscricao_estadual, ativo, ...}]
-  if (Array.isArray(data?.inscricoes_estaduais)) {
-    const ativa = data.inscricoes_estaduais.find((i: any) => i.ativo) ?? data.inscricoes_estaduais[0];
-    if (ativa?.inscricao_estadual) return String(ativa.inscricao_estadual);
-  }
-  return "";
-}
+type IeLookup = {
+  ie: string;
+  status: "found" | "not_found" | "rate_limited" | "error";
+};
 
 async function fromBrasilAPI(digits: string): Promise<Result | null> {
   try {
-    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`, {
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
     if (!res.ok) return null;
     const d = await res.json();
     return {
       razao_social: d.razao_social || "",
       nome_fantasia: d.nome_fantasia || "",
-      inscricao_estadual: pickIE(d),
+      inscricao_estadual: pickInscricaoEstadual(d.inscricoes_estaduais, d.uf),
       logradouro: d.logradouro || "",
       numero: d.numero || "",
       complemento: d.complemento || "",
@@ -49,14 +52,17 @@ async function fromBrasilAPI(digits: string): Promise<Result | null> {
       email: d.email || "",
       source: "brasilapi",
     };
-  } catch {
+  } catch (error) {
+    console.warn("BrasilAPI falhou:", String(error));
     return null;
   }
 }
 
 async function fromReceitaWS(digits: string): Promise<Result | null> {
   try {
-    const res = await fetch(`https://receitaws.com.br/v1/cnpj/${digits}`);
+    const res = await fetch(`https://receitaws.com.br/v1/cnpj/${digits}`, {
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
     if (!res.ok) return null;
     const d = await res.json();
     if (d.status === "ERROR") return null;
@@ -75,8 +81,33 @@ async function fromReceitaWS(digits: string): Promise<Result | null> {
       email: d.email || "",
       source: "receitaws",
     };
-  } catch {
+  } catch (error) {
+    console.warn("ReceitaWS falhou:", String(error));
     return null;
+  }
+}
+
+async function fromCnpjWsIE(digits: string, uf: string): Promise<IeLookup> {
+  try {
+    const res = await fetch(`https://publica.cnpj.ws/cnpj/${digits}`, {
+      headers: { "User-Agent": "OldBrasilCRM/1.0" },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+
+    if (res.status === 429) return { ie: "", status: "rate_limited" };
+    if (!res.ok) return { ie: "", status: "error" };
+
+    const d = await res.json();
+    const estabelecimento = d?.estabelecimento ?? {};
+    const ufEstabelecimento = estabelecimento?.estado?.sigla || uf;
+    const ie = pickInscricaoEstadual(estabelecimento?.inscricoes_estaduais, ufEstabelecimento);
+
+    return ie
+      ? { ie, status: "found" }
+      : { ie: "", status: "not_found" };
+  } catch (error) {
+    console.warn("CNPJ.ws falhou:", String(error));
+    return { ie: "", status: "error" };
   }
 }
 
@@ -93,6 +124,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
     const digits = cnpj.replace(/\D/g, "");
     if (digits.length !== 14) {
       return new Response(JSON.stringify({ error: "CNPJ inválido" }), {
@@ -112,7 +144,18 @@ Deno.serve(async (req) => {
     }
 
     if (!result.inscricao_estadual) {
-      result.ie_warning = "IE não encontrada, preencha manualmente";
+      const ieLookup = await fromCnpjWsIE(digits, result.uf);
+
+      if (ieLookup.ie) {
+        result.inscricao_estadual = ieLookup.ie;
+        result.ie_source = "cnpj.ws";
+      } else if (ieLookup.status === "rate_limited") {
+        result.ie_warning = "A fonte de IE atingiu o limite de consultas. Tente novamente em alguns segundos ou preencha manualmente";
+      } else if (ieLookup.status === "not_found") {
+        result.ie_warning = `IE ativa não encontrada${result.uf ? ` para ${result.uf}` : ""}. Confirme se o cliente é contribuinte ou preencha manualmente`;
+      } else {
+        result.ie_warning = "Não foi possível consultar a IE agora. Tente novamente ou preencha manualmente";
+      }
     }
 
     return new Response(JSON.stringify(result), {
