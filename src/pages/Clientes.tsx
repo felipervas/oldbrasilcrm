@@ -324,31 +324,26 @@ export default function Clientes() {
       );
       if (res.ok) {
         const data = await res.json();
-        setForm(prev => {
-          const ie = prev.inscricao_estadual || prev.ie || data.inscricao_estadual || "";
-          return {
-            ...prev,
-            nome_loja: prev.nome_loja || data.razao_social || data.nome_fantasia || prev.nome_loja,
-            nome_fantasia: prev.nome_fantasia || data.nome_fantasia || prev.nome_fantasia,
-            ie,
-            inscricao_estadual: ie,
-            endereco: data.logradouro
-              ? `${data.logradouro}${data.numero ? `, ${data.numero}` : ""}${data.complemento ? ` - ${data.complemento}` : ""}`
-              : prev.endereco,
-            bairro: data.bairro || prev.bairro,
-            cidade: data.municipio || prev.cidade,
-            estado: data.uf || prev.estado,
-            cep: data.cep ? formatCep(data.cep) : prev.cep,
-            telefone: prev.telefone || (data.telefone ? formatPhone(data.telefone) : prev.telefone),
-            email: prev.email || data.email || prev.email,
-          };
-        });
-        if (data.ie_warning) {
-          toast.warning(`Dados do CNPJ preenchidos. ${data.ie_warning}`);
-        } else {
-          const ieSource = data.ie_source ? `, IE: ${data.ie_source}` : "";
-          toast.success(`Dados do CNPJ preenchidos! (fonte: ${data.source || "—"}${ieSource})`);
-        }
+        setForm(prev => ({
+          ...prev,
+          nome_loja: prev.nome_loja || data.razao_social || data.nome_fantasia || prev.nome_loja,
+          nome_fantasia: prev.nome_fantasia || data.nome_fantasia || prev.nome_fantasia,
+          inscricao_estadual: prev.inscricao_estadual || data.inscricao_estadual || prev.inscricao_estadual,
+          endereco: data.logradouro
+            ? `${data.logradouro}${data.numero ? `, ${data.numero}` : ""}${data.complemento ? ` - ${data.complemento}` : ""}`
+            : prev.endereco,
+          bairro: data.bairro || prev.bairro,
+          cidade: data.municipio || prev.cidade,
+          estado: data.uf || prev.estado,
+          cep: data.cep ? formatCep(data.cep) : prev.cep,
+          telefone: prev.telefone || (data.telefone ? formatPhone(data.telefone) : prev.telefone),
+          email: prev.email || data.email || prev.email,
+        }));
+        toast.success(
+          data.ie_warning
+            ? `Dados preenchidos. ${data.ie_warning}.`
+            : `Dados do CNPJ preenchidos! (fonte: ${data.source || "—"})`
+        );
       } else {
         const err = await res.json().catch(() => ({}));
         toast.error(err.error || "Não foi possível consultar o CNPJ.");
@@ -405,11 +400,10 @@ export default function Clientes() {
   };
   const openEdit = useCallback((c: any) => {
     setEditing(c);
-    const ie = c.inscricao_estadual || c.ie || "";
     setForm({
       nome_loja: c.nome_loja, nome_fantasia: c.nome_fantasia ?? "",
       nome_contato: c.nome_contato ?? "", pessoa_compras: c.pessoa_compras ?? "",
-      cnpj: c.cnpj ?? "", ie, inscricao_estadual: ie,
+      cnpj: c.cnpj ?? "", ie: c.ie ?? "", inscricao_estadual: c.inscricao_estadual ?? c.ie ?? "",
       telefone: c.telefone ?? "", celular: c.celular ?? "", email: c.email ?? "",
       instagram: c.instagram ?? "",
       endereco: c.endereco ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "", estado: c.estado ?? "", cep: c.cep ?? "",
@@ -421,18 +415,12 @@ export default function Clientes() {
   }, [user?.id]);
 
   const handleFieldChange = (key: string, value: string, mask?: string) => {
-    const nextValue = applyMask(value, mask);
-    if (key === "inscricao_estadual") {
-      setForm({ ...form, inscricao_estadual: nextValue, ie: nextValue });
-      return;
-    }
-    setForm({ ...form, [key]: nextValue });
+    setForm({ ...form, [key]: applyMask(value, mask) });
   };
 
   const handleSubmit = async () => {
     if (!form.nome_loja.trim()) { toast.error("Nome da loja é obrigatório."); return; }
-    const ie = (form.inscricao_estadual || form.ie || "").trim();
-    const payload: any = { ...form, ie, inscricao_estadual: ie };
+    const payload: any = { ...form };
     setSaving(true);
     if (editing) {
       // Secretária/gerente pode reatribuir vendedor

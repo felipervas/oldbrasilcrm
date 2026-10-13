@@ -104,10 +104,8 @@ export default function ClienteDetalhe() {
     setLoading(true);
     supabase.from("clientes").select("*").eq("id", id).maybeSingle().then(({ data }) => {
       if (!active) return;
-      const ie = data?.inscricao_estadual || data?.ie || "";
-      const normalized = data ? { ...data, ie, inscricao_estadual: ie } : {};
-      setClient(data ? normalized : null);
-      setForm(normalized);
+      setClient(data);
+      setForm(data ?? {});
       setLoading(false);
     });
     fetchInt();
@@ -184,12 +182,9 @@ export default function ClienteDetalhe() {
   );
 
   const handleSave = async () => {
-    const ie = (form.inscricao_estadual || form.ie || "").trim();
-    const payload = { ...form, ie, inscricao_estadual: ie };
-    const { error } = await supabase.from("clientes").update(payload).eq("id", id);
+    const { error } = await supabase.from("clientes").update(form).eq("id", id);
     if (error) { toast.error("Erro ao salvar."); return; }
-    setClient(payload);
-    setForm(payload);
+    setClient(form);
     setEditing(false);
     toast.success("Cliente atualizado!");
   };

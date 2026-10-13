@@ -31,7 +31,6 @@ export interface PedidoPdfData {
     nome_contato?: string | null;
     cnpj?: string | null;
     ie?: string | null;
-    inscricao_estadual?: string | null;
     endereco?: string | null;
     bairro?: string | null;
     cidade?: string | null;
@@ -124,7 +123,7 @@ export async function gerarPedidoPdf(data: PedidoPdfData) {
 
   const rows = [
     { l1: "Loja", v1: wrap(cliente.nome_loja), l2: "Contato", v2: wrap(cliente.nome_contato || "—") },
-    { l1: "CNPJ", v1: wrap(cliente.cnpj || "—"), l2: "IE", v2: wrap(cliente.inscricao_estadual || cliente.ie || "—") },
+    { l1: "CNPJ", v1: wrap(cliente.cnpj || "—"), l2: "IE", v2: wrap(cliente.ie || "—") },
     {
       l1: "Endereço",
       v1: wrap(`${cliente.endereco || "—"}${cliente.bairro ? `, ${cliente.bairro}` : ""}`),
